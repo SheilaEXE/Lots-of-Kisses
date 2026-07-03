@@ -1,0 +1,10 @@
+{
+  "Name": "Lots of Kisses!",
+  "Author": "NatrollEXE",
+  "Version": "1.0.0",
+  "Description": "Adds kiss-focused romantic interactions and affectionate reactions for spouses, polyamory spouses, and dating partners in Stardew Valley.",
+  "UniqueID": "NatrollEXE.LotsOfKisses",
+  "EntryDll": "LotsOfKisses.dll",
+  "MinimumApiVersion": "4.0.0",
+  "UpdateKeys": []
+}

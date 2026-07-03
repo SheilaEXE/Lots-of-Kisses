@@ -1,0 +1,573 @@
+{
+
+//CONFIGURATION SETTINGS
+
+  "gmcm.section.features": "Mod Features",
+
+  "gmcm.option.enable-mod.name": "Enable Mod",
+  "gmcm.option.enable-mod.tooltip": "Turns all mod features on or off.",
+
+  "gmcm.option.enable-polyamory-support.name": "Enable Polyamory Support",
+  "gmcm.option.enable-polyamory-support.tooltip": "Treat all romantic NPCs as valid kiss partners for this mod, including NPCs from other mods.",
+
+  "gmcm.option.multi-kisses.name": "Multi-Kisses!",
+  "gmcm.option.multi-kisses.tooltip": "Enables romantic sequences with multiple kisses while you stay close to your partner.",
+
+  "gmcm.option.bump-kiss.name": "Bump Kiss",
+  "gmcm.option.bump-kiss.tooltip": "You share a quick kiss when you run toward your boyfriend/girlfriend or spouse, with a small chance of making them drop an item.",
+
+//===============================================================================================================================================================//
+
+  //KISS REACTION - GERAL
+  
+  "kissReaction.1": "...Already?",
+  "kissReaction.2": "Wow...",
+  "kissReaction.3": "Oh my...",
+  "kissReaction.4": "H-hey...",
+  "kissReaction.5": "*blushes*",
+  "kissReaction.6": "*sighs*",
+  "kissReaction.7": "One more?",
+  "kissReaction.8": "A few more?",
+  "kissReaction.9": "Hey, come back.",
+  "kissReaction.10": "Don't go...",
+  
+  //KISS DIALOGUES - PUBLIC
+  
+  "PublicKissReaction.1": "*blushes*",
+  "PublicKissReaction.2": "*sighs*",
+
+//INTERRUPTED KISSES
+
+  //ALEX
+  
+  "publicMultiKiss.Alex.1": "Hey, hey, hey...$l$b$@, I'm an athlete. I have above-average physical endurance.$s#$b$But you're testing my limits in ways they never covered in training.$l",
+  "publicMultiKiss.Alex.2": "@... you know I don't embarrass easily, right?$l$b$Yeah. But I just saw someone looking at me with an expression I'm never going to forget.$s#$b$Thanks for that.$l",
+  "publicMultiKiss.Alex.3": "Ok, ok, pause.$l$b$I know I'm hard to resist. I really do.$s#$b$But you're taking it so far that even I'm at a loss for words.$l",
+  "publicMultiKiss.Alex.4": "@, on the field I always know what to do under pressure.$l$b$But out here in public? You leave me with no playbook.$l#$b$And that doesn't happen with many people, so keep that secret.$l",
+  "publicMultiKiss.Alex.5": "Ok, I know I'm irresistible. That's a fact.$l$b$But you could at least wait until we're alone to act like this.$l",
+  "publicMultiKiss.Alex.6": "Alright, I'll admit it.$l$b$I thought I was the one who left people speechless... but then you flipped things around and now I don't even remember where I was going.$l",
+  "publicMultiKiss.Alex.7": "@...$l$b$I train every morning. Lift weights. Run. I prepare for anything.$l#$b$Just didn't prepare for you, and that's really not fair.$l",
+  "publicMultiKiss.Alex.8": "You do realize people are watching, right?$l$b$Not that I care. They can look.$h#$b$...$s#$b$Ok, I care a little. Just a little.$l",
+  "publicMultiKiss.Alex.9": "H-hey champ, I like attention, everyone knows that.$l$b$But this kind of attention... is really different.$l#$b$This kind of attention... I'd rather have when we're somewhere private.$l",
+  "publicMultiKiss.Alex.10": "@... I train every day to have mental discipline.$l$b$Focus. Discipline. Cool head.$s#$b$...And then you come along and shut all of that down in public and act like it's funny. Unbelievable.$l",
+  "publicMultiKiss.Alex.11": "@! Hey, hey — people are watching!$l$b$Not that I care, because I don't.$s#$b$...But people are watching.$l",
+  "publicMultiKiss.Alex.12": "Ok, look...$l$b$I like you. A lot. That part's obvious.$l#$b$But you could at least warn me before ambushing me in the middle of the village like this.$l",
+  "publicMultiKiss.Alex.13": "H-hey, @, stop.$l$b$If my grandma hears about what's happening here she's going to give me grief about it forever.$s#$b$And anyone around here can tell her.$l",
+  
+  //ELLIOTT
+
+  "publicMultiKiss.Elliott.1": "My sweet inspiration...$l#$b#If you keep kissing me with such passion, I fear I may faint like a hero from an old romance novel.$s#$b#Can we spare the audience just a bit of mercy?$l",
+  "publicMultiKiss.Elliott.2": "Good heavens, @!$l#$b#Your display of affection is worthy of an epic poem, but...$s#$b#...perhaps we should save some of that poetry for our private moments?$l",
+  "publicMultiKiss.Elliott.3": "Oh! @...$l#$b#Are you trying to leave me completely speechless in the middle of the road?$s#$b#Because it's working remarkably well... I've already forgotten where I was going.$l",
+  "publicMultiKiss.Elliott.4": "Ah, you know... I've written about shameless love, about stolen kisses in public...$s$b$I thought it was romantic.$s#$b$But now that I'm the protagonist, I think I need to revise that position.$l",
+  "publicMultiKiss.Elliott.5": "P-please stop, @.$l$b$I've written about love with a precision I'm proud of.$s#$b$But I never wrote about having my face this hot in a public place where anyone might walk by at any moment.$l",
+  "publicMultiKiss.Elliott.6": "One kiss from you is already pure poetry... but this many, in public?$l#$b#It's an entire anthology of scandalous romance, @!$s#$b#And I am quite literally running out of breath.$l",
+  "publicMultiKiss.Elliott.7": "Oh, ${my dear^my darling}$ @...$l#$b#You wish to make such an ardent declaration right here, in plain sight of everyone?$l#$b#I fear the villagers are not prepared for this much passion!$l",
+  "publicMultiKiss.Elliott.8": "You are like a storm of affection!$l#$b#I surrender completely to your charms, but...$s#$b#...if we don't stop, we'll soon be the main scandal at the Saloon!$l",
+  "publicMultiKiss.Elliott.9": "Wait, wait.$l$b$In my mind I always kept my composure in situations like this.$s#$b$In practice, in a public place where anyone might pass... it's not quite like that.$l",
+  "publicMultiKiss.Elliott.10": "Ah, the sweet and heady taste of your kisses...$l#$b#But @, if you keep seducing me like this in a public place...$s#$b#How do you expect me to function in society afterward?$l",
+  "publicMultiKiss.Elliott.11": "My wonderful flower...$l#$b#I adore your boldness, but my heart rate is dangerously elevated.$s#$b#...Spare this poor writer, won't you?$l",
+  "publicMultiKiss.Elliott.12": "I always dreamed of a passionate romance, but you surpass all my expectations, @.$l#$b#Just... please...$s#$b#Give me a moment to breathe before I collapse from sheer love in the middle of the road.$l",
+  "publicMultiKiss.Elliott.13": "I'm quite certain my face is communicating things I would never say aloud.$l$b$And everyone around us can see.$s#$b$And there is absolutely nothing I can do about it.$l",
+  
+  //HARVEY
+  
+  "publicMultiKiss.Harvey.1": "I know I'm a doctor, but I swear I don't know how to cure what you do to me.$l#$b#My knees are weak and my head is spinning.$s#$b#Please, @, have mercy on my heart.$l",
+  "publicMultiKiss.Harvey.2": "@... w-wait a moment!$s#$b#I'm the local doctor — people trust my professional composure.$l#$b#How am I supposed to examine anyone later with my face completely on fire?$l",
+  "publicMultiKiss.Harvey.3": "Oh goodness...$l#$b#From a medical standpoint, the benefits of endorphin release are undeniable...$s#$b#But from a social standpoint, I'm about to have a syncope from sheer embarrassment!$l",
+  "publicMultiKiss.Harvey.4": "@, I truly appreciate your affection...$l#$b#But if you keep kissing me like this in public, I'm going to have a vasovagal episode!$s#$b#...That is, I'm going to faint right here.$l",
+  "publicMultiKiss.Harvey.5": "*Huff... huff...*$s#$b#@, I think I'm hyperventilating.$l#$b#Could you perhaps... save some of this intensive treatment for when we're in the clinic? Behind a curtain?$l",
+  "publicMultiKiss.Harvey.6": "@, please...$l#$b#I'm not young enough to handle such strong emotions in front of everyone!$s#$b#Give your favorite doctor a break... my face can't take any more blushing.$l",
+  "publicMultiKiss.Harvey.7": "My body temperature is rising far too quickly...$l#$b#I must have a fever! No, wait, it's just you kissing me repeatedly in the middle of the road.$s#$b#This is too much exposure for my emotional well-being.$l",
+  "publicMultiKiss.Harvey.8": "What will Maru think if she sees me like this?!$s#$b#Or worse, the whole village!$l#$b#@, have mercy on my clinical reputation... and my sanity as well.$l",
+  "publicMultiKiss.Harvey.9": "Ah, @... I think I just saw Mayor Lewis looking over here.$s#$b#M-my face is burning so badly that I'm going to need a cold compress urgently.$l#$b#Are you trying to embarrass me to death?$l",
+  "publicMultiKiss.Harvey.10": "*Sigh*... you're really not going to stop, are you?$l#$b$Fine, you win. But if I need oxygen after this...$s#$b$The medical liability is entirely yours.$l",
+  "publicMultiKiss.Harvey.11": "B-but @, what about germs?!$s#$b#I mean... I love your kisses, but this repeated exposure in a public, non-sterile environment...$l#$b#Oh, who am I kidding, I just don't know where to look!$l",
+  "publicMultiKiss.Harvey.12": "H-hey, @... my heart rate just jumped to 120 beats per minute!$s#$b#That's not safe for my blood pressure in the middle of the road.$l#$b#Can we take a brief clinical pause?$l",
+  "publicMultiKiss.Harvey.13": "H-help... I no longer know how to act in public.$s#$b#@, if I don't survive this sudden onslaught of public affection...$l#$b$Know that I loved every second. B-but that's enough now!$l",
+  
+  //SAM
+  
+  "publicMultiKiss.Sam.1": "H-hey, @... haha...$l#$b#I know I'm irresistible and all, but we're in the middle of the road!$s#$b#My face is literally on fire, just so you know.$l",
+  "publicMultiKiss.Sam.2": "Whoa, @!$l#$b#If Sebastian or Abigail see us going at it like this, they're going to roast me about it for the rest of my life!$s#$b#Give me a second to breathe, come on?$l",
+  "publicMultiKiss.Sam.3": "Hey, ease up...$l#$b#Not that I'm complaining, not at all, but we're like, in a public place.$s#$b#Can we maybe save this for when we have a little more privacy?$l",
+  "publicMultiKiss.Sam.4": "H-hold on!$l#$b#What if Vincent comes running by and sees this?!$s#$b#He's going to tell my mom, and she's going to lecture me even though I'm already an adult!$l",
+  "publicMultiKiss.Sam.5": "Hehe... you're kind of addicted to me, aren't you?$l#$b#I really like that, I do...$l#$b$But if you don't stop, I think I'm going to explode from embarrassment!$10",
+  "publicMultiKiss.Sam.6": "Wait, wait, wait!$l#$b#You're going to mess up my whole hairstyle! I spent forever getting it like this today.$l#$b#...Also I'm running out of breath.$10",
+  "publicMultiKiss.Sam.7": "O-oh man, @...$l#$b#My heart is beating faster than a drum solo.$l#$b#If anyone is watching, I'm going to want to dig a hole and disappear in it!$l",
+  "publicMultiKiss.Sam.8": "Ok fine, you win the kissing championship!$l#$b#Can I recover my HP now, please?$l#$b#I don't even remember where I was going...$10",
+  "publicMultiKiss.Sam.9": "I think my face is the same color as my hair right now...$s#$b#@, I love you, but the whole village doesn't need a live show from us, right?$l",
+  "publicMultiKiss.Sam.10": "Hey, if you kiss me again I think I'm going to trip over my own feet!$l#$b#I'm not super coordinated when I'm dying of embarrassment, you know?$l",
+  "publicMultiKiss.Sam.11": "Ok, I give up! I can't act natural with you ambushing me with kisses like this!$l#$b#I'm going to have to go play video games locked in my room until this blush wears off.$10",
+  "publicMultiKiss.Sam.12": "If you keep leaving me this flustered...$l#$b#I swear I'm going to forget the chords to my own song!$s#$b#Have some mercy on me, come on?$l",
+  "publicMultiKiss.Sam.13": "Hey, @, hold up, haha.$10#$b#If my mom walks by and sees us hanging all over each other like this, I'm going to be getting jokes and knowing smiles from her for the rest of the day.$l",
+
+  //SEBASTIAN
+
+  "publicMultiKiss.Sebastian.1": "H-hey... wait...$l#$b#@, are you really ${determined^determined}$ to destroy my dignity right here in public?$l#$b#People are watching... and I can already feel my face getting hot.$l",
+  "publicMultiKiss.Sebastian.2": "S-seriously, @? You're going to keep doing this here?$l#$b#I can barely leave the house without feeling judged, imagine doing... this in front of the whole village?$l",
+  "publicMultiKiss.Sebastian.3": "Hey, @, you realize we're not alone here, right? Because I do.$s#$b#A little more of this and I'll be red enough to compete with the tomatoes you grow.$l",
+  "publicMultiKiss.Sebastian.4": "L-look, I really do like it when you're ${affectionate^affectionate}$ with me...$s#$b#But out here it's too much for me. My social battery completely drained just from this scene.$l",
+  "publicMultiKiss.Sebastian.5": "@... do you have any idea how many people have looked at us since this started?$l#$b#Because I do.$s#$b#A little more and I'm going to evaporate from embarrassment right here.$l",
+  "publicMultiKiss.Sebastian.6": "Hold on! Did you freeze or something?$l#$b#I thought my code was the one full of bugs, but you're kind of repeating the same action over and over!$l",
+  "publicMultiKiss.Sebastian.7": "Ok, wait a second...$l#$b#I need to collect myself before someone starts clapping or making fun of me.$s#$b#You really love seeing me squirm, don't you?$l",
+  "publicMultiKiss.Sebastian.8": "@, if you keep kissing me like this in public, I'm going to combust from embarrassment.$l#$b#So... please... take it slow, before I just melt right here.$l",
+  "publicMultiKiss.Sebastian.9": "Ahn, @, I know you're being ${affectionate^affectionate}$... but...$l#$b#This is a public place, not somewhere private... if we keep going, we're going to be the main topic in the village.$l",
+  "publicMultiKiss.Sebastian.10": "G-go easy, @...$l#$b#I'm already not a fan of being outside, you don't have to make it worse by putting me on display like this...$s#$b#Can we go somewhere darker, please.$l",
+  "publicMultiKiss.Sebastian.11": "Ahn... I like this, ok?$l#$b#It's just that maybe... maybe you could not do it quite so many times in a row right here?$s#$b#My face is burning and I still have to exist in society after this.$l",
+  "publicMultiKiss.Sebastian.12": "Look, even the frogs down by the lake have more privacy than we do right now.$l#$b#You're driving me crazy... in a very embarrassing way.$l",
+  "publicMultiKiss.Sebastian.13": "Hey hey, easy...$l#$b#You can't just keep kissing me like this in public and expect me to keep acting normal.$l#$b#I already don't know where to look.$s",
+  
+  //SHANE
+  
+  "publicMultiKiss.Shane.1": "Ugh... @, what's gotten into you today?$s#$b#We're literally in the middle of the road. M-my face is burning, cut it out.$l",
+  "publicMultiKiss.Shane.2": "Seriously? Right here in front of everyone?$l#$b#If you keep ${clinging^clinging}$ to me like this, I swear I'm going to lock myself in the coop and never come out.$l",
+  "publicMultiKiss.Shane.3": "S-stop it, @!$l#$b#I'm not used to this much attention, especially not in public.$s#$b#...Not that I want you to stop forever. Just... not here.$l",
+  "publicMultiKiss.Shane.4": "Look, I kind of like a little affection when it's just us...$s#$b#But out here? I just want to bury my head in a hole from all the embarrassment.$l",
+  "publicMultiKiss.Shane.5": "Good grief, @... did you lose your mind completely?$s#$b#We're in the middle of the road and I hate being the center of attention!$l#$b#Save all that for when we're somewhere private...$l",
+  "publicMultiKiss.Shane.6": "I need a cold Joja Cola after this...$l#$b#My blood pressure must have shot through the roof from all this exposure.$l",
+  "publicMultiKiss.Shane.7": "You want to finish off what little dignity I have left, is that it?$l#$b#Because you're doing an excellent job kissing me in front of the whole village.$l",
+  "publicMultiKiss.Shane.8": "Charlie behaves better in public than you do, you know that?$l#$b#Can you hold back just a little before I completely fall apart right here?$l",
+  "publicMultiKiss.Shane.9": "Ok, fine, I get it, you love me. The whole world gets it too.$l#$b#Now please, can we get out of here before I evaporate from embarrassment.$s",
+  "publicMultiKiss.Shane.10": "H-hold on... this is a little uncomfortable, @...$s#$b#I'm going to start charging you a fee for every public kiss if you don't stop right now.$l",
+  "publicMultiKiss.Shane.11": "Easy there...$l#$b#I'm not made of iron — I can't handle this much clinging without getting embarrassed. People are watching!$s",
+  "publicMultiKiss.Shane.12": "If Marnie sees us going at each other like this, I'm never going to have a moment's peace.$l#$b#She's going to be asking me embarrassing questions for the rest of the year!$s#$b$S-so please, let me breathe a little.$l",
+  "publicMultiKiss.Shane.13": "H-hey, I kind of like it when you're ${clingy^clingy} like this, but...$l#$b#My face is like a pepper it's so hot right now. Can you stop kissing me in front of the whole village?$s",
+  
+  //ABIGAIL
+  
+  "publicMultiKiss.Abigail.1": "Hehe, you're ${quite a guy^quite a girl}$, you know that?$l#$b#But seriously, give me a little room — I need to breathe.$h",
+  "publicMultiKiss.Abigail.2": "I-if you don't stop right now, I'm going to have to draw my sword!$h#$b#...I'm kidding, but I mean it, @! We're in a public place!$l",
+  "publicMultiKiss.Abigail.3": "H-hey, wait, @! You know I don't really care what people think...$l#$b#But you just kissing me nonstop right here in the middle of the road is a bit much, right?$l",
+  "publicMultiKiss.Abigail.4": "Haha, alright, alright, enough already!$l#$b#If you want to kiss me that badly, we could at least go to the cemetery or the lake.$l#$b#There aren't as many nosy people around to spy on us there.$l",
+  "publicMultiKiss.Abigail.5": "H-hey, @, what's gotten into you?!$l#$b#We're in the middle of the road! My face must look like a fire quartz right now...$l",
+  "publicMultiKiss.Abigail.6": "Wow, @...$l#$b#If this were a video game, my embarrassment bar would have hit zero by now.$l#$b#Seriously, @, let's take a break and breathe for a second.$l",
+  "publicMultiKiss.Abigail.7": "Hang on!$l#$b#Did you decide to test how flustered you could make me in public?$l#$b#I love it, but I think we should do this somewhere darker and more private.$l",
+  "publicMultiKiss.Abigail.8": "H-hold on a sec...$l#$b#I love hanging out with you, but the villagers are super gossipy.$s#$b#Can we be a little more discreet?$l",
+  "publicMultiKiss.Abigail.9": "Look... it's not like I'm not enjoying this...$s#$b#But can we maybe do this somewhere more private before the whole village starts applauding?$l",
+  "publicMultiKiss.Abigail.10": "Ok, you win.$l#$b#I'm officially embarrassed. Can we stop putting on a show for the entire village now?$l",
+  "publicMultiKiss.Abigail.11": "H-wait! Look, a bat!$l#$b#...That didn't work, did it? It's just that I don't know how to react when you're this ${clingy^clingy}$ in public...$l",
+  "publicMultiKiss.Abigail.12": "Hey, @... I think we should take a breather, haha.$l#$b#I know we're having fun, but we're in public, and people are going to start staring.$l",
+  "publicMultiKiss.Abigail.13": "You really love to mess with me, don't you?$l#$b#I'm basically hiding inside my jacket from all the embarrassment.$s#$b$Save some of those kisses for when we go exploring the mines, how about that?$l",
+  
+  //EMILY
+
+  "publicMultiKiss.Emily.1": "Wow, @! My aura is vibrating in such a strong, bright pink right now that I think the whole village can see it!$l#$b#I-I need a moment to harmonize all of this energy.$l",
+  "publicMultiKiss.Emily.2": "By the spirits, @! So much affection at once is going to send my chakras into overdrive!$l#$b#Can we breathe for just a moment?$l",
+  "publicMultiKiss.Emily.3": "I-I can feel all of that wonderful cosmic energy of yours, but... we're in the middle of everyone.$s#$b#I just saw someone staring at us with their mouth open.$l",
+  "publicMultiKiss.Emily.4": "Wait, at this rate you're going to melt me like a piece of quartz in a fire.$l#$b#I love your affection, but I can feel my face burning with embarrassment out here.$l",
+  "publicMultiKiss.Emily.5": "I-I don't think the clothes I sewed were made to handle this much wrinkling in the middle of the road...$l#$b#Give me a little space to breathe!$l",
+  "publicMultiKiss.Emily.6": "Wow, @... so much passion all at once!$l#$b#If you keep going, I'm going to float away like my parrot, I'm so light-headed and embarrassed.$l",
+  "publicMultiKiss.Emily.7": "I'm all for freedom and spreading good vibes, but you're leaving me completely flustered!$s#$b#Can we channel this warm connection somewhere more private?$l",
+  "publicMultiKiss.Emily.8": "My crystals have never glowed as brightly as my cheeks do right now!$l#$b#You're a wellspring of energy, @, but please, let's take a pause.$l",
+  "publicMultiKiss.Emily.9": "If we keep kissing like this, I'm going to end up sewing both sleeves on the same side of the next shirt I make, I'm so distracted!$l",
+  "publicMultiKiss.Emily.10": "H-wait! I need to do a quick meditation dance to calm my heart.$l#$b#You have no idea how flustered you make me when you do this in public.$l",
+  "publicMultiKiss.Emily.11": "The loving energy you're giving off is beautiful, but it's drawing everyone's eyes!$s#$b#Can we save this for later? I promise I'll make it up to you.$l",
+  "publicMultiKiss.Emily.12": "Wow! I feel like I just woke up from a beautiful, wild dream!$l#$b#You send me spinning, but my shy side is begging you to stop for just a second.$l",
+  "publicMultiKiss.Emily.13": "Your vibrational frequency is just wonderful today, @...$l#$b#B-but my face is so hot you could fry an egg on it! Give me a little break.$l",
+  
+  //HALEY
+
+  "publicMultiKiss.Haley.1": "Ow, @, stop! You're going to smudge my brand new lipstick!$s#$b#And besides, we're in the middle of the road — everyone is watching!$l",
+  "publicMultiKiss.Haley.2": "Ugh, don't you know you shouldn't be grabbing at people out here in the dirty street?$l#$b#My hair must be a disaster right now, let go of me!$a",
+  "publicMultiKiss.Haley.3": "S-seriously? What if someone takes a photo of me right now?$l#$b#My face is way too red — this is going to completely ruin my color palette!$l",
+  "publicMultiKiss.Haley.4": "Look, I love that you're ${obsessed^obsessed}$ with me, but you're wrinkling my favorite blouse!$s#$b#...Save this for when we're somewhere more private.$l",
+  "publicMultiKiss.Haley.5": "Oh my gosh, @, have you completely lost it?!$l#$b#Even I have limits on how much attention I want to call... and this is super embarrassing!$s",
+  "publicMultiKiss.Haley.6": "Emily is definitely going to tease us if she sees us hanging all over each other like this.$s#$b#Can you stop for a second? My heart is about to leap out of my chest!$l",
+  "publicMultiKiss.Haley.7": "You're so ${lucky^lucky}$ you're so ${cute^cute}$...$l#$b#But if you don't let go of me right now, I swear I'm going to ignore you for the rest of the day!$a",
+  "publicMultiKiss.Haley.8": "I swear I'm going to charge you an expensive bottle of perfume for every public kiss.$l#$b#You're making me dizzy and I hate losing my composure!$l",
+  "publicMultiKiss.Haley.9": "Oh my gosh, what are people going to think?!$s#$b#You can't just ambush me with kisses in the middle of the road like I'm some kind of prize!$l",
+  "publicMultiKiss.Haley.10": "Y-you're making me so flushed and I'm going to start sweating!$s#$b#I just got out of the bath and that would be a social disaster, @, so please, stop for a second!$s",
+  "publicMultiKiss.Haley.11": "I love affection, I really do...$l#$b#But out here? Everyone's going to gossip and I'm going to be the talk of the whole village!$l",
+  "publicMultiKiss.Haley.12": "If you keep being this ${clingy^clingy}$, I'm going to have to lock myself in my dark room!$s#$b#At least in there no one will see how embarrassed I am...$l",
+  "publicMultiKiss.Haley.13": "Ugh... you're so grabby...$s#$b#But I kind of like it when you treat me like the most special person in the world. Just... do it somewhere without an audience, ok?$l",
+  
+  //LEAH
+
+  "publicMultiKiss.Leah.1": "I love that you're so ${affectionate^affectionate}$ with me, but out here?$s#$b#Can we save some of this romance for when we're alone?$l",
+  "publicMultiKiss.Leah.2": "I don't think all the paint in my studio could match the color my face is right now.$l#$b#Can you hold back just a little?$s",
+  "publicMultiKiss.Leah.3": "I'm more frozen than a piece of driftwood on the shore from all this embarrassment!$s#$b#Let's stop before someone shows up and sees us like this.$l",
+  "publicMultiKiss.Leah.4": "I-if you keep doing this, I swear I'm going to run and hide deep in the Forest!$l#$b#How embarrassing...$s",
+  "publicMultiKiss.Leah.5": "At this rate I'm going to have to camouflage myself in the village bushes just to escape all this humiliating exposure!$l#$b#You're impossible, @...$l",
+  "publicMultiKiss.Leah.6": "O-oh my... my hands are trembling from all the shyness!$l#$b#How am I supposed to carve wood later if you leave me in this state in front of the whole village?$l",
+  "publicMultiKiss.Leah.7": "D-do you think I'm made of clay that you can just mold with your kisses in the middle of the road?$l#$b#...Fine, I love your affection, but I'm dying of embarrassment!$l",
+  "publicMultiKiss.Leah.8": "Oh, @... you're making me redder than the autumn leaves!$s#$b#We're in public, please...$l",
+  "publicMultiKiss.Leah.9": "I swear I was less nervous at my art show than I am right now...$s#$b#Save all this romance for later — I promise I'll make it up to you...$l",
+  "publicMultiKiss.Leah.10": "Wow, you're full of energy today, huh?$l#$b#But my social battery for public displays of affection ran out a long time ago.$s",
+  "publicMultiKiss.Leah.11": "Do you want to become the inspiration for a sculpture called 'The Cling'?$l#$b#Because that's exactly what you look like right now! Just let me go a little — I need to breathe.$l",
+  "publicMultiKiss.Leah.12": "I'd rather spend all day sanding rough wood than deal with the embarrassment of everyone staring at us.$l#$b#Take it easy...$l",
+  "publicMultiKiss.Leah.13": "S-seriously, @, my heart is racing.$l#$b#I love you so much, really, but my face is on fire. Give me a break?$s",
+  
+  //MARU
+
+  "publicMultiKiss.Maru.1": "Wow, @! My heart rate just hit alarming levels!$l#$b#I-I don't think we need to test our chemistry in front of everyone, do we?$l",
+  "publicMultiKiss.Maru.2": "If my dad sees us doing this in the middle of the road, his blood pressure is going to go through the stratosphere!$s#$b#Give me a moment, please... my face is on fire.$l",
+  "publicMultiKiss.Maru.3": "H-hey! I haven't built a robot to defend me against public kiss attacks yet.$l#$b#You're causing my brain to short-circuit!$l",
+  "publicMultiKiss.Maru.4": "Oh my gosh, @! You want to overheat all my vital systems?$l#$b#I can't process this much emotional input at once with everyone watching!$l",
+  "publicMultiKiss.Maru.5": "My body temperature rose about three degrees in a matter of seconds.$l#$b#Save some of that enthusiasm for when we're alone somewhere more private.$l",
+  "publicMultiKiss.Maru.6": "I appreciate your displays of affection, but this is becoming a statistical anomaly!$s#$b#Can you let me go before the whole village shows up to catalogue what's happening?$l",
+  "publicMultiKiss.Maru.7": "H-wait! I need to calibrate my emotions — you caught me completely off guard.$l#$b#I'm a scientist, @, I don't know how to handle this much affection in public!$s",
+  "publicMultiKiss.Maru.8": "My heartbeat is so loud right now it's completely scrambling my ability to think clearly.$s#$b#You throw me totally off frequency, @...$l",
+  "publicMultiKiss.Maru.9": "I'm going to have to invent a cling-repelling force field if you keep acting like this in public!$s#$b#...Save all that affection for when we go stargazing in peace, ok?$l",
+  "publicMultiKiss.Maru.10": "If you kiss me again, I-I'm going to use my invisibility invention!$l#$b#Oh right, I haven't finished the prototype... so just let me go, please!$s",
+  "publicMultiKiss.Maru.11": "Oh my gosh, @! My face must be redder than the surface of Mars.$s#$b#Let's get out of here before I evaporate from embarrassment.$s",
+  "publicMultiKiss.Maru.12": "My focus is supposed to be on astronomy, not calculating the probability that the whole village is gossiping about us!$s#$b#You throw me completely off course... but not here!$s",
+  "publicMultiKiss.Maru.13": "S-seriously, if we keep this up, I'm going to need a personal heat sink just for myself.$s#$b#I love you, but my limit for public social interactions has completely overflowed for today!$s",
+  
+  //PENNY
+
+  "publicMultiKiss.Penny.1": "Oh my gosh... @, please! We're in a public place!$s#$b#My face must look like a tomato it's so red...$l",
+  "publicMultiKiss.Penny.2": "What if Jas and Vincent see us?! What kind of example would I be setting?$l#$b#P-please, can we stop? Everyone is watching!$s",
+  "publicMultiKiss.Penny.3": "I-if my mom sees this, she's never going to stop making embarrassing comments in front of the whole village...$s#$b#Let me go a little, please.$l",
+  "publicMultiKiss.Penny.4": "I... I wish I had a thick book right now to hide my face behind.$l#$b#You're making me die of embarrassment, @.$l",
+  "publicMultiKiss.Penny.5": "Oh, @... I love being close to you, but out here?$s#$b#I feel like the whole village has stopped what they're doing just to look at us...$l",
+  "publicMultiKiss.Penny.6": "Y-you're making me so flustered that I'm forgetting how to conjugate the basic verbs I teach the children!$l#$b#C-can you stop for a moment?$s",
+  "publicMultiKiss.Penny.7": "I can't handle this much attention...$l#$b#P-please, can we find somewhere quieter, under a tree, far away from everyone?$l",
+  "publicMultiKiss.Penny.8": "O-oh my... My legs are going weak.$l#$b#If you keep kissing me nonstop like this, I swear I'm going to faint from embarrassment right here.$l",
+  "publicMultiKiss.Penny.9": "D-don't you think this is a little... inappropriate to do in public?$s#$b#I can feel my face burning in a way I didn't even know was possible...$l",
+  "publicMultiKiss.Penny.10": "I swear I'm going to lock myself in the trailer and not come out for the rest of the day if you don't stop grabbing me in the middle of the road!$l#$b#...This is way too much exposure for me...$l",
+  "publicMultiKiss.Penny.11": "Oh no... Even Mayor Lewis seems to have stopped to watch! How embarrassing.$l#$b#@, please, have mercy and let me breathe for a moment.$l",
+  "publicMultiKiss.Penny.12": "I'm very, very shy about this, @... You know that.$s#$b#Save those kisses for when it's just the ${two^two}$ of us...$l",
+  "publicMultiKiss.Penny.13": "R-read a book, watch the birds, do anything else...$l#$b#But please, stop kissing me so much in a public place! My heart can't take it!$l",
+  
+//===============================================================================================================================================================//
+
+// OCCASIONAL APPROACH
+
+  //ALEX
+
+  "approachKiss.Alex.1": "Wow— hey, champ!",
+  "approachKiss.Alex.2": "Whoa... that one snuck up on me.",
+  "approachKiss.Alex.3": "Ok, I did not see that coming.",
+  "approachKiss.Alex.4": "Haha! What was that entrance?",
+  "approachKiss.Alex.5": "Whoa! You're fast.",
+  "approachKiss.Alex.6": "You almost knocked me over!",
+  "approachKiss.Alex.7": "Man, where'd that energy come from?",
+  "approachKiss.Alex.8": "A running kiss? Nice move.",
+  "approachKiss.Alex.9": "Haha! You're going to break me one day.",
+  "approachKiss.Alex.10": "Watch it! Almost stepped on your foot.",
+  "approachKiss.Alex.11": "Whoa... you really came in full force.",
+  "approachKiss.Alex.12": "Haha! I can take it, come on.",
+  "approachKiss.Alex.13": "Ok, fine... I'll admit that was great.",
+  "approachKiss.Alex.14": "That was a bold move.",
+  "approachKiss.Alex.15": "You trying to tackle me?",
+  "approachKiss.Alex.16": "Ok, you caught me off guard.",
+  "approachKiss.Alex.17": "Ok, that kiss had some force behind it.",
+  "approachKiss.Alex.18": "Hey, that's a foul!",
+  "approachKiss.Alex.19": "Hey... do that again.",
+  "approachKiss.Alex.20": "Wow, hit me right in the face! Liked it.",
+  
+  //ELLIOTT
+
+  "approachKiss.Elliott.1": "Oh! Mind the hair.",
+  "approachKiss.Elliott.2": "Good heavens! You caught me completely off guard.",
+  "approachKiss.Elliott.3": "My goodness, a sudden wave of passion?",
+  "approachKiss.Elliott.4": "Come running like that whenever you wish.",
+  "approachKiss.Elliott.5": "My word— that was quite the unexpected kiss.",
+  "approachKiss.Elliott.6": "You nearly swept me off my feet, my muse.",
+  "approachKiss.Elliott.7": "Ah... struck by love itself.",
+  "approachKiss.Elliott.8": "A scene worthy of a romance novel.",
+  "approachKiss.Elliott.9": "What a magnificent way to say hello.",
+  "approachKiss.Elliott.10": "My heart nearly leapt from my chest.",
+  "approachKiss.Elliott.11": "That was so sudden I could barely react.",
+  "approachKiss.Elliott.12": "I nearly fell... poetically.",
+  "approachKiss.Elliott.13": "Oh, what a magnificent collision.",
+  "approachKiss.Elliott.14": "You've left me speechless.",
+  "approachKiss.Elliott.15": "A passionate collision, I would say.",
+  "approachKiss.Elliott.16": "I confess, I was not prepared for that.",
+  "approachKiss.Elliott.17": "What a sweet collision, my love.",
+  "approachKiss.Elliott.18": "A stolen kiss out of nowhere? How classic.",
+  "approachKiss.Elliott.19": "What a theatrical entrance, my love.",
+  "approachKiss.Elliott.20": "Good heavens!",
+
+  //HARVEY
+
+  "approachKiss.Harvey.1": "My pulse just spiked.",
+  "approachKiss.Harvey.2": "That was dangerous... but very sweet.",
+  "approachKiss.Harvey.3": "My heart just about stopped.",
+  "approachKiss.Harvey.4": "You nearly knocked me over!",
+  "approachKiss.Harvey.5": "My glasses almost flew off.",
+  "approachKiss.Harvey.6": "Oh, that worked far better than coffee.",
+  "approachKiss.Harvey.7": "Careful, you might trip.",
+  "approachKiss.Harvey.8": "What an... enchanting arrival.",
+  "approachKiss.Harvey.9": "Oh, my goodness... that was adorable.",
+  "approachKiss.Harvey.10": "You literally left me breathless.",
+  "approachKiss.Harvey.11": "My heart was not prepared for that.",
+  "approachKiss.Harvey.12": "What a dangerous way to say hello.",
+  "approachKiss.Harvey.13": "You have excellent aim.",
+  "approachKiss.Harvey.14": "I'm certain I turned red just now.",
+  "approachKiss.Harvey.15": "Oh... that was rather sudden.",
+  "approachKiss.Harvey.16": "I'm fine... just slightly melted.",
+  "approachKiss.Harvey.17": "That impact was... adorable.",
+  "approachKiss.Harvey.18": "What an intense way to say hello.",
+  "approachKiss.Harvey.19": "That was... quite unexpected.",
+  "approachKiss.Harvey.20": "That was dangerous... but very cute.",
+
+  //SAM
+
+  "approachKiss.Sam.1": "Haha! I was not ready!",
+  "approachKiss.Sam.2": "Wow, you got me right in the face.",
+  "approachKiss.Sam.3": "Ok, that was awesome.",
+  "approachKiss.Sam.4": "Ten out of ten for speed!",
+  "approachKiss.Sam.5": "Hey! My heart just did a backflip.",
+  "approachKiss.Sam.6": "Haha! Do that again!",
+  "approachKiss.Sam.7": "That kiss had a full combo.",
+  "approachKiss.Sam.8": "Best collision of the day.",
+  "approachKiss.Sam.9": "Come running like that every time.",
+  "approachKiss.Sam.10": "Now I'm grinning like an idiot.",
+  "approachKiss.Sam.11": "That kiss had momentum!",
+  "approachKiss.Sam.12": "You caught me completely off guard.",
+  "approachKiss.Sam.13": "That was dangerous... I liked it.",
+  "approachKiss.Sam.14": "I think my sneakers skidded.",
+  "approachKiss.Sam.15": "Whoa, that hit like a critical strike.",
+  "approachKiss.Sam.16": "You just gave my brain lag.",
+  "approachKiss.Sam.17": "That was like a guitar solo.",
+  "approachKiss.Sam.18": "You ran all the way here just to kiss me?",
+  "approachKiss.Sam.19": "Ok, that was really cute.",
+  "approachKiss.Sam.20": "I almost lost my balance, seriously.",
+
+  //SEBASTIAN
+
+  "approachKiss.Sebastian.1": "You're dangerously out of control.",
+  "approachKiss.Sebastian.2": "Hey... my heart has no airbag.",
+  "approachKiss.Sebastian.3": "Wow. Critical surprise attack.",
+  "approachKiss.Sebastian.4": "Wow. My brain just froze.",
+  "approachKiss.Sebastian.5": "Wow — hi to you too.",
+  "approachKiss.Sebastian.6": "A surprise attack? Not bad, actually.",
+  "approachKiss.Sebastian.7": "You're a public hazard, you know that?",
+  "approachKiss.Sebastian.8": "Great. Now I forgot where I was going.",
+  "approachKiss.Sebastian.9": "That was a pretty direct way to say hi.",
+  "approachKiss.Sebastian.10": "Ok, fine... I liked the collision.",
+  "approachKiss.Sebastian.11": "I almost fell, but it was worth it.",
+  "approachKiss.Sebastian.12": "Wow. Now I'm going to be thinking about that.",
+  "approachKiss.Sebastian.13": "Whoa... you really came in full force.",
+  "approachKiss.Sebastian.14": "Hey, do that again. Maybe slower.",
+  "approachKiss.Sebastian.15": "Was that a romantic charge?",
+  "approachKiss.Sebastian.16": "Ok. That caught me off guard.",
+  "approachKiss.Sebastian.17": "You love watching me go red, don't you.",
+  "approachKiss.Sebastian.18": "Surprise kiss... efficient.",
+  "approachKiss.Sebastian.19": "Ok. I wasn't ready for that.",
+  "approachKiss.Sebastian.20": "Ok... ten out of ten approach.",
+
+  //SHANE
+
+  "approachKiss.Shane.1": "You nearly knocked me over, you know that?",
+  "approachKiss.Shane.2": "Ok. That caught me off guard.",
+  "approachKiss.Shane.3": "Was that a kiss or an attack?",
+  "approachKiss.Shane.4": "You're a problem. A cute problem.",
+  "approachKiss.Shane.5": "You ran all the way here for this?",
+  "approachKiss.Shane.6": "Great... lost my train of thought.",
+  "approachKiss.Shane.7": "You've got good aim, I'll give you that.",
+  "approachKiss.Shane.8": "Ran right into me... not bad.",
+  "approachKiss.Shane.9": "Ok, that was kind of cute...",
+  "approachKiss.Shane.10": "I should complain... but I won't.",
+  "approachKiss.Shane.11": "Great. Now I'm thinking about that.",
+  "approachKiss.Shane.12": "Hey... that wasn't fair.",
+  "approachKiss.Shane.13": "What was that? A surprise attack?",
+  "approachKiss.Shane.14": "You're dangerous when you run.",
+  "approachKiss.Shane.15": "What a chaotic way to say hi.",
+  "approachKiss.Shane.16": "Come in softer next time.",
+  "approachKiss.Shane.17": "Ok, I love you too, but take it easy.",
+  "approachKiss.Shane.18": "I wasn't ready for that.",
+  "approachKiss.Shane.19": "Nearly knocked me down... worth it.",
+  "approachKiss.Shane.20": "Ugh— give me a warning next time, @.",
+
+  //ABIGAIL
+
+  "approachKiss.Abigail.1": "Hahaha! Epic collision!",
+  "approachKiss.Abigail.2": "Whoa! What kind of attack was that?",
+  "approachKiss.Abigail.3": "Wow! You really came in full force!",
+  "approachKiss.Abigail.4": "Ok, I did not see that coming.",
+  "approachKiss.Abigail.5": "Come running like that more often.",
+  "approachKiss.Abigail.6": "Ow! You got me right in the face.",
+  "approachKiss.Abigail.7": "Whoa, kiss with critical damage.",
+  "approachKiss.Abigail.8": "Hey! You made me miss a step.",
+  "approachKiss.Abigail.9": "Whoa... what an adorable collision.",
+  "approachKiss.Abigail.10": "You just flew in and did that?",
+  "approachKiss.Abigail.11": "You caught me completely off guard!",
+  "approachKiss.Abigail.12": "I wasn't ready, but I liked it.",
+  "approachKiss.Abigail.13": "Hey! I didn't even get a chance to fight back.",
+  "approachKiss.Abigail.14": "A perfectly calculated collision.",
+  "approachKiss.Abigail.15": "What an aggressively cute way to say hi.",
+  "approachKiss.Abigail.16": "Hey, easy! Or not.",
+  "approachKiss.Abigail.17": "Wow— surprise attack!",
+  "approachKiss.Abigail.18": "A surprise kiss? Loved the strategy.",
+  "approachKiss.Abigail.19": "Haha! I want a rematch on that kiss.",
+  "approachKiss.Abigail.20": "Running kiss unlocked.",
+
+  //EMILY
+
+  "approachKiss.Emily.1": "Oh! You appeared like magic.",
+  "approachKiss.Emily.2": "Hey! You almost made me spin around.",
+  "approachKiss.Emily.3": "Wow! What kind of energy was that?",
+  "approachKiss.Emily.4": "Oh! A kiss with momentum.",
+  "approachKiss.Emily.5": "Ah! You came in glowing today.",
+  "approachKiss.Emily.6": "Oh! What beautiful energy!",
+  "approachKiss.Emily.7": "What an intense way to greet me.",
+  "approachKiss.Emily.8": "What an adorable collision!",
+  "approachKiss.Emily.9": "That kiss lit up my whole day.",
+  "approachKiss.Emily.10": "You just threw my whole aura off.",
+  "approachKiss.Emily.11": "My heart almost danced right out of me.",
+  "approachKiss.Emily.12": "You caught me totally distracted.",
+  "approachKiss.Emily.13": "Ow! You almost knocked me off balance.",
+  "approachKiss.Emily.14": "What a magical way to say hi!",
+  "approachKiss.Emily.15": "That was chaotic and adorable.",
+  "approachKiss.Emily.16": "Hey! What a luminous surprise was that?",
+  "approachKiss.Emily.17": "What a wonderful surprise!",
+  "approachKiss.Emily.18": "That kiss felt like destiny.",
+  "approachKiss.Emily.19": "What a sweet impact.",
+  "approachKiss.Emily.20": "My soul just did a pirouette.",
+
+  //HALEY
+
+  "approachKiss.Haley.1": "Ow! Watch the hair.",
+  "approachKiss.Haley.2": "Whoa! You almost wrinkled my new top.",
+  "approachKiss.Haley.3": "I almost dropped my camera.",
+  "approachKiss.Haley.4": "You scared me! But I'll admit I loved it.",
+  "approachKiss.Haley.5": "Whoa, what's the rush?",
+  "approachKiss.Haley.6": "Hey! You almost smeared my lipstick!",
+  "approachKiss.Haley.7": "A surprise kiss? How romantic.",
+  "approachKiss.Haley.8": "What a cute way to get my attention.",
+  "approachKiss.Haley.9": "That would have made a really blurry photo.",
+  "approachKiss.Haley.10": "Oh my gosh! What an adorable attack.",
+  "approachKiss.Haley.11": "Ok, that was actually kind of cute.",
+  "approachKiss.Haley.12": "Ow! Watch the outfit!",
+  "approachKiss.Haley.13": "My heart almost leapt out of my chest.",
+  "approachKiss.Haley.14": "Was that a kiss or an attack?",
+  "approachKiss.Haley.15": "That was a little rough... and cute.",
+  "approachKiss.Haley.16": "Wow! What an impulsive move. Liked it.",
+  "approachKiss.Haley.17": "You caught me completely off guard.",
+  "approachKiss.Haley.18": "You're a hazard to my makeup.",
+  "approachKiss.Haley.19": "I should complain, but I liked it.",
+  "approachKiss.Haley.20": "Wow... a kiss like that out of nowhere?",
+
+  //LEAH
+
+  "approachKiss.Leah.1": "Oh! You almost knocked me over!",
+  "approachKiss.Leah.2": "Do you always move like that, or do you just miss me?",
+  "approachKiss.Leah.3": "Wow, what an intense way to say hi.",
+  "approachKiss.Leah.4": "What an entrance.",
+  "approachKiss.Leah.5": "You ran all the way here just for this?",
+  "approachKiss.Leah.6": "Wow... you've got a lot of energy today.",
+  "approachKiss.Leah.7": "Ow! You almost threw me off balance.",
+  "approachKiss.Leah.8": "Careful, I almost became abstract art.",
+  "approachKiss.Leah.9": "What a sweet way to say hi.",
+  "approachKiss.Leah.10": "Whoa! A kiss with momentum.",
+  "approachKiss.Leah.11": "You love catching me off guard, don't you?",
+  "approachKiss.Leah.12": "Whoa, you almost made me lose my step...",
+  "approachKiss.Leah.13": "Wow, my heart jumped just now.",
+  "approachKiss.Leah.14": "That was chaotic... but lovely.",
+  "approachKiss.Leah.15": "You're pure force of nature.",
+  "approachKiss.Leah.16": "I wasn't expecting that kiss.",
+  "approachKiss.Leah.17": "You came in like a leaf on the wind.",
+  "approachKiss.Leah.18": "Haha! That was so you.",
+  "approachKiss.Leah.19": "A collision like that I'll take any day.",
+  "approachKiss.Leah.20": "What an impact full of love.",
+
+  //MARU
+
+  "approachKiss.Maru.1": "Was that a kiss or an experiment?",
+  "approachKiss.Maru.2": "You came in way too fast!",
+  "approachKiss.Maru.3": "You throw me completely out of orbit.",
+  "approachKiss.Maru.4": "Hm? ...Oh. I see where your priorities are.",
+  "approachKiss.Maru.5": "That impact was... interesting.",
+  "approachKiss.Maru.6": "Wow... that had perfect timing.",
+  "approachKiss.Maru.7": "I think my glasses nearly flew off.",
+  "approachKiss.Maru.8": "You caught me completely off guard.",
+  "approachKiss.Maru.9": "My attention has been hijacked.",
+  "approachKiss.Maru.10": "That triggered a very strong reaction.",
+  "approachKiss.Maru.11": "Ah... my focus just evaporated.",
+  "approachKiss.Maru.12": "Wow... my internal data just crashed.",
+  "approachKiss.Maru.13": "What a brilliant way to say hello.",
+  "approachKiss.Maru.14": "That kiss had a lot of kinetic energy.",
+  "approachKiss.Maru.15": "Wow! I was completely taken by surprise.",
+  "approachKiss.Maru.16": "You left me with no logical response.",
+  "approachKiss.Maru.17": "This collision requires further testing.",
+  "approachKiss.Maru.18": "That was scientifically adorable.",
+  "approachKiss.Maru.19": "Hey, I was trying to think.",
+  "approachKiss.Maru.20": "My brain just short-circuited.",
+
+  //PENNY
+
+  "approachKiss.Penny.1": "You almost lifted me off the ground.",
+  "approachKiss.Penny.2": "Oh my gosh... what a surprise.",
+  "approachKiss.Penny.3": "You make that look so natural.",
+  "approachKiss.Penny.4": "That was quite a sudden kiss.",
+  "approachKiss.Penny.5": "I never know how to prepare for that.",
+  "approachKiss.Penny.6": "You ran all the way here just for this?",
+  "approachKiss.Penny.7": "That collision was... cute.",
+  "approachKiss.Penny.8": "That was a very effective way to get my attention.",
+  "approachKiss.Penny.9": "You always leave me speechless.",
+  "approachKiss.Penny.10": "You almost made me trip.",
+  "approachKiss.Penny.11": "That was quite an affectionate impact.",
+  "approachKiss.Penny.12": "You leave me so flustered like that.",
+  "approachKiss.Penny.13": "Ah... that was really sweet.",
+  "approachKiss.Penny.14": "Now I forgot what I was going to do.",
+  "approachKiss.Penny.15": "What an adorable way to say hello.",
+  "approachKiss.Penny.16": "That kiss left me all embarrassed.",
+  "approachKiss.Penny.17": "I think I forgot what I was going to say.",
+  "approachKiss.Penny.18": "Oh! What a lovely surprise.",
+  "approachKiss.Penny.19": "Ah... my face gave me away.",
+  "approachKiss.Penny.20": "I think my face just turned red.",
+
+  //SURPRISE GIFT  
+
+  //MALE
+
+  "giftAlex.1": "Made this snack for you, you're going to need it. {201}",
+  "giftAlex.2": "You need fuel — here, take this! {349}",
+  "giftAlex.3": "Pure protein for my favorite person. {195}",
+
+  "giftElliott.1": "I found this pomegranate and immediately thought of you. {63}",
+  "giftElliott.2": "A small present to inspire your day. {444}",
+  "giftElliott.3": "For the brightest star in the valley. {268}",
+
+  "giftHarvey.1": "A good coffee to keep your energy up for the rest of the day. {395}",
+  "giftHarvey.2": "Don't overwork yourself. {237}",
+  "giftHarvey.3": "This will help give you some energy today. {253}",
+
+  "giftSam.1": "How about a pizza for us to share? {206}",
+  "giftSam.2": "You must be thirsty. Here! {167}",
+  "giftSam.3": "Take this to eat, you're going to need it. {224}",
+
+  "giftSebastian.1": "Found this in the mines today and saved it for you. {84}",
+  "giftSebastian.2": "Hm... I tried to cook... {240}",
+  "giftSebastian.3": "Drink it while it's still hot. {253}",
+
+  "giftShane.1": "I was saving this for you. Here. {215}",
+  "giftShane.2": "I got this pizza at the Saloon for us to share. {206}",
+  "giftShane.3": "Here, you're going to need the energy. {346}",
+
+  //FEMALE
+
+  "giftAbigail.1": "Found this rock in the mines and it had your name on it! {66}",
+  "giftAbigail.2": "Was out exploring earlier and saved this for you. {68}",
+  "giftAbigail.3": "A little gift for the ${bravest guy^bravest girl}$ I know. {287:3}",
+
+  "giftHaley.1": "I made this for you today! {221}",
+  "giftHaley.2": "Picked this up for you, hope you like it. {421}",
+  "giftHaley.3": "For the hardest-working farmer in the valley. {18}",
+
+  "giftLeah.1": "Made this for you, hope it tastes good! {200}",
+  "giftLeah.2": "Nature reminded me of you today. {20}",
+  "giftLeah.3": "Eat it while it's still fresh. {610}",
+
+  "giftMaru.1": "Took a break from my inventions to make you this. {222}",
+  "giftMaru.2": "I calculated you were going to need this today. {395}",
+  "giftMaru.3": "I found this while walking near the mines. {80}",
+
+  "giftPenny.1": "Found this along the way and saved it for you. {22}",
+  "giftPenny.2": "Made this with a lot of care, hope you like it. {230}",
+  "giftPenny.3": "To give you a little comfort during the farm work. {614}",
+
+  "giftEmily.1": "The energies of the universe told me you'd need this. {62}",
+  "giftEmily.2": "Made this for you — packed it full of good vibrations! {204}",
+  "giftEmily.3": "A little gift full of good energy, just for you. {64}",
+  
+  "fullBag.1": "I was going to give you something, but your bag is full.",
+
+  "gmcm.option.blush-smoke-style.name": "Blush smoke style",
+  "gmcm.option.blush-smoke-style.tooltip": "Choose which blush smoke animation plays during kiss sequences.",
+  "gmcm.option.blush-smoke-style.style1": "Style 1",
+  "gmcm.option.blush-smoke-style.style2": "Style 2"
+}

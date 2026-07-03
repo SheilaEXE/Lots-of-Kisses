@@ -1,0 +1,25 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Rider / JetBrains
+.idea/
+
+# VS Code
+.vscode/
+
+# Config local do jogador (não deve ir pro repo)
+config.json
+
+# DLLs do jogo (referências locais, não redistribuíveis)
+*.dll
+!*.deps.json
+
+# OS
+.DS_Store
+Thumbs.db
