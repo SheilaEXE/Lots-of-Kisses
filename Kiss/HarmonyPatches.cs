@@ -19,7 +19,7 @@ namespace LotsOfKisses
                 if (!__result || __instance == null || who == null)
                     return;
 
-                if (ModEntry.Instance?.Config?.AtivarMod != true)
+                if (ModEntry.Instance?.Config?.ModEnabled != true)
                     return;
 
                 // Core guard:
@@ -77,11 +77,11 @@ namespace LotsOfKisses
     {
         static bool Prefix(Farmer __instance, int facingDirection)
         {
-            if (ModEntry.Instance?.Config?.AtivarMod != true)
+            if (ModEntry.Instance?.Config?.ModEnabled != true)
                 return true;
 
             // MUITO IMPORTANTE:
-            // sem essa flag, esse patch interfere no Attentive Lovers e no beijo vanilla.
+            // Without this flag, this patch interferes with Attentive Lovers and the vanilla kiss.
             if (ModEntry.Instance.LotsOfKissesKissPatchActive != true)
                 return true;
 
@@ -145,7 +145,7 @@ namespace LotsOfKisses
         {
             try
             {
-                if (ModEntry.Instance?.Config?.AtivarMod != true)
+                if (ModEntry.Instance?.Config?.ModEnabled != true)
                     return true;
 
                 if (!ModEntry.suppressDialogueFromAutoKissClick)

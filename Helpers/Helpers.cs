@@ -30,7 +30,7 @@ namespace LotsOfKisses
 
         internal bool IsPolyamorySpouse(string npcName)
         {
-            if (this.Config?.AtivarCompatibilidadePoliamor != true)
+            if (this.Config?.PolyamorySupport != true)
                 return false;
 
             if (!Context.IsWorldReady || Game1.player == null)
@@ -63,7 +63,7 @@ namespace LotsOfKisses
 
         internal bool IsDatingPartner(string npcName)
         {
-            if (this.Config?.AtivarNamorados != true)
+            if (this.Config?.PolyamorySupport != true)
                 return false;
 
             if (!Context.IsWorldReady || Game1.player == null)

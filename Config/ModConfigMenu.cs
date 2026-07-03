@@ -30,43 +30,43 @@ namespace LotsOfKisses
                 mod: mod.ModManifest,
                 name: () => mod.Helper.Translation.Get("gmcm.option.enable-mod.name"),
                 tooltip: () => mod.Helper.Translation.Get("gmcm.option.enable-mod.tooltip"),
-                getValue: () => mod.Config.AtivarMod,
-                setValue: value => mod.Config.AtivarMod = value
+                getValue: () => mod.Config.ModEnabled,
+                setValue: value => mod.Config.ModEnabled = value
             );
 
             configMenu.AddBoolOption(
                 mod: mod.ModManifest,
                 name: () => T(mod, "gmcm.option.enable-polyamory-support.name", "Enable polyamory support"),
                 tooltip: () => T(mod, "gmcm.option.enable-polyamory-support.tooltip", "Treat all romantic NPCs as valid kiss partners for this mod, including NPCs from other mods."),
-                getValue: () => mod.Config.AtivarCompatibilidadePoliamor,
-                setValue: value => mod.Config.AtivarCompatibilidadePoliamor = value
+                getValue: () => mod.Config.PolyamorySupport,
+                setValue: value => mod.Config.PolyamorySupport = value
             );
 
             configMenu.AddBoolOption(
                 mod: mod.ModManifest,
                 name: () => mod.Helper.Translation.Get("gmcm.option.multi-kisses.name"),
                 tooltip: () => mod.Helper.Translation.Get("gmcm.option.multi-kisses.tooltip"),
-                getValue: () => mod.Config.AtivarTrocaDeBeijos,
-                setValue: value => mod.Config.AtivarTrocaDeBeijos = value
+                getValue: () => mod.Config.MultiKissEnabled,
+                setValue: value => mod.Config.MultiKissEnabled = value
             );
 
             configMenu.AddBoolOption(
                 mod: mod.ModManifest,
                 name: () => mod.Helper.Translation.Get("gmcm.option.bump-kiss.name"),
                 tooltip: () => mod.Helper.Translation.Get("gmcm.option.bump-kiss.tooltip"),
-                getValue: () => mod.Config.AtivarBeijoEsbarrao,
-                setValue: value => mod.Config.AtivarBeijoEsbarrao = value
+                getValue: () => mod.Config.BumpKissEnabled,
+                setValue: value => mod.Config.BumpKissEnabled = value
             );
 
             configMenu.AddTextOption(
                 mod: mod.ModManifest,
                 name: () => T(mod, "gmcm.option.blush-smoke-style.name", "Blush smoke style"),
                 tooltip: () => T(mod, "gmcm.option.blush-smoke-style.tooltip", "Choose which blush smoke animation plays during kiss sequences."),
-                getValue: () => mod.Config.EstiloBlushSmoke.ToString(),
+                getValue: () => mod.Config.BlushSmokeStyle.ToString(),
                 setValue: value =>
                 {
                     if (System.Enum.TryParse<BlushSmokeStyle>(value, out var parsed))
-                        mod.Config.EstiloBlushSmoke = parsed;
+                        mod.Config.BlushSmokeStyle = parsed;
                 },
                 allowedValues: new[] { "Style1", "Style2" },
                 formatAllowedValue: value => T(mod, $"gmcm.option.blush-smoke-style.{value.ToLower()}", value)

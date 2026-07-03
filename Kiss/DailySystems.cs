@@ -26,7 +26,7 @@ namespace LotsOfKisses
                 Game1.activeClickableMenu == null &&
                 Game1.player.canMove &&
                 talkedToSpouseToday &&
-                this.Config.AtivarTrocaDeBeijos)
+                this.Config.MultiKissEnabled)
             {
                 float touchDistance = DistanceToPlayer(spouse);
                 bool touchingSpouseNow = touchDistance <= 64f;
@@ -69,7 +69,7 @@ namespace LotsOfKisses
                 return true;
 
             // If any system or mod is moving the NPC, don't let Lots of Kisses
-            // ficar virando o sprite dele por cima.
+            // flip the sprite on top of it.
             if (npc.controller != null)
                 return true;
 
@@ -140,11 +140,11 @@ namespace LotsOfKisses
             passiveLookRestoreActive = true;
             passiveLookRestoreNpcName = npc.Name;
 
-            // Primeira pose real antes dele virar para a jogadora.
+            // First real pose before turning to face the player.
             passiveLookRestoreFacing = npc.FacingDirection;
             passiveLookRestoreFrame = npc.Sprite.CurrentFrame;
 
-            // Guarda onde ele estava quando essa pose foi salva.
+            // Store where the NPC was when this pose was saved.
             passiveLookRestoreTile = npc.TilePoint;
             passiveLookRestoreLocationName = npc.currentLocation.NameOrUniqueName;
 
@@ -320,9 +320,9 @@ namespace LotsOfKisses
                 return;
             }
 
-            const float minNoticeDistance = 300f; // Se for menor que isso, o cônjuge já te nota normalmente, sem a reação de "notar de longe".
-            const float maxNoticeDistance = 600f; // Se for maior que isso, o cônjuge nem te nota, então não faz sentido ter a reação de "notar de longe".
-            const float approachThreshold = 8f; // A distância mínima que o jogador deve se aproximar para que o cônjuge reaja, para evitar reações quando o jogador está só passando.
+            const float minNoticeDistance = 300f; // Below this the spouse already notices naturally, no "notice from afar" reaction needed.
+            const float maxNoticeDistance = 600f; // Above this the spouse can't see the player, so a "notice from afar" reaction makes no sense.
+            const float approachThreshold = 8f;   // Minimum distance the player must close before the spouse reacts, to avoid reactions when just passing by.
 
             bool isInNoticeZone = distance < maxNoticeDistance && distance > minNoticeDistance;
             bool hadPreviousDistance = lastNoticeDistance >= 0f;

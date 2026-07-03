@@ -8,25 +8,20 @@ namespace LotsOfKisses
 
     public class ModConfig
     {
-        // Ativar/Desativar o Mod
-        public bool AtivarMod { get; set; } = true;
+        // Master toggle for the mod.
+        public bool ModEnabled { get; set; } = true;
 
-        // Chance of receiving a gift from your partner on a bump kiss — fixed at 5%, not exposed in GMCM.
-        public int ChancePresenteEsbarrao { get; set; } = 5;
+        // Enable or disable multi-kiss sequences.
+        public bool MultiKissEnabled { get; set; } = true;
 
-        // Enable or disable multi-kiss sequences
-        public bool AtivarTrocaDeBeijos { get; set; } = true;
+        // Enable or disable the bump kiss when running toward a partner.
+        public bool BumpKissEnabled { get; set; } = true;
 
-        // Ligar/Desligar o beijo ao esbarrar
-        public bool AtivarBeijoEsbarrao { get; set; } = true;
-
-        // Dating partners are always supported — not exposed in GMCM, always true.
-        public bool AtivarNamorados { get; set; } = true;
-
-        // Enables generic polyamory mod support by treating all married NPCs in friendshipData as valid romantic partners.
-        public bool AtivarCompatibilidadePoliamor { get; set; } = true;
+        // Treat all romantic NPCs as valid kiss partners, including those from other mods.
+        // Always true — not exposed in GMCM, but kept configurable for advanced users via config.json.
+        public bool PolyamorySupport { get; set; } = true;
 
         // Which blush smoke animation style to use (row 0 = Style1, row 1 = Style2).
-        public BlushSmokeStyle EstiloBlushSmoke { get; set; } = BlushSmokeStyle.Style2;
+        public BlushSmokeStyle BlushSmokeStyle { get; set; } = BlushSmokeStyle.Style2;
     }
 }

@@ -99,7 +99,7 @@ namespace LotsOfKisses
             }
             catch
             {
-                // Se a estrutura interna mudar, a checagem por CurrentFrame ainda cobre os casos comuns.
+                // If the internal structure changes, the CurrentFrame fallback still covers the common cases.
             }
 
             return -1;
@@ -721,7 +721,7 @@ namespace LotsOfKisses
 
             float distance = DistanceToPlayer(spouse);
 
-            if (distance >= 600f) // distância grande o suficiente para considerar que o jogador se afastou ou o NPC se teletransportou, então cancela a pausa para evitar prender o NPC desnecessariamente
+            if (distance >= 600f) // Far enough to assume the player moved away or the NPC warped — cancel the pause to avoid locking the NPC unnecessarily.
             {
                 this.Monitor.Log(
                     $"[OUTSIDE BUMP PAUSE EXIT] npc={spouse.Name} dist={distance:F1} timer={outsideBumpPauseTimer} loc={spouse.currentLocation?.NameOrUniqueName ?? "null"}",
@@ -734,7 +734,7 @@ namespace LotsOfKisses
 
             spouse.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
 
-            // pausa curtinha, sem matar controller
+            // Short pause — doesn't kill the controller.
             if (spouse.movementPause < 6)
                 spouse.movementPause = 6;
         }
@@ -1333,9 +1333,9 @@ namespace LotsOfKisses
             }
 
             // The bump kiss only loses priority if the multi-kiss sequence is already
-            // realmente acontecendo de verdade.
+            // actually running.
             bool multiKissBusy =
-                this.Config.AtivarTrocaDeBeijos &&
+                this.Config.MultiKissEnabled &&
                 (
                     continuousKissActive ||
                     continuousKissPendingRestart
@@ -1354,7 +1354,7 @@ namespace LotsOfKisses
             Vector2 diff = Game1.player.Position - npc.Position;
             bool isHorizontal = Math.Abs(diff.X) > Math.Abs(diff.Y);
 
-            if (this.Config.AtivarBeijoEsbarrao &&
+            if (this.Config.BumpKissEnabled &&
                 justStartedTouchingSpouse &&
                 isHorizontal &&
                 Game1.player.isMoving() &&
@@ -1445,7 +1445,7 @@ namespace LotsOfKisses
                 if (locName != "FarmHouse" && locName != "Farm" && !approachKissTriggered && !suppressBumpKissDialogue)
                 {
                     bool giftDrop = IsCurrentSpouse(npc.Name) &&
-                                    random.NextDouble() < (this.Config.ChancePresenteEsbarrao / 100.0);
+                                    random.NextDouble() < 0.05;
                     string surpriseLine = null;
                     List<Item> giftItems = null;
                     string fullBagLine = null;
@@ -1519,7 +1519,7 @@ namespace LotsOfKisses
                 }
 
                 // Give priority to the bump kiss:
-                // limpa o hold da troca de beijos e impede que ela entre imediatamente no mesmo toque.
+                // Clear the multi-kiss hold and prevent it from re-entering immediately on the same touch.
                 continuousKissTouchHoldTimer = 0;
                 continuousKissWasTouchingSpouse = false;
                 continuousKissPendingRestart = false;
@@ -1556,19 +1556,19 @@ namespace LotsOfKisses
                         if (continuousKissActive || continuousKissPendingRestart)
                             return;
 
-                        if (DistanceToPlayer(pauseNpc) >= 600f) // se o jogador tiver se afastado muito, não ativa a pausa
+                        if (DistanceToPlayer(pauseNpc) >= 600f) // Player moved too far away — skip the pause.
                             return;
 
                         outsideBumpPauseActive = true;
                         outsideBumpPauseNpc = pauseNpc;
-                        outsideBumpPauseTimer = 360; // 6 segundos de pausa
+                        outsideBumpPauseTimer = 360; // 6-second pause
                         pauseNpc.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
 
                     }, activeKissVisualDelayMs);
                 }
                 else
                 {
-                    // dentro de casa/fazenda continua normal
+                    // Indoors / farm — no outdoor pause needed, continue normally.
                     approachKissHoldActive = false;
                     approachKissHoldNpc = null;
                     approachKissTriggered = false;
@@ -1576,7 +1576,7 @@ namespace LotsOfKisses
                     approachKissHoldToken++;
                 }
 
-                cooldown = 100; // dar um tempinho antes de permitir outra reação de toque, pra evitar que o cônjuge fique reagindo loucamente se o jogador ficar parado encostado nele.
+                cooldown = 100; // Brief cooldown before allowing another touch reaction, so the partner doesn't react repeatedly if the player stands still next to them.
                 dialogueCooldown = 350;
                 didReactThisTick = true;
                 playerWasTouchingSpouse = true;
@@ -1588,7 +1588,7 @@ namespace LotsOfKisses
             // Only rearms the approachKiss DIALOGUE outside the farm/house
             if (!IsHomeOrFarmLocation())
             {
-                if (approachKissRearmPending && currentDistance >= 1000f) // se o jogador tiver se afastado bastante, rearma o approachKiss
+                if (approachKissRearmPending && currentDistance >= 1000f) // Player moved far enough away — re-arm the approach kiss.
                 {
                     approachKissTriggered = false;
                     approachKissRearmPending = false;

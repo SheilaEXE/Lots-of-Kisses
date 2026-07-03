@@ -51,7 +51,7 @@ namespace LotsOfKisses
             }
 
             // Polyamory spouses
-            if (this.Config?.AtivarCompatibilidadePoliamor == true)
+            if (this.Config?.PolyamorySupport == true)
             {
                 this.Monitor.Log("[PARTNER DETECTION] Polyamory compatibility enabled. Scanning friendship data for extra married NPCs...", LogLevel.Info);
 
@@ -72,7 +72,7 @@ namespace LotsOfKisses
             }
 
             // Dating partners
-            if (this.Config?.AtivarNamorados == true)
+            if (this.Config?.PolyamorySupport == true)
             {
                 this.Monitor.Log("[PARTNER DETECTION] Dating support enabled. Scanning friendship data for dating/engaged NPCs...", LogLevel.Info);
 
@@ -323,7 +323,7 @@ namespace LotsOfKisses
             if (!Context.IsWorldReady)
                 return;
 
-            if (this.Config != null && !this.Config.AtivarMod)
+            if (this.Config != null && !this.Config.ModEnabled)
                 return;
 
             if (!e.Button.IsActionButton())

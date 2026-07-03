@@ -7,8 +7,14 @@
   "gmcm.option.enable-mod.name": "Enable Mod",
   "gmcm.option.enable-mod.tooltip": "Turns all mod features on or off.",
 
+  "gmcm.option.enable-dating-partners.name": "Enable Dating Partners",
+  "gmcm.option.enable-dating-partners.tooltip": "Allow kiss interactions with NPCs you're dating, not only your spouse.",
+
   "gmcm.option.enable-polyamory-support.name": "Enable Polyamory Support",
   "gmcm.option.enable-polyamory-support.tooltip": "Treat all romantic NPCs as valid kiss partners for this mod, including NPCs from other mods.",
+
+  "gmcm.option.bump-kiss-gift-chance.name": "Bump Kiss Gift Chance (%)",
+  "gmcm.option.bump-kiss-gift-chance.tooltip": "The chance of receiving a surprise gift after a quick bump kiss.",
 
   "gmcm.option.multi-kisses.name": "Multi-Kisses!",
   "gmcm.option.multi-kisses.tooltip": "Enables romantic sequences with multiple kisses while you stay close to your partner.",
@@ -92,10 +98,10 @@
   "publicMultiKiss.Sam.2": "Whoa, @!$l#$b#If Sebastian or Abigail see us going at it like this, they're going to roast me about it for the rest of my life!$s#$b#Give me a second to breathe, come on?$l",
   "publicMultiKiss.Sam.3": "Hey, ease up...$l#$b#Not that I'm complaining, not at all, but we're like, in a public place.$s#$b#Can we maybe save this for when we have a little more privacy?$l",
   "publicMultiKiss.Sam.4": "H-hold on!$l#$b#What if Vincent comes running by and sees this?!$s#$b#He's going to tell my mom, and she's going to lecture me even though I'm already an adult!$l",
-  "publicMultiKiss.Sam.5": "Hehe... you're kind of addicted to me, aren't you?$l#$b#I really like that, I do...$l#$b$But if you don't stop, I think I'm going to explode from embarrassment!$10",
-  "publicMultiKiss.Sam.6": "Wait, wait, wait!$l#$b#You're going to mess up my whole hairstyle! I spent forever getting it like this today.$l#$b#...Also I'm running out of breath.$10",
+  "publicMultiKiss.Sam.5": "Hehe... you're kind of addicted to me, aren't you?$l#$b#I really like that, I do...$l#$b$But if you don't stop, I think I'm going to explode from embarrassment!$l0",
+  "publicMultiKiss.Sam.6": "Wait, wait, wait!$l#$b#You're going to mess up my whole hairstyle! I spent forever getting it like this today.$l#$b#...Also I'm running out of breath.$l0",
   "publicMultiKiss.Sam.7": "O-oh man, @...$l#$b#My heart is beating faster than a drum solo.$l#$b#If anyone is watching, I'm going to want to dig a hole and disappear in it!$l",
-  "publicMultiKiss.Sam.8": "Ok fine, you win the kissing championship!$l#$b#Can I recover my HP now, please?$l#$b#I don't even remember where I was going...$10",
+  "publicMultiKiss.Sam.8": "Ok fine, you win the kissing championship!$l#$b#Can I recover my HP now, please?$l#$b#I don't even remember where I was going...$l0",
   "publicMultiKiss.Sam.9": "I think my face is the same color as my hair right now...$s#$b#@, I love you, but the whole village doesn't need a live show from us, right?$l",
   "publicMultiKiss.Sam.10": "Hey, if you kiss me again I think I'm going to trip over my own feet!$l#$b#I'm not super coordinated when I'm dying of embarrassment, you know?$l",
   "publicMultiKiss.Sam.11": "Ok, I give up! I can't act natural with you ambushing me with kisses like this!$l#$b#I'm going to have to go play video games locked in my room until this blush wears off.$10",
@@ -105,17 +111,17 @@
   //SEBASTIAN
 
   "publicMultiKiss.Sebastian.1": "H-hey... wait...$l#$b#@, are you really ${determined^determined}$ to destroy my dignity right here in public?$l#$b#People are watching... and I can already feel my face getting hot.$l",
-  "publicMultiKiss.Sebastian.2": "S-seriously, @? You're going to keep doing this here?$l#$b#I can barely leave the house without feeling judged, imagine doing... this in front of the whole village?$l",
+  "publicMultiKiss.Sebastian.2": "S-seriously, @? You're going to keep doing this here?$1#$b#I can barely leave the house without feeling judged, imagine doing... this in front of the whole village?$l",
   "publicMultiKiss.Sebastian.3": "Hey, @, you realize we're not alone here, right? Because I do.$s#$b#A little more of this and I'll be red enough to compete with the tomatoes you grow.$l",
-  "publicMultiKiss.Sebastian.4": "L-look, I really do like it when you're ${affectionate^affectionate}$ with me...$s#$b#But out here it's too much for me. My social battery completely drained just from this scene.$l",
+  "publicMultiKiss.Sebastian.4": "L-look, I really do like it when you're ${affectionate^affectionate}$ with me...$s#$b#But out here it's too much for me. My social battery completely drained just from this scene.$1",
   "publicMultiKiss.Sebastian.5": "@... do you have any idea how many people have looked at us since this started?$l#$b#Because I do.$s#$b#A little more and I'm going to evaporate from embarrassment right here.$l",
-  "publicMultiKiss.Sebastian.6": "Hold on! Did you freeze or something?$l#$b#I thought my code was the one full of bugs, but you're kind of repeating the same action over and over!$l",
+  "publicMultiKiss.Sebastian.6": "Hold on! Did you freeze or something?$1#$b#I thought my code was the one full of bugs, but you're kind of repeating the same action over and over!$l",
   "publicMultiKiss.Sebastian.7": "Ok, wait a second...$l#$b#I need to collect myself before someone starts clapping or making fun of me.$s#$b#You really love seeing me squirm, don't you?$l",
   "publicMultiKiss.Sebastian.8": "@, if you keep kissing me like this in public, I'm going to combust from embarrassment.$l#$b#So... please... take it slow, before I just melt right here.$l",
   "publicMultiKiss.Sebastian.9": "Ahn, @, I know you're being ${affectionate^affectionate}$... but...$l#$b#This is a public place, not somewhere private... if we keep going, we're going to be the main topic in the village.$l",
-  "publicMultiKiss.Sebastian.10": "G-go easy, @...$l#$b#I'm already not a fan of being outside, you don't have to make it worse by putting me on display like this...$s#$b#Can we go somewhere darker, please.$l",
+  "publicMultiKiss.Sebastian.10": "G-go easy, @...$l#$b#I'm already not a fan of being outside, you don't have to make it worse by putting me on display like this...$s#$b#Can we go somewhere darker, please.$1",
   "publicMultiKiss.Sebastian.11": "Ahn... I like this, ok?$l#$b#It's just that maybe... maybe you could not do it quite so many times in a row right here?$s#$b#My face is burning and I still have to exist in society after this.$l",
-  "publicMultiKiss.Sebastian.12": "Look, even the frogs down by the lake have more privacy than we do right now.$l#$b#You're driving me crazy... in a very embarrassing way.$l",
+  "publicMultiKiss.Sebastian.12": "Look, even the frogs down by the lake have more privacy than we do right now.$1#$b#You're driving me crazy... in a very embarrassing way.$l",
   "publicMultiKiss.Sebastian.13": "Hey hey, easy...$l#$b#You can't just keep kissing me like this in public and expect me to keep acting normal.$l#$b#I already don't know where to look.$s",
   
   //SHANE
@@ -200,15 +206,15 @@
   
   //MARU
 
-  "publicMultiKiss.Maru.1": "Wow, @! My heart rate just hit alarming levels!$l#$b#I-I don't think we need to test our chemistry in front of everyone, do we?$l",
-  "publicMultiKiss.Maru.2": "If my dad sees us doing this in the middle of the road, his blood pressure is going to go through the stratosphere!$s#$b#Give me a moment, please... my face is on fire.$l",
-  "publicMultiKiss.Maru.3": "H-hey! I haven't built a robot to defend me against public kiss attacks yet.$l#$b#You're causing my brain to short-circuit!$l",
-  "publicMultiKiss.Maru.4": "Oh my gosh, @! You want to overheat all my vital systems?$l#$b#I can't process this much emotional input at once with everyone watching!$l",
-  "publicMultiKiss.Maru.5": "My body temperature rose about three degrees in a matter of seconds.$l#$b#Save some of that enthusiasm for when we're alone somewhere more private.$l",
-  "publicMultiKiss.Maru.6": "I appreciate your displays of affection, but this is becoming a statistical anomaly!$s#$b#Can you let me go before the whole village shows up to catalogue what's happening?$l",
-  "publicMultiKiss.Maru.7": "H-wait! I need to calibrate my emotions — you caught me completely off guard.$l#$b#I'm a scientist, @, I don't know how to handle this much affection in public!$s",
+  "publicMultiKiss.Maru.1": "Wow, @! My heart rate just hit alarming levels!$l#$b#I-I don't think we need to test our chemistry in front of everyone, do we?$1",
+  "publicMultiKiss.Maru.2": "If my dad sees us doing this in the middle of the road, his blood pressure is going to go through the stratosphere!$s#$b#Give me a moment, please... my face is on fire.$1",
+  "publicMultiKiss.Maru.3": "H-hey! I haven't built a robot to defend me against public kiss attacks yet.$1#$b#You're causing my brain to short-circuit!$l",
+  "publicMultiKiss.Maru.4": "Oh my gosh, @! You want to overheat all my vital systems?$l#$b#I can't process this much emotional input at once with everyone watching!$1",
+  "publicMultiKiss.Maru.5": "My body temperature rose about three degrees in a matter of seconds.$1#$b#Save some of that enthusiasm for when we're alone somewhere more private.$l",
+  "publicMultiKiss.Maru.6": "I appreciate your displays of affection, but this is becoming a statistical anomaly!$s#$b#Can you let me go before the whole village shows up to catalogue what's happening?$1",
+  "publicMultiKiss.Maru.7": "H-wait! I need to calibrate my emotions — you caught me completely off guard.$1#$b#I'm a scientist, @, I don't know how to handle this much affection in public!$s",
   "publicMultiKiss.Maru.8": "My heartbeat is so loud right now it's completely scrambling my ability to think clearly.$s#$b#You throw me totally off frequency, @...$l",
-  "publicMultiKiss.Maru.9": "I'm going to have to invent a cling-repelling force field if you keep acting like this in public!$s#$b#...Save all that affection for when we go stargazing in peace, ok?$l",
+  "publicMultiKiss.Maru.9": "I'm going to have to invent a cling-repelling force field if you keep acting like this in public!$s#$b#...Save all that affection for when we go stargazing in peace, ok?$1",
   "publicMultiKiss.Maru.10": "If you kiss me again, I-I'm going to use my invisibility invention!$l#$b#Oh right, I haven't finished the prototype... so just let me go, please!$s",
   "publicMultiKiss.Maru.11": "Oh my gosh, @! My face must be redder than the surface of Mars.$s#$b#Let's get out of here before I evaporate from embarrassment.$s",
   "publicMultiKiss.Maru.12": "My focus is supposed to be on astronomy, not calculating the probability that the whole village is gossiping about us!$s#$b#You throw me completely off course... but not here!$s",
@@ -216,19 +222,19 @@
   
   //PENNY
 
-  "publicMultiKiss.Penny.1": "Oh my gosh... @, please! We're in a public place!$s#$b#My face must look like a tomato it's so red...$l",
-  "publicMultiKiss.Penny.2": "What if Jas and Vincent see us?! What kind of example would I be setting?$l#$b#P-please, can we stop? Everyone is watching!$s",
-  "publicMultiKiss.Penny.3": "I-if my mom sees this, she's never going to stop making embarrassing comments in front of the whole village...$s#$b#Let me go a little, please.$l",
-  "publicMultiKiss.Penny.4": "I... I wish I had a thick book right now to hide my face behind.$l#$b#You're making me die of embarrassment, @.$l",
-  "publicMultiKiss.Penny.5": "Oh, @... I love being close to you, but out here?$s#$b#I feel like the whole village has stopped what they're doing just to look at us...$l",
-  "publicMultiKiss.Penny.6": "Y-you're making me so flustered that I'm forgetting how to conjugate the basic verbs I teach the children!$l#$b#C-can you stop for a moment?$s",
-  "publicMultiKiss.Penny.7": "I can't handle this much attention...$l#$b#P-please, can we find somewhere quieter, under a tree, far away from everyone?$l",
-  "publicMultiKiss.Penny.8": "O-oh my... My legs are going weak.$l#$b#If you keep kissing me nonstop like this, I swear I'm going to faint from embarrassment right here.$l",
-  "publicMultiKiss.Penny.9": "D-don't you think this is a little... inappropriate to do in public?$s#$b#I can feel my face burning in a way I didn't even know was possible...$l",
-  "publicMultiKiss.Penny.10": "I swear I'm going to lock myself in the trailer and not come out for the rest of the day if you don't stop grabbing me in the middle of the road!$l#$b#...This is way too much exposure for me...$l",
+  "publicMultiKiss.Penny.1": "Oh my gosh... @, please! We're in a public place!$s#$b#My face must look like a tomato it's so red...$1",
+  "publicMultiKiss.Penny.2": "What if Jas and Vincent see us?! What kind of example would I be setting?$1#$b#P-please, can we stop? Everyone is watching!$s",
+  "publicMultiKiss.Penny.3": "I-if my mom sees this, she's never going to stop making embarrassing comments in front of the whole village...$s#$b#Let me go a little, please.$1",
+  "publicMultiKiss.Penny.4": "I... I wish I had a thick book right now to hide my face behind.$1#$b#You're making me die of embarrassment, @.$l",
+  "publicMultiKiss.Penny.5": "Oh, @... I love being close to you, but out here?$s#$b#I feel like the whole village has stopped what they're doing just to look at us...$1",
+  "publicMultiKiss.Penny.6": "Y-you're making me so flustered that I'm forgetting how to conjugate the basic verbs I teach the children!$1#$b#C-can you stop for a moment?$s",
+  "publicMultiKiss.Penny.7": "I can't handle this much attention...$l#$b#P-please, can we find somewhere quieter, under a tree, far away from everyone?$1",
+  "publicMultiKiss.Penny.8": "O-oh my... My legs are going weak.$1#$b#If you keep kissing me nonstop like this, I swear I'm going to faint from embarrassment right here.$l",
+  "publicMultiKiss.Penny.9": "D-don't you think this is a little... inappropriate to do in public?$s#$b#I can feel my face burning in a way I didn't even know was possible...$1",
+  "publicMultiKiss.Penny.10": "I swear I'm going to lock myself in the trailer and not come out for the rest of the day if you don't stop grabbing me in the middle of the road!$l#$b#...This is way too much exposure for me...$1",
   "publicMultiKiss.Penny.11": "Oh no... Even Mayor Lewis seems to have stopped to watch! How embarrassing.$l#$b#@, please, have mercy and let me breathe for a moment.$l",
-  "publicMultiKiss.Penny.12": "I'm very, very shy about this, @... You know that.$s#$b#Save those kisses for when it's just the ${two^two}$ of us...$l",
-  "publicMultiKiss.Penny.13": "R-read a book, watch the birds, do anything else...$l#$b#But please, stop kissing me so much in a public place! My heart can't take it!$l",
+  "publicMultiKiss.Penny.12": "I'm very, very shy about this, @... You know that.$s#$b#Save those kisses for when it's just the ${two^two}$ of us...$1",
+  "publicMultiKiss.Penny.13": "R-read a book, watch the birds, do anything else...$1#$b#But please, stop kissing me so much in a public place! My heart can't take it!$l",
   
 //===============================================================================================================================================================//
 

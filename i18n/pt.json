@@ -7,8 +7,14 @@
   "gmcm.option.enable-mod.name": "Ativar Mod",
   "gmcm.option.enable-mod.tooltip": "Liga ou desliga todas as funções do mod.",
 
+  "gmcm.option.enable-dating-partners.name": "Ativar Namorados",
+  "gmcm.option.enable-dating-partners.tooltip": "Permite interações de beijo com NPCs que você está namorando, não apenas com o cônjuge.",
+
   "gmcm.option.enable-polyamory-support.name": "Ativar Suporte a Poliamor",
   "gmcm.option.enable-polyamory-support.tooltip": "Trata todos os NPCs românticos como parceiros válidos para os beijos deste mod, inclusive NPCs de outros mods.",
+
+  "gmcm.option.bump-kiss-gift-chance.name": "Chance de Presente ao Esbarrar (%)",
+  "gmcm.option.bump-kiss-gift-chance.tooltip": "A chance de ganhar um presente surpresa após um beijo rápido ao esbarrar.",
 
   "gmcm.option.multi-kisses.name": "Multi-Beijos!",
   "gmcm.option.multi-kisses.tooltip": "Permite sequências românticas com vários beijos enquanto vocês estão próximos.",

@@ -47,7 +47,7 @@ namespace LotsOfKisses
             if (npc == null)
                 return;
 
-            int row = (int)(this.Config?.EstiloBlushSmoke ?? BlushSmokeStyle.Style2);
+            int row = (int)(this.Config?.BlushSmokeStyle ?? BlushSmokeStyle.Style2);
 
             activeBlushSmokes[npc.Name] = new BlushSmokeInstance
             {
@@ -115,7 +115,7 @@ namespace LotsOfKisses
                 );
 
                 // Position above the head.
-                // Ajuste o -104f se quiser mais alto/baixo.
+                // Adjust -104f to move the effect higher or lower relative to the NPC.
                 Vector2 worldPos = npc.Position + new Vector2(32f, -80f);
 
                 // Drifts upward slightly during the animation to look like rising smoke.
@@ -123,7 +123,7 @@ namespace LotsOfKisses
 
                 Vector2 screenPos = Game1.GlobalToLocal(Game1.viewport, worldPos);
 
-                // Origem no meio inferior do frame 16x16.
+                // Origin at the bottom-center of the 16x16 frame.
                 Vector2 origin = new Vector2(8f, 16f);
 
                 float layerDepth = Math.Min(0.999f, (npc.Position.Y + 128f) / 10000f);
