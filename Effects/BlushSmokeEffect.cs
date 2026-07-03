@@ -115,8 +115,8 @@ namespace LotsOfKisses
                 );
 
                 // Position above the head.
-                // Adjust -104f to move the effect higher or lower relative to the NPC.
-                Vector2 worldPos = npc.Position + new Vector2(32f, -80f);
+                // Adjust -64f to move the effect higher or lower relative to the NPC.
+                Vector2 worldPos = npc.Position + new Vector2(32f, -64f);
 
                 // Drifts upward slightly during the animation to look like rising smoke.
                 worldPos.Y -= frame * 2f;
