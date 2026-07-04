@@ -3,6 +3,7 @@ using StardewModdingAPI;
 using StardewValley;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace LotsOfKisses
 {
@@ -168,6 +169,9 @@ namespace LotsOfKisses
         /// to expire instead of ~2.5 real seconds, effectively silencing bystanders after their
         /// first line for the rest of the kiss sequence.
         /// </summary>
+        /// <summary>Real ticks over which the bubble fades out smoothly before closing (0.3s at 60 ticks/sec).</summary>
+        private const int CrowdReactionBubbleFadeTicks = 18;
+
         private void TickCrowdReactionCooldowns()
         {
             foreach (var snapshot in activeBystanderSnapshots)
@@ -179,13 +183,42 @@ namespace LotsOfKisses
                 {
                     snapshot.CrowdReactionBubbleCloseTicks--;
 
+                    // Ease the bubble's alpha down smoothly over the last CrowdReactionBubbleFadeTicks
+                    // ticks instead of snapping it to 0 in a single frame, so it visually fades out
+                    // the same way the game's own (pause-sensitive) timer would — just driven by our
+                    // own real-tick counter so it isn't stuck open during the paused valley.
+                    if (snapshot.CrowdReactionBubbleCloseTicks <= CrowdReactionBubbleFadeTicks)
+                    {
+                        float fadeProgress = snapshot.CrowdReactionBubbleCloseTicks / (float)CrowdReactionBubbleFadeTicks;
+                        SetSpeechBubbleAlpha(snapshot.Npc, fadeProgress);
+                    }
+
                     if (snapshot.CrowdReactionBubbleCloseTicks == 0 && snapshot.Npc != null)
                     {
-                        // Passing an empty string clears the bubble immediately instead of
-                        // waiting on the game's own (pause-sensitive) display timer.
-                        snapshot.Npc.showTextAboveHead("");
+                        ForceCloseSpeechBubble(snapshot.Npc);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Sets the NPC's speech bubble opacity directly (0 = invisible, 1 = fully visible),
+        /// using the same textAboveHeadAlpha field confirmed from the game's compiled metadata
+        /// that ForceCloseSpeechBubble zeroes out at the end of the fade.
+        /// </summary>
+        private void SetSpeechBubbleAlpha(NPC npc, float alpha)
+        {
+            if (npc == null)
+                return;
+
+            try
+            {
+                FieldInfo field = npc.GetType().GetField("textAboveHeadAlpha", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                field?.SetValue(npc, alpha);
+            }
+            catch
+            {
+                // Internal field name/shape may differ between game versions — skip silently.
             }
         }
 
@@ -474,6 +507,53 @@ namespace LotsOfKisses
             // Route NPCs work like the spouse outside bump-kiss pause: stop refreshing movementPause
             // and let vanilla continue the route by itself.
             npc.movementPause = 0;
+        }
+
+        /// <summary>
+        /// Force-closes an NPC's speech bubble immediately, instead of leaving an empty bubble
+        /// shell on screen (which is what passing an empty string to showTextAboveHead did — the
+        /// bubble shape stayed visible with no text inside, and skipped the game's normal
+        /// fade-out). Field names and types confirmed directly from the game's compiled
+        /// Stardew Valley.dll metadata: textAboveHeadTimer (int), textAboveHeadPreTimer (int),
+        /// textAboveHead (string), textAboveHeadAlpha (float, controls the bubble's fade opacity).
+        /// Zeroing the timer and alpha together closes the bubble on the very next draw call,
+        /// the same as when its timer naturally reaches zero.
+        /// </summary>
+        private void ForceCloseSpeechBubble(NPC npc)
+        {
+            if (npc == null)
+                return;
+
+            bool foundAnyField = false;
+
+            foreach (string fieldName in new[] { "textAboveHeadTimer", "textAboveHeadPreTimer", "textAboveHead", "textAboveHeadAlpha" })
+            {
+                try
+                {
+                    FieldInfo field = npc.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                    if (field == null)
+                        continue;
+
+                    foundAnyField = true;
+
+                    if (field.FieldType == typeof(int))
+                        field.SetValue(npc, 0);
+                    else if (field.FieldType == typeof(float))
+                        field.SetValue(npc, 0f);
+                    else if (field.FieldType == typeof(string))
+                        field.SetValue(npc, null);
+                }
+                catch
+                {
+                    // Internal field name/shape may differ between game versions — skip silently.
+                }
+            }
+
+            // Fallback: if none of the confirmed internal field names exist in this game version
+            // (e.g. a future update renames them), at least clear the visible text so it's not
+            // stuck showing the same line forever — strictly better than a permanently stuck line.
+            if (!foundAnyField)
+                npc.showTextAboveHead("");
         }
 
         /// <summary>
