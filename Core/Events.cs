@@ -257,7 +257,20 @@ namespace LotsOfKisses
             if (Game1.timeOfDay >= 2600)
                 return; // Let the game's own forced pass-out logic handle end-of-day naturally.
 
-            Game1.timeOfDay += 10;
+            // Game1.timeOfDay is stored as HMM (e.g. 1050 = 10:50), not a plain decimal number —
+            // minutes only go up to 50 before rolling over into the next hour (1050 + 10 must
+            // become 1100, not 1060, which isn't a valid time and would show a broken clock).
+            int hours = Game1.timeOfDay / 100;
+            int minutes = Game1.timeOfDay % 100;
+
+            minutes += 10;
+            if (minutes >= 60)
+            {
+                minutes -= 60;
+                hours += 1;
+            }
+
+            Game1.timeOfDay = hours * 100 + minutes;
         }
 
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
