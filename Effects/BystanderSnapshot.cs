@@ -45,5 +45,14 @@ namespace LotsOfKisses
         /// time to finish the visual turn before the emote pops, instead of firing in the same tick.
         /// </summary>
         public int PendingEmoteDelayTicks            { get; set; }
+
+        /// <summary>
+        /// Ticks left before this NPC is eligible to roll for another crowd reaction line.
+        /// Prevents a new showTextAboveHead call from re-triggering on the same NPC while
+        /// their current speech bubble is still visible — each call resets the bubble's own
+        /// timer, so back-to-back rolls across kiss cycles could otherwise make it look like
+        /// the bubble never disappears.
+        /// </summary>
+        public int CrowdReactionCooldownTicks        { get; set; }
     }
 }

@@ -174,4 +174,38 @@ namespace LotsOfKisses
             }
         }
     }
+
+    // ===================================================================================================================================================================================================================================================
+    // HARMONYPATCH TO KEEP THE IN-GAME CLOCK RUNNING WHILE THE MULTI-KISS IS ACTIVE
+    // ===================================================================================================================================================================================================================================================
+    // Each continuous-kiss cycle re-triggers the vanilla kiss animation, which (via
+    // Farmer_PerformKiss_KissDelay_Patch above) sets Game1.player.CanMove = false for the
+    // duration of the animation. Game1.shouldTimePass() treats a player who can't move as
+    // "busy" and holds the clock, so back-to-back cycles never leave enough of a gap for the
+    // clock to tick — the in-game time freezes for as long as the multi-kiss keeps going.
+    // This patch forces the result back to true, but ONLY while this mod's own continuous
+    // kiss is actually running, so it never affects any other reason the game or another mod
+    // might have for pausing time.
+    [HarmonyPatch(typeof(Game1), nameof(Game1.shouldTimePass))]
+    public static class Game1_ShouldTimePass_KeepClockRunningDuringMultiKiss_Patch
+    {
+        static void Postfix(ref bool __result)
+        {
+            try
+            {
+                if (__result)
+                    return;
+
+                if (ModEntry.Instance?.Config?.ModEnabled != true)
+                    return;
+
+                if (ModEntry.Instance.continuousKissActive)
+                    __result = true;
+            }
+            catch (Exception ex)
+            {
+                ModEntry.Instance?.Monitor.Log($"[TIME PATCH] Error in shouldTimePass Postfix: {ex}", LogLevel.Error);
+            }
+        }
+    }
 }

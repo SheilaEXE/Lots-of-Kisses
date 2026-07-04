@@ -195,10 +195,60 @@ namespace LotsOfKisses
             contentPackLoader.Load();
         }
 
+        /// <summary>
+        /// Re-applies the movementPause hold on the spouse and any active bystanders right after
+        /// the game window regains focus. The game's own movementPause countdown keeps running
+        /// even while the window is unfocused (it's driven by Game1's internal clock, not by this
+        /// mod's update loop), so a hold that was supposed to last through a multi-kiss cycle may
+        /// have already run out during the time the window was in the background. Without this,
+        /// the NPC can end up "free" while the mod still believes the kiss/hold is active, causing
+        /// the player and NPC to visually desync or lock up when focus returns.
+        /// </summary>
+        private void ReinforceHoldAfterFocusRegained()
+        {
+            if (continuousKissActive && continuousKissNpc != null)
+                continuousKissNpc.movementPause = System.Math.Max(continuousKissNpc.movementPause, 60);
+
+            NPC spouse = GetSpouse();
+            if (spouse != null && (kissSequenceActive || kissPostSequenceActive))
+                spouse.movementPause = System.Math.Max(spouse.movementPause, 60);
+
+            foreach (var snapshot in activeBystanderSnapshots)
+            {
+                if (snapshot?.Npc != null)
+                    snapshot.Npc.movementPause = System.Math.Max(snapshot.Npc.movementPause, 60);
+            }
+        }
+
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
             if (!Context.IsWorldReady || !e.IsMultipleOf(1))
                 return;
+
+            // Freeze the entire mod while the game window isn't focused (player alt-tabbed,
+            // switched to another app/browser, etc). Timers, kiss cycles, and NPC holds all
+            // pause here and pick up exactly where they left off once focus returns — this
+            // avoids the desync that made the player and NPC get stuck when the window
+            // regained focus mid multi-kiss.
+            bool isGameWindowActiveNow = Game1.game1 == null || Game1.game1.IsActive;
+
+            if (!isGameWindowActiveNow)
+            {
+                wasGameWindowActiveLastTick = false;
+                return;
+            }
+
+            if (!wasGameWindowActiveLastTick)
+            {
+                // Window just regained focus. The game's own movementPause counter keeps
+                // ticking down even while unfocused (it's driven by Game1, not by this mod's
+                // update loop), so an NPC that was being held during a multi-kiss may have
+                // already "escaped" the hold without this mod's timers moving at all.
+                // Re-apply the hold immediately so the NPC and player stay in sync.
+                ReinforceHoldAfterFocusRegained();
+            }
+
+            wasGameWindowActiveLastTick = true;
 
             if (kissBlockAfterDialogueTimer > 0)
                 kissBlockAfterDialogueTimer--;

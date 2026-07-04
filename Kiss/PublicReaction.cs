@@ -150,9 +150,17 @@ namespace LotsOfKisses
 
             // Every bystander already watching — whether they just noticed above or noticed on a
             // previous kiss cycle — gets an independent 10% roll for a crowd reaction line, every cycle.
+            // Skipped while their previous line's speech bubble is still on screen (see
+            // CrowdReactionCooldownTicks), so the bubble gets a chance to disappear naturally.
             foreach (var snapshot in activeBystanderSnapshots)
             {
-                TryShowCrowdReactionLine(snapshot.Npc);
+                if (snapshot.CrowdReactionCooldownTicks > 0)
+                {
+                    snapshot.CrowdReactionCooldownTicks--;
+                    continue;
+                }
+
+                TryShowCrowdReactionLine(snapshot);
             }
         }
 
@@ -453,8 +461,10 @@ namespace LotsOfKisses
         /// falls back to the generic "CrowdReaction" pool for NPCs without personalized lines
         /// (custom/SVE NPCs), and uses "CrowdReaction.Child" for children instead.
         /// </summary>
-        private void TryShowCrowdReactionLine(NPC npc)
+        private void TryShowCrowdReactionLine(BystanderSnapshot snapshot)
         {
+            NPC npc = snapshot?.Npc;
+
             if (npc == null || random.NextDouble() >= CrowdReactionLineChance)
                 return;
 
@@ -475,7 +485,13 @@ namespace LotsOfKisses
             }
 
             if (!string.IsNullOrEmpty(line))
+            {
                 npc.showTextAboveHead(line);
+
+                // Keep this bystander quiet for a few cycles after speaking, giving the bubble
+                // time to fully close before they're eligible to speak again.
+                snapshot.CrowdReactionCooldownTicks = 150; // ~2.5s at 60 ticks/sec
+            }
         }
 
         /// <summary>
