@@ -236,7 +236,12 @@ namespace LotsOfKisses
         /// </summary>
         private void AdvanceClockDuringMultiKissIfNeeded()
         {
-            if (!continuousKissActive)
+            // continuousKissActive briefly drops to false between cycles while
+            // continuousKissPendingRestart is set (right before the next tier starts), so both
+            // flags count as "multi-kiss in progress" here — otherwise the accumulator would
+            // reset on every single cycle transition and never reach the threshold to advance
+            // the clock, even during a long unbroken kissing session.
+            if (!continuousKissActive && !continuousKissPendingRestart)
             {
                 multiKissClockAccumulatorTicks = 0;
                 return;
