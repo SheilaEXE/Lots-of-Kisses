@@ -28,6 +28,25 @@ namespace LotsOfKisses
             suppressedDialogueDuringAutoKissClick = false;
             LotsOfKissesKissPatchActive = true;
 
+            // The vanilla checkAction, when it sees a pending CurrentDialogue on the NPC, opens
+            // that dialogue instead of running the kiss logic — it never reaches the animation
+            // code at all, even with the pop-up suppressed by our Harmony patch above. That's
+            // what caused "ghost kisses": the mod's own effects (heart, smoke) fired because they
+            // don't depend on checkAction, but the actual pose animation never played, since the
+            // native method took the "show dialogue" branch instead of the "kiss" branch.
+            // Temporarily stash the queued dialogue out of the NPC during this simulated click so
+            // checkAction takes the kiss branch, then restore it right after — the player still
+            // gets to read it manually later, exactly as before.
+            List<Dialogue> stashedDialogue = null;
+            if (npc.CurrentDialogue != null && npc.CurrentDialogue.Count > 0)
+            {
+                // Pop preserves top-to-bottom order; storing in that same order lets us Push
+                // back in reverse to reconstruct the identical stack afterward.
+                stashedDialogue = new List<Dialogue>(npc.CurrentDialogue.Count);
+                while (npc.CurrentDialogue.Count > 0)
+                    stashedDialogue.Add(npc.CurrentDialogue.Pop());
+            }
+
             try
             {
                 bool result = npc.checkAction(Game1.player, npc.currentLocation);
@@ -37,8 +56,6 @@ namespace LotsOfKisses
 
                 if (dialogueWasBlocked)
                 {
-                    // Do NOT clear CurrentDialogue here.
-                    // The dialogue must remain available for the player to read manually afterward.
                     kissBlockAfterDialogueTimer = Math.Max(kissBlockAfterDialogueTimer, 120);
                     return false;
                 }
@@ -51,6 +68,16 @@ namespace LotsOfKisses
                 suppressDialogueAutoKissNpc = previousNpc;
                 suppressedDialogueDuringAutoKissClick = previousSuppressed;
                 LotsOfKissesKissPatchActive = previousKissPatchFlag;
+
+                // Restore the original pending dialogue, unless checkAction pushed a brand new
+                // one of its own (rare, but don't stomp on it if it did).
+                if (stashedDialogue != null && npc.CurrentDialogue != null && npc.CurrentDialogue.Count == 0)
+                {
+                    // stashedDialogue[0] was the original top of the stack (read first), so push
+                    // it last to keep it back on top.
+                    for (int i = stashedDialogue.Count - 1; i >= 0; i--)
+                        npc.CurrentDialogue.Push(stashedDialogue[i]);
+                }
             }
         }
         // =========================================================================================================================================
@@ -1033,6 +1060,14 @@ namespace LotsOfKisses
             if (spouse == null)
                 return;
 
+            // Pause (don't cancel) the multi-kiss cycle while any menu is open — inventory,
+            // map, GMCM, etc. This is separate from the pending-dialogue block that was
+            // intentionally removed: an open menu means the player actively paused to look at
+            // something, so hearts/smoke effects shouldn't keep climbing behind it. The cycle
+            // picks back up exactly where it left off once the menu closes.
+            if (Game1.activeClickableMenu != null)
+                return;
+
             if (continuousKissPendingRestart)
             {
                 if (continuousKissNpc == null || continuousKissNpc.currentLocation != Game1.player.currentLocation)
@@ -1276,6 +1311,11 @@ namespace LotsOfKisses
         private void UpdateBumpKissSystem(NPC npc, float distance)
         {
             if (npc == null || !Context.IsWorldReady)
+                return;
+
+            // Same reasoning as UpdateContinuousKissSystem: a menu being open shouldn't let the
+            // bump kiss trigger or continue behind it.
+            if (Game1.activeClickableMenu != null)
                 return;
 
             bool touching = distance <= 64f;
