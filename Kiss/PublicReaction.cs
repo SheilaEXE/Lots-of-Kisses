@@ -16,6 +16,9 @@ namespace LotsOfKisses
         /// <summary>Chance (0–1) that a noticing bystander plays an embarrassed emote.</summary>
         private const double BystanderEmoteChance = 0.30;
 
+        /// <summary>Chance (0–1) that a noticing bystander says a crowd reaction line above their head.</summary>
+        private const double CrowdReactionLineChance = 0.10;
+
         /// <summary>Ticks to wait after the public multi-kiss dialogue closes / kiss scene ends before releasing bystanders.</summary>
         private const int BystanderRestoreDelayTicks = 120; // ~2s
 
@@ -143,6 +146,13 @@ namespace LotsOfKisses
                 this.Monitor.Log(
                     $"[BYSTANDER] {npc.Name} noticed (tier {kissTier}, forced={forceReact}, moving={wasMoving}, controller={hadController}, dist={distance:F0})",
                     LogLevel.Trace);
+            }
+
+            // Every bystander already watching — whether they just noticed above or noticed on a
+            // previous kiss cycle — gets an independent 10% roll for a crowd reaction line, every cycle.
+            foreach (var snapshot in activeBystanderSnapshots)
+            {
+                TryShowCrowdReactionLine(snapshot.Npc);
             }
         }
 
@@ -437,6 +447,81 @@ namespace LotsOfKisses
         /// Returns true if any NPC other than the romantic partner is currently visible on screen.
         /// Used to suppress the post-kiss dialogue balloon when there are bystanders watching.
         /// </summary>
+        /// <summary>
+        /// 10% independent chance for a noticing bystander to say a short reaction line above
+        /// their head. Uses the NPC's own "Reaction&lt;Name&gt;" lines when available (e.g. ReactionAbigail),
+        /// falls back to the generic "CrowdReaction" pool for NPCs without personalized lines
+        /// (custom/SVE NPCs), and uses "CrowdReaction.Child" for children instead.
+        /// </summary>
+        private void TryShowCrowdReactionLine(NPC npc)
+        {
+            if (npc == null || random.NextDouble() >= CrowdReactionLineChance)
+                return;
+
+            string line;
+
+            if (IsChildNpc(npc))
+            {
+                line = GetSimpleDialogueLine("CrowdReaction.Child", 1, 10);
+            }
+            else
+            {
+                // "Reaction<Name>" has no separator between the prefix and the NPC name
+                // (e.g. "ReactionAbigail.1"), unlike the mod's usual "{prefix}.{name}.{n}" pattern.
+                line = GetSimpleDialogueLine($"Reaction{npc.Name}", 1, 10);
+
+                if (string.IsNullOrEmpty(line))
+                    line = GetSimpleDialogueLine("CrowdReaction", 1, 30);
+            }
+
+            if (!string.IsNullOrEmpty(line))
+                npc.showTextAboveHead(line);
+        }
+
+        /// <summary>
+        /// Looks up "{prefix}.{n}" translation keys directly (content pack first, then i18n),
+        /// picking a random number in [min, max]. Used for crowd reaction pools that don't
+        /// follow the mod's usual per-NPC dialogue key pattern.
+        /// </summary>
+        private string GetSimpleDialogueLine(string prefix, int min, int max)
+        {
+            if (string.IsNullOrEmpty(prefix))
+                return null;
+
+            for (int i = 0; i < 10; i++)
+            {
+                int number = random.Next(min, max + 1);
+                string value = GetSimpleDialogueKey(prefix, number);
+
+                if (!string.IsNullOrEmpty(value))
+                    return value;
+            }
+
+            for (int number = min; number <= max; number++)
+            {
+                string value = GetSimpleDialogueKey(prefix, number);
+
+                if (!string.IsNullOrEmpty(value))
+                    return value;
+            }
+
+            return null;
+        }
+
+        private string GetSimpleDialogueKey(string prefix, int number)
+        {
+            string key = $"{prefix}.{number}";
+
+            if (contentPackLoader.TryGetEntry(key, out string packValue) && !string.IsNullOrEmpty(packValue))
+                return packValue.Replace("@", Game1.player.Name);
+
+            var translation = this.Helper.Translation.Get(key);
+            if (translation.HasValue())
+                return translation.ToString().Replace("@", Game1.player.Name);
+
+            return null;
+        }
+
         internal bool HasBystandersOnScreen()
         {
             if (Game1.currentLocation == null)

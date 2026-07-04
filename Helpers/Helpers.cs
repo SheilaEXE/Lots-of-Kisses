@@ -151,6 +151,11 @@ namespace LotsOfKisses
             return false;
         }
 
+        internal bool IsChildNpc(NPC npc)
+        {
+            return npc != null && npc.Age == NPC.child;
+        }
+
         internal bool IsPrivateKissMoment(NPC spouse)
         {
             GameLocation loc = Game1.currentLocation;
