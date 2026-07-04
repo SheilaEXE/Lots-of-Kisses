@@ -220,6 +220,41 @@ namespace LotsOfKisses
             }
         }
 
+        /// <summary>
+        /// Real-time ticks (at 60 ticks/sec) equivalent to the game's default pace of
+        /// 10 in-game minutes per ~7 real seconds. Matches vanilla speed so multi-kiss
+        /// sequences don't make time pass faster or slower than normal play.
+        /// </summary>
+        private const int TicksPerTenGameMinutes = 420; // 7 seconds * 60 ticks/sec
+
+        /// <summary>
+        /// Advances Game1.timeOfDay by 10 in-game minutes once enough real-time ticks have
+        /// accumulated, but only while the continuous kiss is active. This runs independently
+        /// of Game1.shouldTimePass(), so it never affects any other time-pausing logic from the
+        /// base game or other mods — it only compensates for the freeze this mod's own repeated
+        /// kiss animations would otherwise cause.
+        /// </summary>
+        private void AdvanceClockDuringMultiKissIfNeeded()
+        {
+            if (!continuousKissActive)
+            {
+                multiKissClockAccumulatorTicks = 0;
+                return;
+            }
+
+            multiKissClockAccumulatorTicks++;
+
+            if (multiKissClockAccumulatorTicks < TicksPerTenGameMinutes)
+                return;
+
+            multiKissClockAccumulatorTicks = 0;
+
+            if (Game1.timeOfDay >= 2600)
+                return; // Let the game's own forced pass-out logic handle end-of-day naturally.
+
+            Game1.timeOfDay += 10;
+        }
+
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
             if (!Context.IsWorldReady || !e.IsMultipleOf(1))
@@ -249,6 +284,15 @@ namespace LotsOfKisses
             }
 
             wasGameWindowActiveLastTick = true;
+
+            // Keep the in-game clock moving while the continuous kiss is active. Each cycle
+            // re-triggers the vanilla kiss animation, which holds Game1.shouldTimePass() at
+            // false for its duration — with cycles chaining back-to-back, the clock would
+            // otherwise freeze for as long as the multi-kiss keeps going. This advances
+            // Game1.timeOfDay directly on the same real-time cadence the game already uses
+            // (about 7 seconds of real time per in-game 10 minutes), instead of touching
+            // shouldTimePass or any other game/mod time-control logic.
+            AdvanceClockDuringMultiKissIfNeeded();
 
             if (kissBlockAfterDialogueTimer > 0)
                 kissBlockAfterDialogueTimer--;
