@@ -298,6 +298,7 @@ namespace LotsOfKisses
             // (about 7 seconds of real time per in-game 10 minutes), instead of touching
             // shouldTimePass or any other game/mod time-control logic.
             AdvanceClockDuringMultiKissIfNeeded();
+            TickCrowdReactionCooldowns();
 
             if (kissBlockAfterDialogueTimer > 0)
                 kissBlockAfterDialogueTimer--;

@@ -100,7 +100,18 @@ namespace LotsOfKisses
 
                 int newPlayerKissDelay = ModEntry.Instance?.activeKissVisualDelayMs ?? 1000;
 
-                __instance.CanMove = false;
+                // Only lock player movement for a single, standalone kiss (bump kiss / one-off
+                // vanilla kiss). During the mod's own continuous multi-kiss, each cycle re-triggers
+                // this same vanilla animation — if CanMove stayed false through every cycle back
+                // to back, the game treats the player as "busy" for the whole sequence and pauses
+                // every NPC's schedule/movement across the entire valley (not just the local
+                // bystanders this mod manages). Leaving CanMove untouched here keeps the visual
+                // kiss animation intact while letting the rest of the world keep moving normally.
+                bool isPartOfContinuousMultiKiss = ModEntry.Instance?.continuousKissActive == true;
+
+                if (!isPartOfContinuousMultiKiss)
+                    __instance.CanMove = false;
+
                 __instance.FarmerSprite.PauseForSingleAnimation = false;
                 __instance.faceDirection(facingDirection);
 

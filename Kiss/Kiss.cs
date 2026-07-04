@@ -415,7 +415,13 @@ namespace LotsOfKisses
             if (random.Next(100) >= chance)
                 return false;
 
-            string line = GetDialogueLine("publicMultiKiss", 1, 15, npc);
+            // publicMultiKiss was split into two separate dialogue pools: OutdoorKisses for
+            // outside locations and IndoorKisses for anything enclosed (houses, shops, etc),
+            // each NPC having 13 lines per pool instead of the old single 15-line pool.
+            bool isOutdoors = npc.currentLocation?.IsOutdoors ?? true;
+            string dialoguePrefix = isOutdoors ? "OutdoorKisses" : "IndoorKisses";
+
+            string line = GetDialogueLine(dialoguePrefix, 1, 13, npc);
             if (string.IsNullOrEmpty(line))
                 return false;
 

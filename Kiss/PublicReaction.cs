@@ -150,17 +150,30 @@ namespace LotsOfKisses
 
             // Every bystander already watching — whether they just noticed above or noticed on a
             // previous kiss cycle — gets an independent 10% roll for a crowd reaction line, every cycle.
-            // Skipped while their previous line's speech bubble is still on screen (see
-            // CrowdReactionCooldownTicks), so the bubble gets a chance to disappear naturally.
+            // Skipped while their previous line's speech bubble cooldown hasn't elapsed yet (see
+            // CrowdReactionCooldownTicks, decremented every real tick in TickCrowdReactionCooldowns).
             foreach (var snapshot in activeBystanderSnapshots)
             {
                 if (snapshot.CrowdReactionCooldownTicks > 0)
-                {
-                    snapshot.CrowdReactionCooldownTicks--;
                     continue;
-                }
 
                 TryShowCrowdReactionLine(snapshot);
+            }
+        }
+
+        /// <summary>
+        /// Decrements every active bystander's crowd-reaction cooldown by one real tick.
+        /// Must run every game update (60/sec), NOT once per kiss cycle — a kiss cycle only
+        /// lasts a fraction of a second, so ticking the cooldown there made it take ~150 cycles
+        /// to expire instead of ~2.5 real seconds, effectively silencing bystanders after their
+        /// first line for the rest of the kiss sequence.
+        /// </summary>
+        private void TickCrowdReactionCooldowns()
+        {
+            foreach (var snapshot in activeBystanderSnapshots)
+            {
+                if (snapshot.CrowdReactionCooldownTicks > 0)
+                    snapshot.CrowdReactionCooldownTicks--;
             }
         }
 
