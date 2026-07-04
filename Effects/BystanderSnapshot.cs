@@ -54,5 +54,15 @@ namespace LotsOfKisses
         /// the bubble never disappears.
         /// </summary>
         public int CrowdReactionCooldownTicks        { get; set; }
+
+        /// <summary>
+        /// Real ticks left before this bystander's speech bubble is force-closed by the mod.
+        /// The game's own bubble timer relies on the world being unpaused to count down, but
+        /// the valley pauses during each vanilla kiss cycle — so without this, the bubble can
+        /// get stuck on screen for the whole multi-kiss sequence. Ticked every real update
+        /// regardless of pause state (see TickCrowdReactionCooldowns), guaranteeing the bubble
+        /// closes after a fixed real-time duration.
+        /// </summary>
+        public int CrowdReactionBubbleCloseTicks     { get; set; }
     }
 }

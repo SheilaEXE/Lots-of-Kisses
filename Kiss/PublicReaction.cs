@@ -174,6 +174,18 @@ namespace LotsOfKisses
             {
                 if (snapshot.CrowdReactionCooldownTicks > 0)
                     snapshot.CrowdReactionCooldownTicks--;
+
+                if (snapshot.CrowdReactionBubbleCloseTicks > 0)
+                {
+                    snapshot.CrowdReactionBubbleCloseTicks--;
+
+                    if (snapshot.CrowdReactionBubbleCloseTicks == 0 && snapshot.Npc != null)
+                    {
+                        // Passing an empty string clears the bubble immediately instead of
+                        // waiting on the game's own (pause-sensitive) display timer.
+                        snapshot.Npc.showTextAboveHead("");
+                    }
+                }
             }
         }
 
@@ -504,6 +516,11 @@ namespace LotsOfKisses
                 // Keep this bystander quiet for a few cycles after speaking, giving the bubble
                 // time to fully close before they're eligible to speak again.
                 snapshot.CrowdReactionCooldownTicks = 150; // ~2.5s at 60 ticks/sec
+
+                // The valley pauses during each vanilla kiss cycle, which stalls the game's own
+                // bubble timer — force-close it after a fixed 3 real seconds instead of relying
+                // on that timer to count down on its own.
+                snapshot.CrowdReactionBubbleCloseTicks = 180; // 3s at 60 ticks/sec
             }
         }
 

@@ -334,9 +334,6 @@ namespace LotsOfKisses
             if (IsOutfitReactionActive())
                 return;
 
-            if (HasReadableDialogueWaiting(npc))
-                return;
-
             if (approachKissBlockTimer > 0)
                 return;
 
@@ -352,26 +349,10 @@ namespace LotsOfKisses
 
             activeKissVisualDelayMs = durationMs;
 
+            // The dialogue itself is intentionally left alone here (never cleared) so it stays
+            // available for the player to open manually afterward — only the automatic pop-up
+            // triggered by this simulated click is suppressed by the Harmony patch.
             bool vanillaTriggered = TryTriggerRomanticContinuousKiss(npc);
-
-            if (lastAutoKissClickWasBlockedDialogue)
-            {
-                ClearNpcPreKissSpecialAction(npc);
-                ResetContinuousKissPlayerLeanEffect(true);
-
-                continuousKissActive = false;
-                continuousKissNpc = null;
-                continuousKissPendingRestart = false;
-                continuousKissGapTimer = 0;
-                continuousKissTouchHoldTimer = 0;
-                continuousKissWasTouchingSpouse = false;
-                continuousKissVanillaTriggered = false;
-                continuousKissHeartTriggered = false;
-                continuousKissSmokeTriggered = false;
-
-                kissBlockAfterDialogueTimer = Math.Max(kissBlockAfterDialogueTimer, 120);
-                return;
-            }
 
             ResetContinuousKissPlayerLeanEffect(true);
 
@@ -784,9 +765,6 @@ namespace LotsOfKisses
             if (IsOutfitReactionActive())
                 return false;
 
-            if (HasReadableDialogueWaiting(npc))
-                return false;
-
             if (approachKissBlockTimer > 0)
                 return false;
 
@@ -813,9 +791,6 @@ namespace LotsOfKisses
         private bool TryTriggerVanillaContinuousKiss(NPC npc)
         {
             if (npc == null || npc.currentLocation != Game1.player.currentLocation)
-                return false;
-
-            if (HasReadableDialogueWaiting(npc))
                 return false;
 
             if (approachKissBlockTimer > 0)
@@ -1154,14 +1129,6 @@ namespace LotsOfKisses
             if (!continuousKissVanillaTriggered && distance <= 72f)
             {
                 bool vanillaTriggered = TryTriggerRomanticContinuousKiss(spouse);
-
-                if (lastAutoKissClickWasBlockedDialogue)
-                {
-                    ForceEndContinuousKiss(spouse);
-                    kissBlockAfterDialogueTimer = Math.Max(kissBlockAfterDialogueTimer, 120);
-                    return;
-                }
-
                 continuousKissVanillaTriggered = vanillaTriggered;
             }
 
@@ -1311,20 +1278,6 @@ namespace LotsOfKisses
             if (npc == null || !Context.IsWorldReady)
                 return;
 
-            if (HasReadableDialogueWaiting(npc))
-            {
-                playerWasTouchingSpouse = distance <= 64f;
-
-                approachKissHoldActive = false;
-                approachKissHoldNpc = null;
-                approachKissTriggered = false;
-                approachKissRearmPending = false;
-                continuousKissTouchHoldTimer = 0;
-                continuousKissWasTouchingSpouse = false;
-
-                return;
-            }
-
             bool touching = distance <= 64f;
             bool useOutsideApproachKissHold = !IsHomeOrFarmLocation();
             bool justStartedTouchingSpouse = touching && !playerWasTouchingSpouse;
@@ -1367,7 +1320,6 @@ namespace LotsOfKisses
                 Game1.timeOfDay < 2400 &&
                 cooldown <= 0 &&
                 approachKissBlockTimer <= 0 &&
-                !HasReadableDialogueWaiting(npc) &&
                 !kissPostSequenceActive &&
                 !kissSequenceActive &&
                 pendingKissNpc == null &&
@@ -1391,34 +1343,6 @@ namespace LotsOfKisses
                 activeKissVisualDelayMs = bumpKissVisualDelayMs;
 
                 TryTriggerRomanticBumpKiss(npc);
-
-                if (lastAutoKissClickWasBlockedDialogue)
-                {
-                    ClearNpcPreKissSpecialAction(npc);
-                    Game1.player.CanMove = true;
-                    Game1.player.completelyStopAnimatingOrDoingAction();
-
-                    npc.Halt();
-                    npc.movementPause = 0;
-                    npc.Sprite.StopAnimation();
-                    npc.Sprite.UpdateSourceRect();
-
-                    playerWasTouchingSpouse = distance <= 64f;
-
-                    approachKissHoldActive = false;
-                    approachKissHoldNpc = null;
-                    approachKissTriggered = false;
-                    approachKissRearmPending = false;
-
-                    continuousKissTouchHoldTimer = 0;
-                    continuousKissWasTouchingSpouse = false;
-                    continuousKissPendingRestart = false;
-
-                    cooldown = 30;
-                    kissBlockAfterDialogueTimer = Math.Max(kissBlockAfterDialogueTimer, 120);
-
-                    return;
-                }
 
                 Game1.playSound("dwop");
                 npc.doEmote(20);

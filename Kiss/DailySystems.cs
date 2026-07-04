@@ -22,7 +22,6 @@ namespace LotsOfKisses
                 !kissSequenceActive &&
                 !kissPostSequenceActive &&
                 !spouse.isSleeping.Value &&
-                !HasReadableDialogueWaiting(spouse) &&
                 Game1.activeClickableMenu == null &&
                 Game1.player.canMove &&
                 talkedToSpouseToday &&
