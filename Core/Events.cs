@@ -290,6 +290,18 @@ namespace LotsOfKisses
 
             wasGameWindowActiveLastTick = true;
 
+            // The vanilla kiss checkAction sets Game1.freezeControls = true for the duration of
+            // the kiss "cutscene", which is what actually locks every NPC's schedule/movement
+            // across the whole valley — not shouldTimePass or CanMove. Since the mod's continuous
+            // multi-kiss re-triggers that same vanilla kiss on every cycle, freezeControls stays
+            // true back-to-back and the valley never gets a gap to un-pause. Forcing it back to
+            // false here — only while our own continuous kiss is running — keeps the rest of the
+            // world moving without touching anything else the game or another mod might freeze
+            // controls for (menus, events, cutscenes, etc. are untouched since this only fires
+            // during our own kiss sequence).
+            if (continuousKissActive || continuousKissPendingRestart)
+                Game1.freezeControls = false;
+
             // Keep the in-game clock moving while the continuous kiss is active. Each cycle
             // re-triggers the vanilla kiss animation, which holds Game1.shouldTimePass() at
             // false for its duration — with cycles chaining back-to-back, the clock would
