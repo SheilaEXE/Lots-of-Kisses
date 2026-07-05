@@ -368,7 +368,8 @@ namespace LotsOfKisses
                 if (Game1.activeClickableMenu != null || Game1.dialogueUp)
                     continue;
 
-                if (DistanceToPlayer(npc) < NpcSpecialActionRestoreDistance)
+                float dist = DistanceToPlayer(npc);
+                if (dist < NpcSpecialActionRestoreDistance)
                     continue;
 
                 TryRestoreNpcPreKissSpecialAction(npc, clearAfterRestore: true);
@@ -661,18 +662,27 @@ namespace LotsOfKisses
 
             npc.controller = null;
             npc.Halt();
-            npc.Sprite.StopAnimation();
-            npc.Sprite.ClearAnimation();
-            npc.Sprite.CurrentAnimation = null;
-
-            // Hard reset — fully clears controller and animation state.
-            npc.flip = false;
-            npc.faceDirection(npc.FacingDirection);
-            npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(npc.FacingDirection);
-
             npc.movementPause = 0;
             npc.addedSpeed = 0;
-            npc.Sprite.UpdateSourceRect();
+
+            // If a snapshot is still saved for this NPC, skip forcing the idle frame/animation
+            // reset here — UpdateDeferredNpcSpecialActionRestore will restore the real
+            // pose/animation once the player walks far enough away. Forcing the idle frame in
+            // this "wake up" step (which always ran immediately when a multi-kiss ends,
+            // regardless of a saved snapshot) was overwriting the special pose before the
+            // distance-based restore ever got a chance to run.
+            if (!HasNpcPreKissSpecialAction(npc))
+            {
+                npc.Sprite.StopAnimation();
+                npc.Sprite.ClearAnimation();
+                npc.Sprite.CurrentAnimation = null;
+
+                // Hard reset — fully clears controller and animation state.
+                npc.flip = false;
+                npc.faceDirection(npc.FacingDirection);
+                npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(npc.FacingDirection);
+                npc.Sprite.UpdateSourceRect();
+            }
 
             playerWasTouchingSpouse = false;
             kissProximityTimer = 0;
@@ -690,6 +700,12 @@ namespace LotsOfKisses
 
                 npc.controller = null;
                 npc.Halt();
+                npc.movementPause = 0;
+
+                // Same reasoning as above: don't stomp a pose that's still waiting to be restored.
+                if (HasNpcPreKissSpecialAction(npc))
+                    return;
+
                 npc.Sprite.StopAnimation();
                 npc.Sprite.ClearAnimation();
                 npc.Sprite.CurrentAnimation = null;
@@ -942,6 +958,25 @@ namespace LotsOfKisses
                 if (spouse == null || spouse.currentLocation != Game1.player.currentLocation)
                     return;
 
+                didReactThisTick = false;
+                kissProximityTimer = 0;
+                continuousKissPendingRestart = false;
+                continuousKissGapTimer = 0;
+                continuousKissActive = false;
+                continuousKissNpc = null;
+                kissPostSequenceActive = false;
+                kissPostSequenceNpc = null;
+
+                // If a snapshot is still saved for this NPC, don't overwrite the idle frame —
+                // UpdateDeferredNpcSpecialActionRestore will restore the special pose/animation
+                // once the player moves far enough away. Forcing the idle frame here would
+                // permanently overwrite that restoration, which is exactly what was happening to
+                // NPCs with a location-override pose (e.g. Sebastian playing video games): this
+                // delayed cleanup ran a moment after the kiss ended and stomped the idle frame
+                // back on top before the distance-based restore ever got a chance to run.
+                if (HasNpcPreKissSpecialAction(spouse))
+                    return;
+
                 spouse.Halt();
                 spouse.controller = null;
                 spouse.movementPause = 0;
@@ -954,15 +989,6 @@ namespace LotsOfKisses
                 spouse.faceDirection(spouse.FacingDirection);
                 spouse.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(spouse.FacingDirection);
                 spouse.Sprite.UpdateSourceRect();
-
-                didReactThisTick = false;
-                kissProximityTimer = 0;
-                continuousKissPendingRestart = false;
-                continuousKissGapTimer = 0;
-                continuousKissActive = false;
-                continuousKissNpc = null;
-                kissPostSequenceActive = false;
-                kissPostSequenceNpc = null;
             }, 220);
 
             DelayedAction.functionAfterDelay(() =>
@@ -978,6 +1004,12 @@ namespace LotsOfKisses
         private void RestoreSpouseScheduleAfterMultiKiss(NPC spouse)
         {
             if (spouse == null || spouse.currentLocation == null)
+                return;
+
+            // Same reasoning as the 220ms delayed cleanup above: don't stomp the idle frame on
+            // top of a pose/animation that's still waiting to be restored by
+            // UpdateDeferredNpcSpecialActionRestore once the player walks away.
+            if (HasNpcPreKissSpecialAction(spouse))
                 return;
 
             spouse.Halt();
