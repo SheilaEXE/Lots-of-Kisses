@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using xTile.Dimensions;
 
@@ -190,12 +191,30 @@ namespace LotsOfKisses
         /// walls, closed doors, and solid tiles block the line. Mirrors the same check used
         /// in Outfit Reactions so both mods treat room visibility consistently.
         /// </summary>
+        /// <summary>
+        /// Locations where line-of-sight checking is skipped entirely — every romantic-eligible
+        /// NPC in the location is treated as able to see the player, regardless of raycast
+        /// results. Needed because the game has no way to distinguish a real wall from a large
+        /// piece of map furniture (pool tables, counters, etc) — both live on the same
+        /// "Buildings" layer with the same collision flag, so a structural-only check isn't
+        /// possible. Add location names here as more false-positive cases are found.
+        /// </summary>
+        private static readonly HashSet<string> LineOfSightExemptLocations = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Beach",
+            "Saloon",
+        };
+
         private static bool HasLineOfSightToPlayer(NPC npc)
         {
             if (npc == null || Game1.player == null || npc.currentLocation == null)
                 return false;
 
             GameLocation location = npc.currentLocation;
+
+            if (LineOfSightExemptLocations.Contains(location.Name))
+                return true;
+
             Vector2 npcTile    = new Vector2((int)(npc.Position.X / Game1.tileSize), (int)(npc.Position.Y / Game1.tileSize));
             Vector2 playerTile = new Vector2((int)(Game1.player.Position.X / Game1.tileSize), (int)(Game1.player.Position.Y / Game1.tileSize));
 
@@ -213,7 +232,8 @@ namespace LotsOfKisses
 
                 try
                 {
-                    if (IsStructuralWallOrDoor(location, tileX, tileY))
+                    xTile.Dimensions.Location tileLoc = new(tileX, tileY);
+                    if (!location.isTilePassable(tileLoc, Game1.viewport))
                         return false;
                 }
                 catch
@@ -223,38 +243,6 @@ namespace LotsOfKisses
             }
 
             return true;
-        }
-
-        /// <summary>
-        /// True only for real map structure — walls, solid building tiles on the "Buildings"
-        /// layer — never for furniture, tables, chairs, fences, arcade machines, or any other
-        /// placed object. Those all use isTilePassable's broader collision check (which also
-        /// covers dynamic objects/furniture), but a pool table between two NPCs shouldn't block
-        /// them from noticing a kiss the same way an actual wall would.
-        /// Checks the "Passable" tile property directly on the Buildings layer, which is where
-        /// vanilla maps define structural collision (walls, door frames, pillars) — separate
-        /// from the Objects/Furniture layers that placed items and furniture live on.
-        /// </summary>
-        private static bool IsStructuralWallOrDoor(GameLocation location, int tileX, int tileY)
-        {
-            // Off the map entirely (e.g. outside the building bounds) — treat as blocking,
-            // matching the old isTilePassable behavior for out-of-bounds tiles.
-            if (!location.isTileOnMap(new Vector2(tileX, tileY)))
-                return true;
-
-            // The actual structural check: if the Buildings layer explicitly marks this tile
-            // passable (walkway, open doorway, etc), it's not a wall.
-            string passable = location.doesTileHaveProperty(tileX, tileY, "Passable", "Buildings");
-            if (passable != null)
-                return false; // explicitly passable — not a wall
-
-            bool hasBuildingsTile = location.map?.GetLayer("Buildings")?.PickTile(
-                new xTile.Dimensions.Location(tileX * Game1.tileSize, tileY * Game1.tileSize),
-                Game1.viewport.Size) != null;
-
-            // A solid tile on the Buildings layer with no explicit Passable property is a wall
-            // or other structural piece — that's what should block the raycast.
-            return hasBuildingsTile;
         }
 
         private NPC GetSpouse()
