@@ -238,6 +238,7 @@ namespace LotsOfKisses
             // so the two systems don't fight over the same NPC.
             int? passiveLookFacingOverride = null;
             int? passiveLookFrameOverride = null;
+            bool hasPassiveLookOverride = false;
             if (passiveLookRestoreActive && passiveLookRestoreNpcName == npc.Name)
             {
                 if (passiveLookRestoreFacing >= 0)
@@ -245,9 +246,17 @@ namespace LotsOfKisses
                 if (passiveLookRestoreFrame >= 0)
                     passiveLookFrameOverride = passiveLookRestoreFrame;
 
+                hasPassiveLookOverride = passiveLookFacingOverride.HasValue || passiveLookFrameOverride.HasValue;
+
                 this.Monitor.Log($"[RESTORE DEBUG] {npc.Name}: adopting passive-look's saved original pose (facing={passiveLookFacingOverride}, frame={passiveLookFrameOverride}) instead of current live state before kiss-capture.", LogLevel.Debug);
 
-                ClearPassiveLookOriginalPose();
+                // Don't clear yet — only once we've actually saved this into the kiss snapshot
+                // below. Clearing early (before we know the capture will succeed) is what
+                // silently threw the real pose away the first time this fix was tried: frame 0
+                // (e.g. just standing, facing north, nothing "special" about the sprite itself)
+                // tripped the "nothing special detected" skip further down, and by then the
+                // passive-look memory was already gone, so a later capture attempt saved
+                // whatever pose the NPC had drifted into by then instead.
             }
 
             List<FarmerSprite.AnimationFrame> animation = null;
@@ -265,7 +274,10 @@ namespace LotsOfKisses
             // skipped for exactly those poses, meaning there was never anything to restore
             // afterward, no matter how the distance/location guards behaved. Match the bystander
             // capture in PublicReaction.cs, which has no such filter and just always saves.
-            bool hasSpecialStaticFrame = effectiveFrame != 0;
+            // A pose confirmed by the passive-look system always counts as worth saving, even if
+            // it happens to be frame 0 (e.g. simply standing and facing north) — the "specialness"
+            // there is the facing direction, not the frame index.
+            bool hasSpecialStaticFrame = hasPassiveLookOverride || effectiveFrame != 0;
 
             // If the NPC is walking with no special animation or frame, skip capture —
             // unless it's late night (22h+) where walking means going home and we still want the kiss to work.
@@ -281,6 +293,9 @@ namespace LotsOfKisses
                 this.Monitor.Log($"[RESTORE DEBUG] {npc.Name}: capture skipped — idle, frame=0, no animation (nothing special detected).", LogLevel.Debug);
                 return;
             }
+
+            if (hasPassiveLookOverride)
+                ClearPassiveLookOriginalPose();
 
             var snapshot = new NpcPreKissSpecialActionSnapshot
             {
