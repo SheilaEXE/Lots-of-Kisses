@@ -92,7 +92,16 @@ namespace LotsOfKisses
                 bool wasMoving = npc.isMoving();
                 bool hadController = npc.controller != null;
                 bool isWalkingToward = IsNpcWalkingTowardPlayer(npc);
-                bool wasRouteNpc = wasMoving || hadController || isWalkingToward;
+                // NOTE: this used to also fold in `hadController` here. That seemed harmless at
+                // capture time, but WasPausedByMod is later used during restore to decide whether
+                // an NPC is a "route NPC" safe to release with just a movementPause reset instead
+                // of actually restoring CurrentAnimation/CurrentFrame. Stationary special poses
+                // (billiards, sitting on the beach, washing dishes, pier fishing) often still have
+                // a non-null controller even while holding still, so folding hadController in here
+                // made WasPausedByMod=true for them too — silently reintroducing the same "route
+                // release only, no real restore" bug even after removing HadController from the
+                // restore-time check directly. Only actual movement should count as "route".
+                bool wasRouteNpc = wasMoving || isWalkingToward;
 
                 // No matter how a bystander qualifies below, they must actually be able to see
                 // the player — an NPC behind a wall or in a separate room of the same

@@ -225,12 +225,39 @@ namespace LotsOfKisses
             if (preKissSpecialActionSnapshotsByNpc.ContainsKey(npc.Name))
                 return;
 
+            // NOTE: UpdateSpouseLookAtPlayer (DailySystems.cs) runs every tick and turns the NPC to
+            // face the player as soon as they're close — well before any kiss even starts. By the
+            // time this function runs, npc.FacingDirection/Sprite.CurrentFrame may already be the
+            // "looking at player" pose, not the real original (e.g. Sebastian fishing, facing
+            // north). That system keeps its OWN memory of the true original pose
+            // (passiveLookRestoreFacing/Frame) specifically so it can undo its own turn later — but
+            // its restore only fires at 1000f distance, and gets wiped out by changedState checks
+            // (e.g. the vanilla kiss animation itself counts as "a special animation started").
+            // So: if it's still holding a saved original for this NPC, that's the real pose to
+            // snapshot — not whatever the NPC is currently doing — and we take ownership of it here
+            // so the two systems don't fight over the same NPC.
+            int? passiveLookFacingOverride = null;
+            int? passiveLookFrameOverride = null;
+            if (passiveLookRestoreActive && passiveLookRestoreNpcName == npc.Name)
+            {
+                if (passiveLookRestoreFacing >= 0)
+                    passiveLookFacingOverride = passiveLookRestoreFacing;
+                if (passiveLookRestoreFrame >= 0)
+                    passiveLookFrameOverride = passiveLookRestoreFrame;
+
+                this.Monitor.Log($"[RESTORE DEBUG] {npc.Name}: adopting passive-look's saved original pose (facing={passiveLookFacingOverride}, frame={passiveLookFrameOverride}) instead of current live state before kiss-capture.", LogLevel.Debug);
+
+                ClearPassiveLookOriginalPose();
+            }
+
             List<FarmerSprite.AnimationFrame> animation = null;
             if (npc.Sprite.CurrentAnimation != null && npc.Sprite.CurrentAnimation.Count > 0)
                 animation = new List<FarmerSprite.AnimationFrame>(npc.Sprite.CurrentAnimation);
 
             bool isWalking = npc.isMoving();
             bool hasSpecialAnimation = animation != null && animation.Count > 0;
+            int effectiveFrame = passiveLookFrameOverride ?? npc.Sprite.CurrentFrame;
+            int effectiveFacing = passiveLookFacingOverride ?? npc.FacingDirection;
             // NOTE: used to also require npc.Sprite.CurrentFrame >= 16 ("hasSpecialStaticFrame") to
             // decide whether a pose was "special" enough to bother saving. That heuristic assumed
             // every special pose (billiards, sitting on the beach, washing dishes, pier fishing)
@@ -238,7 +265,7 @@ namespace LotsOfKisses
             // skipped for exactly those poses, meaning there was never anything to restore
             // afterward, no matter how the distance/location guards behaved. Match the bystander
             // capture in PublicReaction.cs, which has no such filter and just always saves.
-            bool hasSpecialStaticFrame = npc.Sprite.CurrentFrame != 0;
+            bool hasSpecialStaticFrame = effectiveFrame != 0;
 
             // If the NPC is walking with no special animation or frame, skip capture —
             // unless it's late night (22h+) where walking means going home and we still want the kiss to work.
@@ -259,8 +286,8 @@ namespace LotsOfKisses
             {
                 Npc = npc,
                 Location = npc.currentLocation,
-                FacingDirection = npc.FacingDirection,
-                CurrentFrame = npc.Sprite.CurrentFrame,
+                FacingDirection = effectiveFacing,
+                CurrentFrame = effectiveFrame,
                 Flip = npc.flip,
                 MovementPause = (int)npc.movementPause,
                 AddedSpeed = (int)npc.addedSpeed,
