@@ -73,7 +73,6 @@ NPCs without a content pack still work fully — kisses happen normally, just wi
 - ✅ Works with spouses and dating partners
 - ✅ Compatible with polyamory mods (all recognized romantic partners are supported)
 - ✅ Compatible with any romanceable NPC custom via content pack
-- ✅ Cross-mod compatibility with [Outfit Reactions](https://github.com/NatrollEXE) via `modData` flags
 
 ---
 
