@@ -25,6 +25,7 @@ namespace LotsOfKisses
         internal static bool suppressDialogueFromAutoKissClick = false;
         internal static NPC suppressDialogueAutoKissNpc = null;
         internal static bool suppressedDialogueDuringAutoKissClick = false;
+        internal static bool suppressLocationOverrideDialogueDuringAutoKissClick = false;
         private bool lastAutoKissClickWasBlockedDialogue = false;
         internal bool LotsOfKissesKissPatchActive = false;
         private bool passiveLookRestoreActive = false;

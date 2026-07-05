@@ -28,6 +28,16 @@ namespace LotsOfKisses
             suppressedDialogueDuringAutoKissClick = false;
             LotsOfKissesKissPatchActive = true;
 
+            // Some NPCs have a fixed "location override" line tied to their current pose/location
+            // (e.g. Sebastian playing video games, Abigail sitting on the couch) that never clears
+            // on its own — unlike a regular queued dialogue, it's recalculated fresh every time
+            // checkAction runs, so stashing CurrentDialogue alone doesn't help here. Suppressing it
+            // through NPC.HasLocationOverrideDialogue (Harmony Prefix below) makes checkAction take
+            // the kiss branch instead, without needing to touch or restore anything on the NPC itself
+            // — the same override line is recalculated fresh next time the player clicks normally.
+            bool previousSuppressLocationOverride = suppressLocationOverrideDialogueDuringAutoKissClick;
+            suppressLocationOverrideDialogueDuringAutoKissClick = true;
+
             // The vanilla checkAction, when it sees a pending CurrentDialogue on the NPC, opens
             // that dialogue instead of running the kiss logic — it never reaches the animation
             // code at all, even with the pop-up suppressed by our Harmony patch above. That's
@@ -68,6 +78,7 @@ namespace LotsOfKisses
                 suppressDialogueAutoKissNpc = previousNpc;
                 suppressedDialogueDuringAutoKissClick = previousSuppressed;
                 LotsOfKissesKissPatchActive = previousKissPatchFlag;
+                suppressLocationOverrideDialogueDuringAutoKissClick = previousSuppressLocationOverride;
 
                 // Restore the original pending dialogue, unless checkAction pushed a brand new
                 // one of its own (rare, but don't stomp on it if it did).

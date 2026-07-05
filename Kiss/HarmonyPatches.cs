@@ -186,4 +186,40 @@ namespace LotsOfKisses
         }
     }
 
+    // ===================================================================================================================================================================================================================================================
+    // HARMONYPATCH TO STOP LOCATION/POSE-SPECIFIC DIALOGUE (E.G. SEBASTIAN PLAYING VIDEO GAMES,
+    // ABIGAIL SITTING ON THE COUCH) FROM BLOCKING THE VANILLA KISS ANIMATION DURING AN AUTO KISS CLICK
+    // ===================================================================================================================================================================================================================================================
+    // Confirmed directly from the game's compiled Stardew Valley.dll metadata: this override
+    // check lives on GameLocation (not NPC) — the current map decides whether it has a fixed
+    // dialogue line for a given NPC standing in it right now (e.g. the pier location knows
+    // Sebastian has a "watching the water" line while he's there). Unlike a regular queued
+    // dialogue line (npc.CurrentDialogue), this line is recalculated fresh every time checkAction
+    // runs — it can't be stashed and restored the way CurrentDialogue is. checkAction takes the
+    // "show this override line" branch instead of the kiss branch whenever this returns true, so
+    // the kiss animation never plays — a "ghost kiss" where the mod's own heart/smoke effects
+    // still fire, but the NPC's pose never changes. Forcing this to false during the mod's own
+    // simulated click makes checkAction fall through to the kiss branch instead; the override
+    // line itself isn't touched and will show normally again on the player's next manual click.
+    [HarmonyPatch(typeof(GameLocation), nameof(GameLocation.HasLocationOverrideDialogue))]
+    public static class GameLocation_HasLocationOverrideDialogue_SuppressDuringAutoKiss_Patch
+    {
+        static bool Prefix(ref bool __result)
+        {
+            try
+            {
+                if (!ModEntry.suppressLocationOverrideDialogueDuringAutoKissClick)
+                    return true; // run the original method normally
+
+                __result = false;
+                return false; // skip the original method, we already set the result
+            }
+            catch (Exception ex)
+            {
+                ModEntry.Instance?.Monitor.Log($"[AUTO KISS CLICK] Error suppressing location override dialogue: {ex}", LogLevel.Error);
+                return true;
+            }
+        }
+    }
+
 }
