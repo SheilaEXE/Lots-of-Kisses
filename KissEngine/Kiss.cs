@@ -969,10 +969,59 @@ namespace LotsOfKisses
 
             bool triggered = TryCheckActionForAutoKissWithoutDialogue(npc);
 
+            // checkAction only plays the real vanilla kiss pose for the player's actual spouse —
+            // for a dating partner (not yet married) it does nothing, unless some other mod (e.g.
+            // Hugs and Kisses, or a polyamory mod) happens to be installed and patches it. If it's
+            // not installed and this is a dating partner, do it ourselves: manually play the same
+            // kiss pose the game already ships on every datable NPC's tilesheet, and call the real
+            // Farmer.PerformKiss so the player's own animation matches too. This mod's existing
+            // friendship/sound/emote logic elsewhere is untouched — this only supplies the missing
+            // vanilla pose + PerformKiss call.
+            if (!triggered
+                && this.Config?.EnableBoyfriendKisses == true
+                && IsDatingPartner(npc.Name)
+                && !IsCurrentSpouse(npc.Name))
+            {
+                triggered = TryPerformManualVanillaDatingKiss(npc);
+            }
+
             if (triggered && playSound)
                 Game1.playSound("dwop");
 
             return triggered;
+        }
+
+        // Manually replicates the piece of the vanilla spouse-kiss flow that checkAction never
+        // exposes for dating partners: setting the NPC's kiss pose frame (flipped to face the
+        // player correctly) and calling Farmer.PerformKiss so the player's own kiss animation
+        // plays for real, instead of just this mod's own effects running on top of nothing.
+        private bool TryPerformManualVanillaDatingKiss(NPC npc)
+        {
+            if (npc == null || npc.Sprite == null || Game1.player == null)
+                return false;
+
+            int kissFrame = GetVanillaKissFrame(npc.Name);
+            bool poseFacesRight = GetVanillaKissFacingRight(npc.Name);
+
+            bool flip = (poseFacesRight && npc.FacingDirection == 3)
+                     || (!poseFacesRight && npc.FacingDirection == 1);
+
+            int delay = Game1.IsMultiplayer ? 1000 : 10;
+            npc.movementPause = delay;
+
+            npc.Sprite.setCurrentAnimation(new List<FarmerSprite.AnimationFrame>
+            {
+                new FarmerSprite.AnimationFrame(kissFrame, delay, false, flip, npc.haltMe, true)
+            });
+            npc.Sprite.UpdateSourceRect();
+
+            int playerFaceDirection = 1; // right
+            if ((poseFacesRight && !flip) || (!poseFacesRight && flip))
+                playerFaceDirection = 3; // left
+
+            Game1.player.PerformKiss(playerFaceDirection);
+
+            return true;
         }
 
         // Tries to trigger the game's built-in continuous kiss reaction (fires when the player kisses while already very close to the NPC) to reuse the game's animation and visual effects. This reaction is temperamental and may not fire every time, but adds significant immersion when it does.

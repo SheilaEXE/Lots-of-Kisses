@@ -10,11 +10,10 @@
   "gmcm.option.enable-dating-partners.name": "Enable Dating Partners",
   "gmcm.option.enable-dating-partners.tooltip": "Allow kiss interactions with NPCs you're dating, not only your spouse.",
 
-  "gmcm.option.enable-polyamory-support.name": "Enable Polyamory Support",
-  "gmcm.option.enable-polyamory-support.tooltip": "Treat all romantic NPCs as valid kiss partners for this mod, including NPCs from other mods.",
-
-  "gmcm.option.bump-kiss-gift-chance.name": "Bump Kiss Gift Chance (%)",
-  "gmcm.option.bump-kiss-gift-chance.tooltip": "The chance of receiving a surprise gift after a quick bump kiss.",
+  "gmcm.option.enable-polyamory-support.name": "Enable Multiple Partners",
+  "gmcm.option.enable-polyamory-support.tooltip": "Lets this mod's kiss system work with more than one romantic partner at once (for save files using a polyamory mod), instead of only your one official spouse.",
+  "gmcm.option.enable-boyfriend-kisses.name": "Enable Kisses with Dating Partners",
+  "gmcm.option.enable-boyfriend-kisses.tooltip": "Lets this mod's kiss system also work with a boyfriend/girlfriend you're dating, not just a spouse you're married to. Turn off to only allow kisses with your spouse.",
 
   "gmcm.option.multi-kisses.name": "Multi-Kisses!",
   "gmcm.option.multi-kisses.tooltip": "Enables romantic sequences with multiple kisses while you stay close to your partner.",

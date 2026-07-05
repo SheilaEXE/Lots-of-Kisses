@@ -44,6 +44,14 @@ namespace LotsOfKisses
 
             configMenu.AddBoolOption(
                 mod: mod.ModManifest,
+                name: () => T(mod, "gmcm.option.enable-boyfriend-kisses.name", "Enable kisses with dating partners"),
+                tooltip: () => T(mod, "gmcm.option.enable-boyfriend-kisses.tooltip", "If off, this mod only does anything for your spouse — dating partners (not yet married) are treated as regular NPCs. Note: the actual vanilla kiss animation for a dating partner still needs a separate mod like Hugs and Kisses; this only controls this mod's own kiss system (multi-kiss, bump kiss, bystander reactions, etc.) for them."),
+                getValue: () => mod.Config.EnableBoyfriendKisses,
+                setValue: value => mod.Config.EnableBoyfriendKisses = value
+            );
+
+            configMenu.AddBoolOption(
+                mod: mod.ModManifest,
                 name: () => mod.Helper.Translation.Get("gmcm.option.multi-kisses.name"),
                 tooltip: () => mod.Helper.Translation.Get("gmcm.option.multi-kisses.tooltip"),
                 getValue: () => mod.Config.MultiKissEnabled,

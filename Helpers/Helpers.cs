@@ -67,6 +67,9 @@ namespace LotsOfKisses
             if (this.Config?.PolyamorySupport != true)
                 return false;
 
+            if (this.Config?.EnableBoyfriendKisses != true)
+                return false;
+
             if (!Context.IsWorldReady || Game1.player == null)
                 return false;
 
