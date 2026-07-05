@@ -87,6 +87,11 @@ namespace LotsOfKisses
 
             try
             {
+                // TEMPORARY DIAGNOSTIC LOG — remove once confirmed working.
+                ModEntry.Instance?.Monitor.Log(
+                    $"[DIAGNOSTIC] PerformKiss Prefix: eventUp={Game1.eventUp}, UsingTool={__instance.UsingTool}, menu={(Game1.activeClickableMenu != null)}, ridingHorse={__instance.isRidingHorse()}, sitting={__instance.IsSitting()}, emoting={__instance.IsEmoting}, canMove={__instance.CanMove}",
+                    LogLevel.Warn);
+
                 if (Game1.eventUp ||
                     __instance.UsingTool ||
                     (__instance.IsLocalPlayer && Game1.activeClickableMenu != null) ||
