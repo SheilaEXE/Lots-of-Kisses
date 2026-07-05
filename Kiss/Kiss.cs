@@ -613,6 +613,21 @@ namespace LotsOfKisses
             continuousKissWasTouchingSpouse = false;
             continuousKissVanillaTriggered = false;
 
+            // GetActiveRomanticNpcFromState() (used by GetSpouse(), which drives every automatic
+            // kiss system) checks several NPC-reference fields to figure out "who is the player
+            // currently kissing". If any of these were left pointing at the previous partner
+            // after ending a kiss, GetSpouse() would keep returning that old NPC even after the
+            // player walked away and approached someone else entirely — silently blocking every
+            // kiss system for the new NPC until these were cleared some other way (e.g. their own
+            // timers finally expiring). Clearing them all here, on every kiss end, closes that gap.
+            outsideBumpPauseNpc = null;
+            outsideBumpPauseActive = false;
+            approachKissHoldNpc = null;
+            approachKissHoldActive = false;
+            pendingNpcKissResetNpc = null;
+            pendingPublicMultiKissShyNpc = null;
+            pendingPublicMultiKissShyEmote = false;
+
             activeKissVisualDelayMs = bumpKissVisualDelayMs;
         }
         // Hard-reset helper: ensures the NPC returns to a clean state (no controller, no stuck animation) after a continuous kiss, especially a bump kiss, even if something goes wrong mid-sequence. Called on both natural kiss end and emergency cleanup.
