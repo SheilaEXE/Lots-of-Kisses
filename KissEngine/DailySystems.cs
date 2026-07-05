@@ -7,9 +7,9 @@ namespace LotsOfKisses
 {
     public partial class ModEntry
     {
-        // ======================================================================================================
+// ======================================================================
         // LOOK-AT-PLAYER / DISTANCE NOTICE SYSTEM
-        // ======================================================================================================
+// ======================================================================
         private void UpdateDailySpouseSystems(NPC spouse)
         {
             if (spouse == null || !Context.IsWorldReady)
@@ -258,9 +258,9 @@ namespace LotsOfKisses
             // Keep the memory alive while the NPC remains idle in the same state.
             passiveLookRestoreTimer = Math.Max(passiveLookRestoreTimer, 900);
         }
-        // ===================================================================
+// ======================================================================
         // SEGUINDO COM O OLHAR
-        // ===================================================================
+// ======================================================================
         private void UpdateSpouseLookAtPlayer(NPC npc, float distance)
         {
             if (npc == null || !Context.IsWorldReady)
@@ -305,9 +305,9 @@ namespace LotsOfKisses
             passiveLookRestoreTimer = Math.Max(passiveLookRestoreTimer, 180); // 3 segundos
         }
 
-        // =========================================================================
+// ======================================================================
         // IF THE PLAYER IS FAR ENOUGH AWAY BUT STILL WITHIN NOTICE RANGE, THE PARTNER REACTS
-        // =========================================================================
+// ======================================================================
         private void UpdateSpouseNoticeFromDistance(NPC npc, float distance)
         {
             if (npc == null || !Context.IsWorldReady)

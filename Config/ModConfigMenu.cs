@@ -36,8 +36,8 @@ namespace LotsOfKisses
 
             configMenu.AddBoolOption(
                 mod: mod.ModManifest,
-                name: () => T(mod, "gmcm.option.enable-polyamory-support.name", "Enable polyamory support"),
-                tooltip: () => T(mod, "gmcm.option.enable-polyamory-support.tooltip", "Treat all romantic NPCs as valid kiss partners for this mod, including NPCs from other mods."),
+                name: () => T(mod, "gmcm.option.enable-polyamory-support.name", "Enable multiple partners"),
+                tooltip: () => T(mod, "gmcm.option.enable-polyamory-support.tooltip", "Lets this mod's kiss system work with more than one romantic partner at once (for save files using a polyamory mod), instead of only your one official spouse."),
                 getValue: () => mod.Config.PolyamorySupport,
                 setValue: value => mod.Config.PolyamorySupport = value
             );
@@ -45,7 +45,7 @@ namespace LotsOfKisses
             configMenu.AddBoolOption(
                 mod: mod.ModManifest,
                 name: () => T(mod, "gmcm.option.enable-boyfriend-kisses.name", "Enable kisses with dating partners"),
-                tooltip: () => T(mod, "gmcm.option.enable-boyfriend-kisses.tooltip", "If off, this mod only does anything for your spouse — dating partners (not yet married) are treated as regular NPCs. Note: the actual vanilla kiss animation for a dating partner still needs a separate mod like Hugs and Kisses; this only controls this mod's own kiss system (multi-kiss, bump kiss, bystander reactions, etc.) for them."),
+                tooltip: () => T(mod, "gmcm.option.enable-boyfriend-kisses.tooltip", "Lets this mod's kiss system also work with a boyfriend/girlfriend you're dating, not just a spouse you're married to. Turn off to only allow kisses with your spouse."),
                 getValue: () => mod.Config.EnableBoyfriendKisses,
                 setValue: value => mod.Config.EnableBoyfriendKisses = value
             );

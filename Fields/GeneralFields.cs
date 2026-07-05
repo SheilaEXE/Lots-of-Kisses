@@ -6,12 +6,12 @@ namespace LotsOfKisses
 {
     public partial class ModEntry
     {
-        // =====================================================================
+// ======================================================================
         // FIELDS
-        // =====================================================================
-        // =====================================================================
+// ======================================================================
+// ======================================================================
         // GENERAL STATE
-        // =====================================================================
+// ======================================================================
         private int lastDayChecked = -1;
         private string lastLocation = "";
         private int cooldown = 0;
@@ -39,33 +39,16 @@ namespace LotsOfKisses
         private string passiveLookRestoreLocationName = "";
         private bool wasGameWindowActiveLastTick = true;
 
-        // =====================================================================
+// ======================================================================
         // DAILY ROUTINE / DIALOGUES
-        // =====================================================================
+// ======================================================================
         private bool wasInNoticeZone = false;
         private bool talkedToSpouseToday = false;
 
-        // =====================================================================
+// ======================================================================
         // UTILITY HELPERS
-        // =====================================================================
-        private bool HasReadableDialogueWaiting(NPC npc)
-        {
-            if (npc == null || Game1.player == null)
-                return false;
-
-            if (kissBlockAfterDialogueTimer > 0)
-                return true;
-
-            if (Game1.dialogueUp || Game1.activeClickableMenu != null)
-                return true;
-
-            if (npc.CurrentDialogue != null && npc.CurrentDialogue.Count > 0)
-                return true;
-
-            return false;
-        }
-
-        // Reads the cross-mod flag written by the Outfit Reactions mod (NatrollEXE.OutfitReactions)
+// ======================================================================
+// Reads the cross-mod flag written by the Outfit Reactions mod (NatrollEXE.OutfitReactions)
         // into the Farmer's modData. While present, an outfit reaction is in progress (noticing,
         // generating, or dialogue open) and kisses must hold off so the two mods don't collide.
         // Using modData means no hard dependency or load-order requirement between the mods.

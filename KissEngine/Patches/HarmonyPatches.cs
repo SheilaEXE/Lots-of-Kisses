@@ -6,9 +6,9 @@ using System;
 
 namespace LotsOfKisses
 {
-    // ===================================================================================================================================================================================================================================================
+// ======================================================================
     // HARMONYPATCH PARA AUMENTAR O DELAY DO BEIJO NORMAL DO CONJUGE, DEIXANDO O MOMENTO MAIS LONGO OU MAIS CURTO
-    // ===================================================================================================================================================================================================================================================
+// ======================================================================
     [HarmonyPatch(typeof(NPC), nameof(NPC.checkAction), new[] { typeof(Farmer), typeof(GameLocation) })]
     public static class NPC_CheckAction_KissDelay_Patch
     {
@@ -69,9 +69,9 @@ namespace LotsOfKisses
         }
     }
 
-    // ===================================================================================================================================================================================================================================================
+// ======================================================================
     // HARMONYPATCH PARA AUMENTAR O DELAY DO BEIJO NORMAL DO JOGADOR, DEIXANDO O MOMENTO MAIS LONGO OU MAIS CURTO
-    // ===================================================================================================================================================================================================================================================
+// ======================================================================
     [HarmonyPatch(typeof(Farmer), nameof(Farmer.PerformKiss))]
     public static class Farmer_PerformKiss_KissDelay_Patch
     {
@@ -146,9 +146,9 @@ namespace LotsOfKisses
             }
         }
     }
-    // ===================================================================================================================================================================================================================================================
+// ======================================================================
     // BLOCK DIALOGUE OPENED BY THE AUTOMATIC KISS CLICK
-    // ===================================================================================================================================================================================================================================================
+// ======================================================================
     [HarmonyPatch(typeof(Game1), nameof(Game1.drawDialogue), new[] { typeof(NPC) })]
     public static class Game1_DrawDialogue_SuppressAutoKissDialogue_Patch
     {
@@ -186,21 +186,12 @@ namespace LotsOfKisses
         }
     }
 
-    // ===================================================================================================================================================================================================================================================
-    // HARMONYPATCH TO STOP LOCATION/POSE-SPECIFIC DIALOGUE (E.G. SEBASTIAN PLAYING VIDEO GAMES,
-    // ABIGAIL SITTING ON THE COUCH) FROM BLOCKING THE VANILLA KISS ANIMATION DURING AN AUTO KISS CLICK
-    // ===================================================================================================================================================================================================================================================
-    // Confirmed directly from the game's compiled Stardew Valley.dll metadata: this override
-    // check lives on GameLocation (not NPC) — the current map decides whether it has a fixed
-    // dialogue line for a given NPC standing in it right now (e.g. the pier location knows
-    // Sebastian has a "watching the water" line while he's there). Unlike a regular queued
-    // dialogue line (npc.CurrentDialogue), this line is recalculated fresh every time checkAction
-    // runs — it can't be stashed and restored the way CurrentDialogue is. checkAction takes the
-    // "show this override line" branch instead of the kiss branch whenever this returns true, so
-    // the kiss animation never plays — a "ghost kiss" where the mod's own heart/smoke effects
-    // still fire, but the NPC's pose never changes. Forcing this to false during the mod's own
-    // simulated click makes checkAction fall through to the kiss branch instead; the override
-    // line itself isn't touched and will show normally again on the player's next manual click.
+    // ── Suppresses NPC.checkAction's "location override dialogue" branch during a
+    // simulated auto-kiss click (e.g. Sebastian's "watching the water" line at the pier).
+    // This line is recalculated fresh every call — unlike CurrentDialogue, it can't be
+    // stashed — and it otherwise blocks the kiss branch entirely, causing a "ghost kiss"
+    // (mod effects fire, pose never changes). Only suppressed during our own simulated
+    // click; shows normally again on the player's next manual click.
     [HarmonyPatch(typeof(GameLocation), nameof(GameLocation.HasLocationOverrideDialogue))]
     public static class GameLocation_HasLocationOverrideDialogue_SuppressDuringAutoKiss_Patch
     {
@@ -222,23 +213,10 @@ namespace LotsOfKisses
         }
     }
 
-    // ===================================================================================================================================================================================================================================================
-    // HARMONYPATCH TO STOP "END OF ROUTE" POSE MESSAGES (E.G. SEBASTIAN PLAYING VIDEO GAMES,
-    // ABIGAIL SITTING ON THE COUCH) FROM BLOCKING THE VANILLA KISS ANIMATION DURING AN AUTO KISS CLICK
-    // ===================================================================================================================================================================================================================================================
-    // Confirmed directly from the game's compiled Stardew Valley.dll metadata and in-game
-    // diagnostic logging: NPC.hasTemporaryMessageAvailable() — checked inside NPC.checkAction's
-    // kiss branch — returns true not just from HasLocationOverrideDialogue, but also from three
-    // separate private fields (endOfRouteMessage, doingEndOfRouteAnimation,
-    // goingToDoEndOfRouteAnimation) that get set whenever an NPC settles into a scheduled
-    // "end of route" pose like Sebastian playing video games or Abigail sitting on the couch.
-    // Suppressing HasLocationOverrideDialogue alone wasn't enough — this method has its own
-    // independent true-producing paths. checkAction takes the "show a message instead of
-    // kissing" branch whenever this returns true, causing the ghost-kiss (mod effects fire,
-    // animation never plays). Forcing this to false during the mod's own simulated click makes
-    // checkAction fall through to the kiss branch instead; nothing on the NPC is touched or
-    // needs restoring, so the same pose message will show normally again on the player's next
-    // manual click.
+    // ── Same idea as above, for NPC.hasTemporaryMessageAvailable(): it also returns true
+    // from "end of route" pose fields (Sebastian gaming, Abigail on the couch) independently
+    // of HasLocationOverrideDialogue, blocking the kiss branch the same way. Suppressed only
+    // during our own simulated click; nothing on the NPC needs restoring afterward.
     [HarmonyPatch(typeof(NPC), nameof(NPC.hasTemporaryMessageAvailable))]
     public static class NPC_HasTemporaryMessageAvailable_SuppressDuringAutoKiss_Patch
     {

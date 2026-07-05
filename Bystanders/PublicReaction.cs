@@ -144,8 +144,6 @@ namespace LotsOfKisses
 
                 activeBystanderSnapshots.Add(snapshot);
 
-                this.Monitor.Log($"[RESTORE DEBUG][BYSTANDER] {npc.Name} snapshot captured. frame={snapshot.CurrentFrame} anim={(snapshot.CurrentAnimation != null ? snapshot.CurrentAnimation.Count : 0)} wasMoving={snapshot.WasMoving} walkingToward={snapshot.WasWalkingTowardPlayer} hadController={snapshot.HadController} wasPausedByMod={snapshot.WasPausedByMod}.", LogLevel.Debug);
-
                 // Mark this NPC as watching so other mods (e.g. Outfit Reactions) can skip
                 // starting their own reactions on them until they're released below.
                 npc.modData[BystanderWatchingModDataKey] = "1";
@@ -298,7 +296,6 @@ namespace LotsOfKisses
                 bystanderRestoreSafetyTimer--;
             else
             {
-                this.Monitor.Log("[RESTORE DEBUG][BYSTANDER] Safety timer expired — forcing RestoreAllBystanders().", LogLevel.Debug);
                 RestoreAllBystanders();
                 return;
             }
@@ -348,7 +345,6 @@ namespace LotsOfKisses
                 return;
             }
 
-            this.Monitor.Log("[RESTORE DEBUG][BYSTANDER] Countdown finished — calling RestoreAllBystanders() normally.", LogLevel.Debug);
             RestoreAllBystanders();
         }
 
@@ -476,11 +472,8 @@ namespace LotsOfKisses
                 {
                     ReleaseRouteBystanderPauseOnly(snapshot);
                     routeSnapshots.Add(snapshot);
-                    this.Monitor.Log($"[RESTORE DEBUG][BYSTANDER] {npc.Name} route released gently — CurrentAnimation/CurrentFrame NOT restored here (wasMoving={snapshot.WasMoving}, wasWalkingToward={snapshot.WasWalkingTowardPlayer}, controller={snapshot.HadController}).", LogLevel.Debug);
                     continue;
                 }
-
-                this.Monitor.Log($"[RESTORE DEBUG][BYSTANDER] {npc.Name} taking full restore path — will reset CurrentAnimation/CurrentFrame to saved snapshot.", LogLevel.Debug);
 
                 npc.movementPause = snapshot.MovementPause;
                 npc.FacingDirection = snapshot.FacingDirection;
