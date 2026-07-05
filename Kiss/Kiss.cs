@@ -340,6 +340,36 @@ namespace LotsOfKisses
             TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
         }
 
+        /// <summary>Ticks left before this specific NPC can trigger a new bump-kiss cooldown line/gift. Per-NPC, so kissing one partner doesn't block trying with another right after.</summary>
+        private int GetApproachKissBlockTimer(NPC npc)
+        {
+            if (npc == null)
+                return 0;
+
+            return approachKissBlockTimerByNpc.TryGetValue(npc.Name, out int value) ? value : 0;
+        }
+
+        private void SetApproachKissBlockTimer(NPC npc, int value)
+        {
+            if (npc == null)
+                return;
+
+            approachKissBlockTimerByNpc[npc.Name] = value;
+        }
+
+        private void TickApproachKissBlockTimers()
+        {
+            if (approachKissBlockTimerByNpc.Count == 0)
+                return;
+
+            var keys = new System.Collections.Generic.List<string>(approachKissBlockTimerByNpc.Keys);
+            foreach (string key in keys)
+            {
+                if (approachKissBlockTimerByNpc[key] > 0)
+                    approachKissBlockTimerByNpc[key]--;
+            }
+        }
+
         private void StartContinuousKiss(NPC npc, int kissTier, bool isNewSequence = false)
         {
             if (npc == null || npc.currentLocation != Game1.player.currentLocation)
@@ -361,7 +391,7 @@ namespace LotsOfKisses
             if (IsOutfitReactionActive())
                 return;
 
-            if (approachKissBlockTimer > 0)
+            if (GetApproachKissBlockTimer(npc) > 0)
                 return;
 
             CaptureNpcPreKissSpecialAction(npc);
@@ -792,7 +822,7 @@ namespace LotsOfKisses
             if (IsOutfitReactionActive())
                 return false;
 
-            if (approachKissBlockTimer > 0)
+            if (GetApproachKissBlockTimer(npc) > 0)
                 return false;
 
             if (Game1.activeClickableMenu != null)
@@ -820,7 +850,7 @@ namespace LotsOfKisses
             if (npc == null || npc.currentLocation != Game1.player.currentLocation)
                 return false;
 
-            if (approachKissBlockTimer > 0)
+            if (GetApproachKissBlockTimer(npc) > 0)
                 return false;
 
             if (Game1.activeClickableMenu != null)
@@ -1359,7 +1389,7 @@ namespace LotsOfKisses
                 Game1.player.isMoving() &&
                 Game1.timeOfDay < 2400 &&
                 cooldown <= 0 &&
-                approachKissBlockTimer <= 0 &&
+                GetApproachKissBlockTimer(npc) <= 0 &&
                 !kissPostSequenceActive &&
                 !kissSequenceActive &&
                 pendingKissNpc == null &&
@@ -1476,7 +1506,7 @@ namespace LotsOfKisses
                                 if (!string.IsNullOrEmpty(surpriseLine))
                                 {
                                     npc.showTextAboveHead(surpriseLine);
-                                    approachKissBlockTimer = 300;
+                                    SetApproachKissBlockTimer(npc, 300);
                                     approachKissDialogueLastTimeOfDay = kissTimeOfDay;
                                 }
                             }

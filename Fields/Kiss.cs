@@ -24,7 +24,7 @@ namespace LotsOfKisses
         internal bool approachKissHoldActive = false;
         internal NPC approachKissHoldNpc = null;
         private int approachKissHoldToken = 0;
-        private int approachKissBlockTimer = 0;
+        private System.Collections.Generic.Dictionary<string, int> approachKissBlockTimerByNpc = new();
         private int approachKissDialogueLastTimeOfDay = -1;
         private bool bystanderRestoreForceStart = false; // set when publicMultiKiss dialogue fires — bypasses kiss-state wait
         private string pendingKissCycleLine = null;

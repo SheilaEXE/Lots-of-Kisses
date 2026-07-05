@@ -20,7 +20,7 @@ namespace LotsOfKisses
             pendingPublicMultiKissShyEmote = false;
             pendingPublicMultiKissShyNpc = null;
             pendingPublicMultiKissShyEmoteTimer = 0;
-            approachKissBlockTimer = 0;
+            approachKissBlockTimerByNpc.Clear();
             approachKissDialogueLastTimeOfDay = -1;
             kissBlockAfterDialogueTimer = 0;
             wasDialogueOrMenuOpenLastTick = false;
@@ -105,7 +105,7 @@ namespace LotsOfKisses
             pendingPublicMultiKissShyEmote = false;
             pendingPublicMultiKissShyNpc = null;
             pendingPublicMultiKissShyEmoteTimer = 0;
-            approachKissBlockTimer = 0;
+            approachKissBlockTimerByNpc.Clear();
             approachKissDialogueLastTimeOfDay = -1;
             kissBlockAfterDialogueTimer = 0;
             wasDialogueOrMenuOpenLastTick = false;
@@ -156,7 +156,7 @@ namespace LotsOfKisses
             pendingPublicMultiKissShyEmote = false;
             pendingPublicMultiKissShyNpc = null;
             pendingPublicMultiKissShyEmoteTimer = 0;
-            approachKissBlockTimer = 0;
+            approachKissBlockTimerByNpc.Clear();
             approachKissDialogueLastTimeOfDay = -1;
             kissBlockAfterDialogueTimer = 0;
             wasDialogueOrMenuOpenLastTick = false;
@@ -220,59 +220,6 @@ namespace LotsOfKisses
             }
         }
 
-        /// <summary>
-        /// Real-time ticks (at 60 ticks/sec) equivalent to the game's default pace of
-        /// 10 in-game minutes per ~7 real seconds. Matches vanilla speed so multi-kiss
-        /// sequences don't make time pass faster or slower than normal play.
-        /// </summary>
-        private const int TicksPerTenGameMinutes = 420; // 7 seconds * 60 ticks/sec
-
-        /// <summary>
-        /// Advances Game1.timeOfDay by 10 in-game minutes once enough real-time ticks have
-        /// accumulated, but only while the continuous kiss is active. This runs independently
-        /// of Game1.shouldTimePass(), so it never affects any other time-pausing logic from the
-        /// base game or other mods — it only compensates for the freeze this mod's own repeated
-        /// kiss animations would otherwise cause.
-        /// </summary>
-        private void AdvanceClockDuringMultiKissIfNeeded()
-        {
-            // continuousKissActive briefly drops to false between cycles while
-            // continuousKissPendingRestart is set (right before the next tier starts), so both
-            // flags count as "multi-kiss in progress" here — otherwise the accumulator would
-            // reset on every single cycle transition and never reach the threshold to advance
-            // the clock, even during a long unbroken kissing session.
-            if (!continuousKissActive && !continuousKissPendingRestart)
-            {
-                multiKissClockAccumulatorTicks = 0;
-                return;
-            }
-
-            multiKissClockAccumulatorTicks++;
-
-            if (multiKissClockAccumulatorTicks < TicksPerTenGameMinutes)
-                return;
-
-            multiKissClockAccumulatorTicks = 0;
-
-            if (Game1.timeOfDay >= 2600)
-                return; // Let the game's own forced pass-out logic handle end-of-day naturally.
-
-            // Game1.timeOfDay is stored as HMM (e.g. 1050 = 10:50), not a plain decimal number —
-            // minutes only go up to 50 before rolling over into the next hour (1050 + 10 must
-            // become 1100, not 1060, which isn't a valid time and would show a broken clock).
-            int hours = Game1.timeOfDay / 100;
-            int minutes = Game1.timeOfDay % 100;
-
-            minutes += 10;
-            if (minutes >= 60)
-            {
-                minutes -= 60;
-                hours += 1;
-            }
-
-            Game1.timeOfDay = hours * 100 + minutes;
-        }
-
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
             if (!Context.IsWorldReady || !e.IsMultipleOf(1))
@@ -315,14 +262,9 @@ namespace LotsOfKisses
             if (continuousKissActive || continuousKissPendingRestart)
                 Game1.freezeControls = false;
 
-            // Keep the in-game clock moving while the continuous kiss is active. Each cycle
-            // re-triggers the vanilla kiss animation, which holds Game1.shouldTimePass() at
-            // false for its duration — with cycles chaining back-to-back, the clock would
-            // otherwise freeze for as long as the multi-kiss keeps going. This advances
-            // Game1.timeOfDay directly on the same real-time cadence the game already uses
-            // (about 7 seconds of real time per in-game 10 minutes), instead of touching
-            // shouldTimePass or any other game/mod time-control logic.
-            AdvanceClockDuringMultiKissIfNeeded();
+            // The bystander speech bubbles run on their own real-tick timer (TickCrowdReactionCooldowns),
+            // independent of Game1.timeOfDay — so reverting the clock to its normal paused-during-kiss
+            // behavior doesn't affect how or when those bubbles fade out and close.
             TickCrowdReactionCooldowns();
 
             if (kissBlockAfterDialogueTimer > 0)
@@ -339,8 +281,7 @@ namespace LotsOfKisses
 
             wasDialogueOrMenuOpenLastTick = dialogueOrMenuOpenNow;
 
-            if (approachKissBlockTimer > 0)
-                approachKissBlockTimer--;
+            TickApproachKissBlockTimers();
 
             if (outsideBumpPauseTimer > 0)
                 outsideBumpPauseTimer--;
@@ -440,7 +381,7 @@ namespace LotsOfKisses
             outsideBumpPauseNpc = null;
             outsideBumpPauseTimer = 0;
             outsideBumpPauseToken++;
-            approachKissBlockTimer = 0;
+            approachKissBlockTimerByNpc.Clear();
             approachKissDialogueLastTimeOfDay = -1;
         }
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e)

@@ -37,7 +37,6 @@ namespace LotsOfKisses
         private Point passiveLookRestoreTile = Point.Zero;
         private string passiveLookRestoreLocationName = "";
         private bool wasGameWindowActiveLastTick = true;
-        private int multiKissClockAccumulatorTicks = 0;
 
         // =====================================================================
         // DAILY ROUTINE / DIALOGUES

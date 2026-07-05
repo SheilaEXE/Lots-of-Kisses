@@ -94,6 +94,13 @@ namespace LotsOfKisses
                 bool isWalkingToward = IsNpcWalkingTowardPlayer(npc);
                 bool wasRouteNpc = wasMoving || hadController || isWalkingToward;
 
+                // No matter how a bystander qualifies below, they must actually be able to see
+                // the player — an NPC behind a wall or in a separate room of the same
+                // GameLocation (e.g. Pierre behind the shop counter) shouldn't react at all,
+                // even if they're technically "on screen" or walking in the player's direction.
+                if (!HasLineOfSightToPlayer(npc))
+                    continue;
+
                 // NPCs walking toward the player within 600f stop to watch — no chance roll needed.
                 // Other NPCs on screen need to pass the notice chance roll.
                 bool forceReact = isWalkingToward && distance <= 600f;
