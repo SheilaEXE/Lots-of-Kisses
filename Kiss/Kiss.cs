@@ -62,6 +62,11 @@ namespace LotsOfKisses
                 bool result = npc.checkAction(Game1.player, npc.currentLocation);
                 bool dialogueWasBlocked = suppressedDialogueDuringAutoKissClick;
 
+                // TEMPORARY DIAGNOSTIC LOG — remove once confirmed working.
+                Monitor.Log(
+                    $"[DIAGNOSTIC] checkAction returned {result} for {npc.Name}. dialogueWasBlocked={dialogueWasBlocked}",
+                    LogLevel.Warn);
+
                 lastAutoKissClickWasBlockedDialogue = dialogueWasBlocked;
 
                 // NOTE: dialogueWasBlocked being true does NOT mean the kiss failed — checkAction
