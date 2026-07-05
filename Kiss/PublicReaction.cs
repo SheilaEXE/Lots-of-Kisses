@@ -155,7 +155,9 @@ namespace LotsOfKisses
                 // Roll the emote now, but don't play it yet — faceGeneralDirection/faceDirection take
                 // a few ticks to visually finish the turn. Stash it on the snapshot and let
                 // UpdateBystanderRestore's tick loop fire it once the NPC has actually turned.
-                if (random.NextDouble() < BystanderEmoteChance)
+                // Skipped entirely for NPCs listed in "Ignored Reactions.json" (e.g. cats, Shane's
+                // chicken) — they still notice and watch, just never emote.
+                if (!IsReactionIgnoredForNpc(npc) && random.NextDouble() < BystanderEmoteChance)
                 {
                     int emote = random.Next(2) == 0 ? 28 : 60;
                     snapshot.PendingEmote = emote;
@@ -174,6 +176,9 @@ namespace LotsOfKisses
             foreach (var snapshot in activeBystanderSnapshots)
             {
                 if (snapshot.CrowdReactionCooldownTicks > 0)
+                    continue;
+
+                if (IsReactionIgnoredForNpc(snapshot.Npc))
                     continue;
 
                 TryShowCrowdReactionLine(snapshot);
