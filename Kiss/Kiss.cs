@@ -62,14 +62,18 @@ namespace LotsOfKisses
                 bool result = npc.checkAction(Game1.player, npc.currentLocation);
                 bool dialogueWasBlocked = suppressedDialogueDuringAutoKissClick;
 
-                // TEMPORARY DIAGNOSTIC LOG — remove once confirmed working.
-                Monitor.Log(
-                    $"[DIAGNOSTIC] checkAction returned {result} for {npc.Name}. dialogueWasBlocked={dialogueWasBlocked}, CurrentAnimation={(npc.Sprite?.CurrentAnimation != null ? "not null" : "null")}",
-                    LogLevel.Warn);
-
                 lastAutoKissClickWasBlockedDialogue = dialogueWasBlocked;
 
-                if (dialogueWasBlocked)
+                // NOTE: dialogueWasBlocked being true does NOT mean the kiss failed — checkAction
+                // can successfully process the kiss (result = true) while also, somewhere in the
+                // same call, tripping our dialogue-suppression patch for an unrelated reason (e.g.
+                // an internal dialogue check that always runs alongside the kiss branch). Treating
+                // "a dialogue was blocked" as "the kiss must have failed" was silently discarding
+                // successful kisses — the mod's own heart/smoke effects still fired (they don't
+                // depend on this return value), but the actual pose animation never played,
+                // because this method returned false even though checkAction had already
+                // performed the real kiss. Trust checkAction's own result instead.
+                if (dialogueWasBlocked && !result)
                 {
                     kissBlockAfterDialogueTimer = Math.Max(kissBlockAfterDialogueTimer, 120);
                     return false;

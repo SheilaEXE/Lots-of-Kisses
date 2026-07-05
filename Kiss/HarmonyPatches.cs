@@ -208,11 +208,6 @@ namespace LotsOfKisses
         {
             try
             {
-                // TEMPORARY DIAGNOSTIC LOG — remove once confirmed working.
-                ModEntry.Instance?.Monitor.Log(
-                    $"[DIAGNOSTIC] HasLocationOverrideDialogue Prefix called. suppress={ModEntry.suppressLocationOverrideDialogueDuringAutoKissClick}",
-                    LogLevel.Warn);
-
                 if (!ModEntry.suppressLocationOverrideDialogueDuringAutoKissClick)
                     return true; // run the original method normally
 
