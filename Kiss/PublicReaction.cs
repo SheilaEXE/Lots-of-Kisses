@@ -135,6 +135,8 @@ namespace LotsOfKisses
 
                 activeBystanderSnapshots.Add(snapshot);
 
+                this.Monitor.Log($"[RESTORE DEBUG][BYSTANDER] {npc.Name} snapshot captured. frame={snapshot.CurrentFrame} anim={(snapshot.CurrentAnimation != null ? snapshot.CurrentAnimation.Count : 0)} wasMoving={snapshot.WasMoving} walkingToward={snapshot.WasWalkingTowardPlayer} hadController={snapshot.HadController} wasPausedByMod={snapshot.WasPausedByMod}.", LogLevel.Debug);
+
                 // Mark this NPC as watching so other mods (e.g. Outfit Reactions) can skip
                 // starting their own reactions on them until they're released below.
                 npc.modData[BystanderWatchingModDataKey] = "1";
@@ -282,6 +284,7 @@ namespace LotsOfKisses
                 bystanderRestoreSafetyTimer--;
             else
             {
+                this.Monitor.Log("[RESTORE DEBUG][BYSTANDER] Safety timer expired — forcing RestoreAllBystanders().", LogLevel.Debug);
                 RestoreAllBystanders();
                 return;
             }
@@ -331,6 +334,7 @@ namespace LotsOfKisses
                 return;
             }
 
+            this.Monitor.Log("[RESTORE DEBUG][BYSTANDER] Countdown finished — calling RestoreAllBystanders() normally.", LogLevel.Debug);
             RestoreAllBystanders();
         }
 
@@ -445,15 +449,24 @@ namespace LotsOfKisses
                 // Release the cross-mod watching flag now that this bystander is going back to normal.
                 npc.modData.Remove(BystanderWatchingModDataKey);
 
-                bool wasRouteNpc = snapshot.WasPausedByMod || snapshot.WasMoving || snapshot.WasWalkingTowardPlayer || snapshot.HadController;
+                // Only treat this as a "route NPC" (safe to let vanilla resume on its own) when it
+                // was actually moving or walking toward the player. NPCs in a stationary special
+                // pose (billiards, sitting on the beach, washing dishes, fishing off the pier) can
+                // still have a leftover HadController=true even while standing still doing their
+                // loop animation — that's not an ongoing route vanilla will resume, so relying on
+                // HadController alone was skipping the real CurrentAnimation/CurrentFrame restore
+                // below and leaving them stuck in the idle frame.
+                bool wasRouteNpc = snapshot.WasPausedByMod || snapshot.WasMoving || snapshot.WasWalkingTowardPlayer;
 
                 if (wasRouteNpc)
                 {
                     ReleaseRouteBystanderPauseOnly(snapshot);
                     routeSnapshots.Add(snapshot);
-                    this.Monitor.Log($"[BYSTANDER] {npc.Name} route released gently (wasMoving={snapshot.WasMoving}, wasWalkingToward={snapshot.WasWalkingTowardPlayer}, controller={snapshot.HadController}).", LogLevel.Trace);
+                    this.Monitor.Log($"[RESTORE DEBUG][BYSTANDER] {npc.Name} route released gently — CurrentAnimation/CurrentFrame NOT restored here (wasMoving={snapshot.WasMoving}, wasWalkingToward={snapshot.WasWalkingTowardPlayer}, controller={snapshot.HadController}).", LogLevel.Debug);
                     continue;
                 }
+
+                this.Monitor.Log($"[RESTORE DEBUG][BYSTANDER] {npc.Name} taking full restore path — will reset CurrentAnimation/CurrentFrame to saved snapshot.", LogLevel.Debug);
 
                 npc.movementPause = snapshot.MovementPause;
                 npc.FacingDirection = snapshot.FacingDirection;

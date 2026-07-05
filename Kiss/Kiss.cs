@@ -231,16 +231,29 @@ namespace LotsOfKisses
 
             bool isWalking = npc.isMoving();
             bool hasSpecialAnimation = animation != null && animation.Count > 0;
-            bool hasSpecialStaticFrame = npc.Sprite.CurrentFrame >= 16;
+            // NOTE: used to also require npc.Sprite.CurrentFrame >= 16 ("hasSpecialStaticFrame") to
+            // decide whether a pose was "special" enough to bother saving. That heuristic assumed
+            // every special pose (billiards, sitting on the beach, washing dishes, pier fishing)
+            // used a high frame index, but many of them don't — so the capture was silently
+            // skipped for exactly those poses, meaning there was never anything to restore
+            // afterward, no matter how the distance/location guards behaved. Match the bystander
+            // capture in PublicReaction.cs, which has no such filter and just always saves.
+            bool hasSpecialStaticFrame = npc.Sprite.CurrentFrame != 0;
 
             // If the NPC is walking with no special animation or frame, skip capture —
             // unless it's late night (22h+) where walking means going home and we still want the kiss to work.
             if (isWalking && !hasSpecialAnimation && !hasSpecialStaticFrame && Game1.timeOfDay < 2200)
+            {
+                this.Monitor.Log($"[RESTORE DEBUG] {npc.Name}: capture skipped — walking with no special pose.", LogLevel.Debug);
                 return;
+            }
 
             // If truly idle with no special state at all, nothing to capture.
             if (!isWalking && !hasSpecialAnimation && !hasSpecialStaticFrame)
+            {
+                this.Monitor.Log($"[RESTORE DEBUG] {npc.Name}: capture skipped — idle, frame=0, no animation (nothing special detected).", LogLevel.Debug);
                 return;
+            }
 
             var snapshot = new NpcPreKissSpecialActionSnapshot
             {
@@ -272,7 +285,7 @@ namespace LotsOfKisses
 
             this.Monitor.Log(
                 $"[SPECIAL ACTION SAVED BEFORE KISS] npc={npc.Name} frame={snapshot.CurrentFrame} anim={(animation != null ? animation.Count : 0)} walking={isWalking}",
-                LogLevel.Trace
+                LogLevel.Debug
             );
         }
 
@@ -312,7 +325,7 @@ namespace LotsOfKisses
 
                 this.Monitor.Log(
                     $"[SPECIAL ACTION RESTORED AFTER KISS] npc={npc.Name} frame={snapshot.CurrentFrame} anim={(snapshot.CurrentAnimation != null ? snapshot.CurrentAnimation.Count : 0)}",
-                    LogLevel.Trace
+                    LogLevel.Debug
                 );
 
                 if (clearAfterRestore)
@@ -331,7 +344,11 @@ namespace LotsOfKisses
         private void UpdateDeferredNpcSpecialActionRestore()
         {
             if (preKissSpecialActionSnapshotsByNpc.Count == 0)
+            {
+                if (Game1.ticks % 60 == 0)
+                    this.Monitor.Log("[RESTORE DEBUG] No spouse snapshots pending (nothing was captured, or already restored).", LogLevel.Debug);
                 return;
+            }
 
             // Snapshot the key list since we may mutate the dictionary (via ClearNpcPreKissSpecialAction)
             // while iterating.
@@ -349,29 +366,50 @@ namespace LotsOfKisses
                     continue;
                 }
 
+                // Player left the NPC's location entirely (e.g. walked out of the Saloon, off the
+                // beach/pier). This is just as much a sign that the player moved away as the
+                // distance check below — actually restore the pose here, don't just discard the
+                // snapshot. Discarding without restoring is what left the NPC frozen in the idle
+                // frame forever whenever "walking far away" meant leaving the room instead of
+                // walking to the other side of it.
                 if (npc.currentLocation != Game1.player.currentLocation)
                 {
-                    ClearNpcPreKissSpecialAction(npc, npcName);
+                    this.Monitor.Log($"[RESTORE DEBUG] {npcName}: player left location, attempting restore now.", LogLevel.Debug);
+                    if (!IsKissSystemHoldingNpc(npc))
+                        TryRestoreNpcPreKissSpecialAction(npc, clearAfterRestore: true);
+                    else
+                        ClearNpcPreKissSpecialAction(npc, npcName);
                     continue;
                 }
 
                 if (IsKissSystemHoldingNpc(npc))
+                {
+                    this.Monitor.Log($"[RESTORE DEBUG] {npcName}: blocked — IsKissSystemHoldingNpc=true.", LogLevel.Debug);
                     continue;
+                }
 
                 int delayTicks = preKissSpecialActionRestoreDelayTicksByNpc.TryGetValue(npcName, out int t) ? t : 0;
                 if (delayTicks > 0)
                 {
                     preKissSpecialActionRestoreDelayTicksByNpc[npcName] = delayTicks - 1;
+                    this.Monitor.Log($"[RESTORE DEBUG] {npcName}: blocked — delayTicks={delayTicks}.", LogLevel.Debug);
                     continue;
                 }
 
                 if (Game1.activeClickableMenu != null || Game1.dialogueUp)
+                {
+                    this.Monitor.Log($"[RESTORE DEBUG] {npcName}: blocked — menu/dialogue open.", LogLevel.Debug);
                     continue;
+                }
 
                 float dist = DistanceToPlayer(npc);
                 if (dist < NpcSpecialActionRestoreDistance)
+                {
+                    this.Monitor.Log($"[RESTORE DEBUG] {npcName}: blocked — dist={dist:F0} < {NpcSpecialActionRestoreDistance}.", LogLevel.Debug);
                     continue;
+                }
 
+                this.Monitor.Log($"[RESTORE DEBUG] {npcName}: all guards passed, restoring now. dist={dist:F0}", LogLevel.Debug);
                 TryRestoreNpcPreKissSpecialAction(npc, clearAfterRestore: true);
             }
         }
