@@ -87,11 +87,6 @@ namespace LotsOfKisses
 
             try
             {
-                // TEMPORARY DIAGNOSTIC LOG — remove once confirmed working.
-                ModEntry.Instance?.Monitor.Log(
-                    $"[DIAGNOSTIC] PerformKiss Prefix: eventUp={Game1.eventUp}, UsingTool={__instance.UsingTool}, menu={(Game1.activeClickableMenu != null)}, ridingHorse={__instance.isRidingHorse()}, sitting={__instance.IsSitting()}, emoting={__instance.IsEmoting}, canMove={__instance.CanMove}",
-                    LogLevel.Warn);
-
                 if (Game1.eventUp ||
                     __instance.UsingTool ||
                     (__instance.IsLocalPlayer && Game1.activeClickableMenu != null) ||
@@ -222,6 +217,44 @@ namespace LotsOfKisses
             catch (Exception ex)
             {
                 ModEntry.Instance?.Monitor.Log($"[AUTO KISS CLICK] Error suppressing location override dialogue: {ex}", LogLevel.Error);
+                return true;
+            }
+        }
+    }
+
+    // ===================================================================================================================================================================================================================================================
+    // HARMONYPATCH TO STOP "END OF ROUTE" POSE MESSAGES (E.G. SEBASTIAN PLAYING VIDEO GAMES,
+    // ABIGAIL SITTING ON THE COUCH) FROM BLOCKING THE VANILLA KISS ANIMATION DURING AN AUTO KISS CLICK
+    // ===================================================================================================================================================================================================================================================
+    // Confirmed directly from the game's compiled Stardew Valley.dll metadata and in-game
+    // diagnostic logging: NPC.hasTemporaryMessageAvailable() — checked inside NPC.checkAction's
+    // kiss branch — returns true not just from HasLocationOverrideDialogue, but also from three
+    // separate private fields (endOfRouteMessage, doingEndOfRouteAnimation,
+    // goingToDoEndOfRouteAnimation) that get set whenever an NPC settles into a scheduled
+    // "end of route" pose like Sebastian playing video games or Abigail sitting on the couch.
+    // Suppressing HasLocationOverrideDialogue alone wasn't enough — this method has its own
+    // independent true-producing paths. checkAction takes the "show a message instead of
+    // kissing" branch whenever this returns true, causing the ghost-kiss (mod effects fire,
+    // animation never plays). Forcing this to false during the mod's own simulated click makes
+    // checkAction fall through to the kiss branch instead; nothing on the NPC is touched or
+    // needs restoring, so the same pose message will show normally again on the player's next
+    // manual click.
+    [HarmonyPatch(typeof(NPC), nameof(NPC.hasTemporaryMessageAvailable))]
+    public static class NPC_HasTemporaryMessageAvailable_SuppressDuringAutoKiss_Patch
+    {
+        static bool Prefix(ref bool __result)
+        {
+            try
+            {
+                if (!ModEntry.suppressLocationOverrideDialogueDuringAutoKissClick)
+                    return true; // run the original method normally
+
+                __result = false;
+                return false; // skip the original method, we already set the result
+            }
+            catch (Exception ex)
+            {
+                ModEntry.Instance?.Monitor.Log($"[AUTO KISS CLICK] Error suppressing temporary message: {ex}", LogLevel.Error);
                 return true;
             }
         }
