@@ -394,10 +394,16 @@ namespace LotsOfKisses
             if (npc == null || npc.currentLocation != Game1.currentLocation)
                 return;
 
+            // NOTE: only actual movement counts as "route NPC" here — same fix as the capture and
+            // restore classifications elsewhere in this file. HadController alone used to count
+            // too, but a stationary NPC doing a scripted activity (like fishing at the pier) can
+            // still have a non-null controller while standing still. Misclassifying them as
+            // "route NPCs" sent them through the gentle branch below, which never stops their
+            // CurrentAnimation — so the fishing loop kept animating underneath the forced
+            // "looking at player" pose, showing as two overlapping sprite frames at once.
             bool wasRouteNpc = snapshot.WasPausedByMod
                             || snapshot.WasMoving
-                            || snapshot.WasWalkingTowardPlayer
-                            || snapshot.HadController;
+                            || snapshot.WasWalkingTowardPlayer;
 
             // Route NPCs use the same gentle idea as UpdateOutsideBumpPause: turn visually toward
             // the player and keep only a tiny refreshed pause. No Halt(), no controller clear, no
