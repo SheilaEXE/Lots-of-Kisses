@@ -144,6 +144,8 @@ namespace LotsOfKisses
 
                 activeBystanderSnapshots.Add(snapshot);
 
+                this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: CAPTURED — Position={snapshot.Position} Tile={npc.TilePoint} Frame={snapshot.CurrentFrame} HasAnim={(snapshot.CurrentAnimation != null)} HadController={hadController} WasMoving={wasMoving} WasWalkingToward={isWalkingToward}", LogLevel.Debug);
+
                 // Mark this NPC as watching so other mods (e.g. Outfit Reactions) can skip
                 // starting their own reactions on them until they're released below.
                 npc.modData[BystanderWatchingModDataKey] = "1";
@@ -253,7 +255,17 @@ namespace LotsOfKisses
         private void ClearActiveBystanderSnapshots()
         {
             foreach (var snapshot in activeBystanderSnapshots)
+            {
                 snapshot?.Npc?.modData?.Remove(BystanderWatchingModDataKey);
+
+                // Hand back any controller we suspended — this is an emergency/early clear path,
+                // so it wouldn't otherwise go through RestoreAllBystanders' normal handoff.
+                if (snapshot?.SavedController != null && snapshot.Npc != null)
+                {
+                    snapshot.Npc.controller = snapshot.SavedController;
+                    snapshot.SavedController = null;
+                }
+            }
 
             activeBystanderSnapshots.Clear();
         }
@@ -276,7 +288,8 @@ namespace LotsOfKisses
         /// <summary>
         /// Ticked every update. Keeps bystanders looking at the player while the scene is active,
         /// then releases them two seconds after the publicMultiKiss dialogue closes / kiss ends.
-        /// Controller is intentionally never cleared here.
+        /// Controller is left alone for route NPCs; only stationary special-pose NPCs have theirs
+        /// suspended (see HoldBystanderWatching/RestoreAllBystanders).
         /// </summary>
         internal void UpdateBystanderRestore()
         {
@@ -427,11 +440,25 @@ namespace LotsOfKisses
             }
             else
             {
-                // Static/special-action NPCs, like someone sitting in the Saloon, don't have a
-                // route controller to protect. Temporarily clear the animation so they actually
-                // stop what they're doing and look at the farmer, then RestoreAllBystanders puts
-                // the original animation/frame back two seconds later.
+                // Static/special-action NPCs, like someone sitting in the Saloon or fishing at a
+                // fixed spot, don't have a walking route to protect the way moving NPCs do. But
+                // some of them still have a non-null controller (e.g. a small back-and-forth path
+                // tied to their fishing animation) that, left running behind our forced idle pose,
+                // kept silently repositioning them — showing up as the NPC appearing frozen in
+                // their old spot AND at a second, controller-driven position at the same time.
+                // Suspend it here and hand it back in RestoreAllBystanders.
+                // HoldBystanderWatching runs every tick while held — only capture the controller
+                // the first time (when it's still non-null). Without this guard, the very next
+                // tick would overwrite SavedController with the null we just set below, losing
+                // the real reference for good.
+                if (npc.controller != null)
+                    snapshot.SavedController = npc.controller;
+                npc.controller = null;
+
                 int lookDirection = GetDirectionTowardPlayer(npc);
+
+                if (Game1.ticks % 15 == 0)
+                    this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: BEFORE hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} HasAnim={(npc.Sprite.CurrentAnimation != null)} FacingDir={npc.FacingDirection} savedController={(snapshot.SavedController != null)} liveControllerNow={(npc.controller != null)}", LogLevel.Debug);
 
                 npc.Sprite.StopAnimation();
                 npc.Sprite.ClearAnimation();
@@ -441,6 +468,9 @@ namespace LotsOfKisses
                 npc.faceDirection(lookDirection);
                 npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(lookDirection);
                 npc.Sprite.UpdateSourceRect();
+
+                if (Game1.ticks % 15 == 0)
+                    this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: AFTER hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} LookDir={lookDirection}", LogLevel.Debug);
             }
 
             if (npc.movementPause < BystanderHoldPauseTicks)
@@ -501,6 +531,13 @@ namespace LotsOfKisses
 
                 npc.Sprite.CurrentFrame = snapshot.CurrentFrame;
                 npc.Sprite.UpdateSourceRect();
+
+                // Hand the controller back, if we suspended one while holding this NPC watching.
+                if (snapshot.SavedController != null)
+                {
+                    npc.controller = snapshot.SavedController;
+                    snapshot.SavedController = null;
+                }
 
                 this.Monitor.Log($"[BYSTANDER] {npc.Name} state restored (idle/static).", LogLevel.Trace);
             }
