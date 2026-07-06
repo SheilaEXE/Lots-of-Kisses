@@ -254,11 +254,20 @@ namespace LotsOfKisses
                 if (__instance == null || ModEntry.Instance == null)
                     return;
 
+                bool isWilly = __instance.Name == "Willy";
+
                 BystanderSnapshot snapshot = ModEntry.Instance.GetActiveStaticBystanderSnapshot(__instance);
+
+                if (isWilly)
+                    ModEntry.Instance.Monitor.Log($"[POSTFIX DEBUG] NPC.update ran for Willy. snapshotFound={(snapshot != null)}", LogLevel.Debug);
+
                 if (snapshot == null)
                     return;
 
                 ModEntry.Instance.ForceStaticBystanderPose(__instance, snapshot);
+
+                if (isWilly)
+                    ModEntry.Instance.Monitor.Log($"[POSTFIX DEBUG] ForceStaticBystanderPose applied after vanilla update. Frame now={__instance.Sprite?.CurrentFrame}", LogLevel.Debug);
             }
             catch (Exception ex)
             {

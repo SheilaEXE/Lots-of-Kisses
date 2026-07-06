@@ -144,7 +144,8 @@ namespace LotsOfKisses
 
                 activeBystanderSnapshots.Add(snapshot);
 
-                this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: CAPTURED — Position={snapshot.Position} Tile={npc.TilePoint} Frame={snapshot.CurrentFrame} HasAnim={(snapshot.CurrentAnimation != null)} HadController={hadController} WasMoving={wasMoving} WasWalkingToward={isWalkingToward}", LogLevel.Debug);
+                if (npc.Name == "Willy")
+                    this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: CAPTURED — Position={snapshot.Position} Tile={npc.TilePoint} Frame={snapshot.CurrentFrame} HasAnim={(snapshot.CurrentAnimation != null)} HadController={hadController} WasMoving={wasMoving} WasWalkingToward={isWalkingToward}", LogLevel.Debug);
 
                 // Mark this NPC as watching so other mods (e.g. Outfit Reactions) can skip
                 // starting their own reactions on them until they're released below.
@@ -502,7 +503,8 @@ namespace LotsOfKisses
 
             int lookDirection = GetDirectionTowardPlayer(npc);
 
-            if (Game1.ticks % 15 == 0)
+            bool isWilly = npc.Name == "Willy";
+            if (isWilly && Game1.ticks % 15 == 0)
                 this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: BEFORE hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} HasAnim={(npc.Sprite.CurrentAnimation != null)} FacingDir={npc.FacingDirection}", LogLevel.Debug);
 
             npc.Sprite.StopAnimation();
@@ -514,7 +516,7 @@ namespace LotsOfKisses
             npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(lookDirection);
             npc.Sprite.UpdateSourceRect();
 
-            if (Game1.ticks % 15 == 0)
+            if (isWilly && Game1.ticks % 15 == 0)
                 this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: AFTER hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} LookDir={lookDirection}", LogLevel.Debug);
         }
 
