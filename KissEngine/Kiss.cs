@@ -190,6 +190,22 @@ namespace LotsOfKisses
             }
         }
 
+        private object TryGetPrivateField(object target, string fieldName)
+        {
+            if (target == null || string.IsNullOrEmpty(fieldName))
+                return null;
+
+            try
+            {
+                FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                return field?.GetValue(target);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         private void CaptureNpcPreKissSpecialAction(NPC npc)
         {
             if (npc == null || npc.Sprite == null || npc.currentLocation == null)

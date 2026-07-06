@@ -265,6 +265,14 @@ namespace LotsOfKisses
                     snapshot.Npc.controller = snapshot.SavedController;
                     snapshot.SavedController = null;
                 }
+
+                if (snapshot?.SavedDoingEndOfRouteAnimation != null && snapshot.Npc != null)
+                {
+                    TrySetSpritePrivateField(snapshot.Npc, "doingEndOfRouteAnimation", snapshot.SavedDoingEndOfRouteAnimation.Value);
+                    TrySetSpritePrivateField(snapshot.Npc, "currentlyDoingEndOfRouteAnimation", snapshot.SavedCurrentlyDoingEndOfRouteAnimation ?? false);
+                    snapshot.SavedDoingEndOfRouteAnimation = null;
+                    snapshot.SavedCurrentlyDoingEndOfRouteAnimation = null;
+                }
             }
 
             activeBystanderSnapshots.Clear();
@@ -440,25 +448,28 @@ namespace LotsOfKisses
             }
             else
             {
-                // Static/special-action NPCs, like someone sitting in the Saloon or fishing at a
-                // fixed spot, don't have a walking route to protect the way moving NPCs do. But
-                // some of them still have a non-null controller (e.g. a small back-and-forth path
-                // tied to their fishing animation) that, left running behind our forced idle pose,
-                // kept silently repositioning them — showing up as the NPC appearing frozen in
-                // their old spot AND at a second, controller-driven position at the same time.
-                // Suspend it here and hand it back in RestoreAllBystanders.
-                // HoldBystanderWatching runs every tick while held — only capture the controller
-                // the first time (when it's still non-null). Without this guard, the very next
-                // tick would overwrite SavedController with the null we just set below, losing
-                // the real reference for good.
-                if (npc.controller != null)
-                    snapshot.SavedController = npc.controller;
-                npc.controller = null;
+                // NOTE: this used to null out npc.controller here, based on the theory that a
+                // leftover controller was silently repositioning the NPC. That wasn't it — and
+                // nulling the controller every tick while held may have actually been the trigger
+                // making vanilla re-run its own "just arrived at route end" check, re-spawning the
+                // fishing intro animation over and over. The REAL mechanism (confirmed by
+                // decompiling NPC.reallyDoAnimationAtEndOfScheduleRoute): vanilla's own
+                // "doingEndOfRouteAnimation" system spawns an independent TemporaryAnimatedSprite
+                // for things like a fishing idle pose, completely separate from npc.Sprite. No
+                // amount of clearing npc.Sprite touches it. Suppress the two private flags that
+                // gate it instead, and hand them back in RestoreAllBystanders.
+                if (snapshot.SavedDoingEndOfRouteAnimation == null)
+                {
+                    snapshot.SavedDoingEndOfRouteAnimation = TryGetPrivateField(npc, "doingEndOfRouteAnimation") as bool?;
+                    snapshot.SavedCurrentlyDoingEndOfRouteAnimation = TryGetPrivateField(npc, "currentlyDoingEndOfRouteAnimation") as bool?;
+                }
+                TrySetSpritePrivateField(npc, "doingEndOfRouteAnimation", false);
+                TrySetSpritePrivateField(npc, "currentlyDoingEndOfRouteAnimation", false);
 
                 int lookDirection = GetDirectionTowardPlayer(npc);
 
                 if (Game1.ticks % 15 == 0)
-                    this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: BEFORE hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} HasAnim={(npc.Sprite.CurrentAnimation != null)} FacingDir={npc.FacingDirection} savedController={(snapshot.SavedController != null)} liveControllerNow={(npc.controller != null)}", LogLevel.Debug);
+                    this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: BEFORE hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} HasAnim={(npc.Sprite.CurrentAnimation != null)} FacingDir={npc.FacingDirection}", LogLevel.Debug);
 
                 npc.Sprite.StopAnimation();
                 npc.Sprite.ClearAnimation();
@@ -537,6 +548,15 @@ namespace LotsOfKisses
                 {
                     npc.controller = snapshot.SavedController;
                     snapshot.SavedController = null;
+                }
+
+                // Hand back vanilla's own end-of-route animation flags — see HoldBystanderWatching.
+                if (snapshot.SavedDoingEndOfRouteAnimation.HasValue)
+                {
+                    TrySetSpritePrivateField(npc, "doingEndOfRouteAnimation", snapshot.SavedDoingEndOfRouteAnimation.Value);
+                    TrySetSpritePrivateField(npc, "currentlyDoingEndOfRouteAnimation", snapshot.SavedCurrentlyDoingEndOfRouteAnimation ?? false);
+                    snapshot.SavedDoingEndOfRouteAnimation = null;
+                    snapshot.SavedCurrentlyDoingEndOfRouteAnimation = null;
                 }
 
                 this.Monitor.Log($"[BYSTANDER] {npc.Name} state restored (idle/static).", LogLevel.Trace);

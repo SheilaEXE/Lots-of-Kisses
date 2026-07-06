@@ -37,6 +37,19 @@ namespace LotsOfKisses
         /// </summary>
         public StardewValley.Pathfinding.PathFindController SavedController { get; set; }
 
+        /// <summary>
+        /// Saved value of NPC's private "doingEndOfRouteAnimation" field, suppressed while this
+        /// NPC is held watching a kiss. This is the actual vanilla mechanism behind things like
+        /// Willy's fishing idle pose: it spawns an independent TemporaryAnimatedSprite overlay
+        /// (via a private "routeEndIntro" frame sequence) completely separate from npc.Sprite —
+        /// clearing/forcing npc.Sprite alone never touched it, which is why the NPC could appear
+        /// to show two different frames/positions at once while held.
+        /// </summary>
+        public bool? SavedDoingEndOfRouteAnimation { get; set; }
+
+        /// <summary>Saved value of NPC's private "currentlyDoingEndOfRouteAnimation" field — see SavedDoingEndOfRouteAnimation.</summary>
+        public bool? SavedCurrentlyDoingEndOfRouteAnimation { get; set; }
+
         /// <summary>Whether this NPC was walking toward the player when they noticed the kiss.</summary>
         public bool WasWalkingTowardPlayer          { get; set; }
 
