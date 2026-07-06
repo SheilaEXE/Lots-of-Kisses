@@ -448,44 +448,74 @@ namespace LotsOfKisses
             }
             else
             {
-                // NOTE: this used to null out npc.controller here, based on the theory that a
-                // leftover controller was silently repositioning the NPC. That wasn't it — and
-                // nulling the controller every tick while held may have actually been the trigger
-                // making vanilla re-run its own "just arrived at route end" check, re-spawning the
-                // fishing intro animation over and over. The REAL mechanism (confirmed by
-                // decompiling NPC.reallyDoAnimationAtEndOfScheduleRoute): vanilla's own
-                // "doingEndOfRouteAnimation" system spawns an independent TemporaryAnimatedSprite
-                // for things like a fishing idle pose, completely separate from npc.Sprite. No
-                // amount of clearing npc.Sprite touches it. Suppress the two private flags that
-                // gate it instead, and hand them back in RestoreAllBystanders.
-                if (snapshot.SavedDoingEndOfRouteAnimation == null)
-                {
-                    snapshot.SavedDoingEndOfRouteAnimation = TryGetPrivateField(npc, "doingEndOfRouteAnimation") as bool?;
-                    snapshot.SavedCurrentlyDoingEndOfRouteAnimation = TryGetPrivateField(npc, "currentlyDoingEndOfRouteAnimation") as bool?;
-                }
-                TrySetSpritePrivateField(npc, "doingEndOfRouteAnimation", false);
-                TrySetSpritePrivateField(npc, "currentlyDoingEndOfRouteAnimation", false);
-
-                int lookDirection = GetDirectionTowardPlayer(npc);
-
-                if (Game1.ticks % 15 == 0)
-                    this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: BEFORE hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} HasAnim={(npc.Sprite.CurrentAnimation != null)} FacingDir={npc.FacingDirection}", LogLevel.Debug);
-
-                npc.Sprite.StopAnimation();
-                npc.Sprite.ClearAnimation();
-                npc.Sprite.CurrentAnimation = null;
-                npc.flip = false;
-                npc.FacingDirection = lookDirection;
-                npc.faceDirection(lookDirection);
-                npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(lookDirection);
-                npc.Sprite.UpdateSourceRect();
-
-                if (Game1.ticks % 15 == 0)
-                    this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: AFTER hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} LookDir={lookDirection}", LogLevel.Debug);
+                ForceStaticBystanderPose(npc, snapshot);
             }
 
             if (npc.movementPause < BystanderHoldPauseTicks)
                 npc.movementPause = BystanderHoldPauseTicks;
+        }
+
+        /// <summary>
+        /// Looks up the active bystander snapshot for this NPC, if any — used by the Harmony
+        /// postfix on NPC.update to know whether this NPC needs its held pose reasserted after
+        /// vanilla's own update runs.
+        /// </summary>
+        internal BystanderSnapshot GetActiveStaticBystanderSnapshot(NPC npc)
+        {
+            if (npc == null)
+                return null;
+
+            return activeBystanderSnapshots.Find(s =>
+                s.Npc == npc
+                && !(s.WasPausedByMod || s.WasMoving || s.WasWalkingTowardPlayer));
+        }
+
+        /// <summary>
+        /// Forces the "looking at player, idle" pose for a stationary special-pose bystander (e.g.
+        /// fishing at a fixed spot). Called both from the normal per-tick hold loop and, via
+        /// Harmony postfix on NPC.update, right after vanilla's own update — so our pose always
+        /// has the last word for that tick instead of losing a per-tick tug-of-war against
+        /// whatever vanilla's own schedule/route-end animation logic just set.
+        /// </summary>
+        internal void ForceStaticBystanderPose(NPC npc, BystanderSnapshot snapshot)
+        {
+            if (npc == null || npc.Sprite == null || snapshot == null || Game1.player == null)
+                return;
+
+            // NOTE: this used to null out npc.controller here, based on the theory that a
+            // leftover controller was silently repositioning the NPC. That wasn't it — and
+            // nulling the controller every tick while held may have actually been the trigger
+            // making vanilla re-run its own "just arrived at route end" check, re-spawning the
+            // fishing intro animation over and over. The REAL mechanism (confirmed by
+            // decompiling NPC.reallyDoAnimationAtEndOfScheduleRoute): vanilla's own
+            // "doingEndOfRouteAnimation" system spawns an independent TemporaryAnimatedSprite
+            // for things like a fishing idle pose, completely separate from npc.Sprite. No
+            // amount of clearing npc.Sprite touches it. Suppress the two private flags that
+            // gate it instead, and hand them back in RestoreAllBystanders.
+            if (snapshot.SavedDoingEndOfRouteAnimation == null)
+            {
+                snapshot.SavedDoingEndOfRouteAnimation = TryGetPrivateField(npc, "doingEndOfRouteAnimation") as bool?;
+                snapshot.SavedCurrentlyDoingEndOfRouteAnimation = TryGetPrivateField(npc, "currentlyDoingEndOfRouteAnimation") as bool?;
+            }
+            TrySetSpritePrivateField(npc, "doingEndOfRouteAnimation", false);
+            TrySetSpritePrivateField(npc, "currentlyDoingEndOfRouteAnimation", false);
+
+            int lookDirection = GetDirectionTowardPlayer(npc);
+
+            if (Game1.ticks % 15 == 0)
+                this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: BEFORE hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} HasAnim={(npc.Sprite.CurrentAnimation != null)} FacingDir={npc.FacingDirection}", LogLevel.Debug);
+
+            npc.Sprite.StopAnimation();
+            npc.Sprite.ClearAnimation();
+            npc.Sprite.CurrentAnimation = null;
+            npc.flip = false;
+            npc.FacingDirection = lookDirection;
+            npc.faceDirection(lookDirection);
+            npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(lookDirection);
+            npc.Sprite.UpdateSourceRect();
+
+            if (Game1.ticks % 15 == 0)
+                this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: AFTER hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} LookDir={lookDirection}", LogLevel.Debug);
         }
 
         private void RestoreAllBystanders()

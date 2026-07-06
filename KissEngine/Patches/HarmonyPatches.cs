@@ -238,4 +238,33 @@ namespace LotsOfKisses
         }
     }
 
+    // ── Ensures a held bystander's "looking at player" pose always has the last word for the
+    // tick. Vanilla's own NPC.update can re-assert a scheduled/route-end animation (e.g. a
+    // fishing idle loop) on the very same tick after our own hold code already ran, turning into
+    // a per-tick tug-of-war where whichever side writes last is what actually gets drawn. Running
+    // this as a Postfix on NPC.update guarantees we always write last, for NPCs currently held as
+    // a stationary bystander.
+    [HarmonyPatch(typeof(NPC), nameof(NPC.update), new[] { typeof(Microsoft.Xna.Framework.GameTime), typeof(GameLocation) })]
+    public static class NPC_Update_BystanderPoseEnforce_Patch
+    {
+        static void Postfix(NPC __instance)
+        {
+            try
+            {
+                if (__instance == null || ModEntry.Instance == null)
+                    return;
+
+                BystanderSnapshot snapshot = ModEntry.Instance.GetActiveStaticBystanderSnapshot(__instance);
+                if (snapshot == null)
+                    return;
+
+                ModEntry.Instance.ForceStaticBystanderPose(__instance, snapshot);
+            }
+            catch (Exception ex)
+            {
+                ModEntry.Instance?.Monitor.Log($"[BYSTANDER POSE ENFORCE] Error re-applying held pose: {ex}", LogLevel.Error);
+            }
+        }
+    }
+
 }
