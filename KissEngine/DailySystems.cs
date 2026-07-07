@@ -261,6 +261,26 @@ namespace LotsOfKisses
 // ======================================================================
         // SEGUINDO COM O OLHAR
 // ======================================================================
+        private bool IsPlayerWithinNpcFieldOfView(NPC npc)
+        {
+            if (npc == null || Game1.player == null)
+                return false;
+
+            Vector2 diff = Game1.player.Position - npc.Position;
+            Vector2 facing = npc.FacingDirection switch
+            {
+                0 => new Vector2(0, -1),  // up
+                1 => new Vector2(1, 0),   // right
+                2 => new Vector2(0, 1),   // down
+                3 => new Vector2(-1, 0),  // left
+                _ => Vector2.Zero
+            };
+
+            // Dot product: positive/zero means the player is roughly in front of (or beside) the
+            // NPC's current facing; negative means directly behind — the NPC's actual blind spot.
+            return (facing.X * diff.X) + (facing.Y * diff.Y) >= 0f;
+        }
+
         private void UpdateSpouseLookAtPlayer(NPC npc, float distance)
         {
             if (npc == null || !Context.IsWorldReady)
@@ -292,6 +312,15 @@ namespace LotsOfKisses
                 // Let UpdatePassiveLookRestoreTimer decide when to return to the original pose.
                 return;
             }
+
+            // Only require the player to already be within the NPC's current field of view when
+            // STARTING a fresh look session — this is what stops the "eyes on the back of the
+            // head" effect for someone approaching from directly behind. Once a look session is
+            // already active (passiveLookRestoreActive), let the NPC turn freely to keep tracking,
+            // exactly like before, until the player leaves and the pose gets restored.
+            bool isStartingNewLookSession = !passiveLookRestoreActive || passiveLookRestoreNpcName != npc.Name;
+            if (isStartingNewLookSession && !IsPlayerWithinNpcFieldOfView(npc))
+                return;
 
             RememberPassiveLookOriginalPose(npc);
 
