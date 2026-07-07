@@ -68,6 +68,15 @@ namespace LotsOfKisses
         /// <summary>Saved value of the NPC's private "drawOffset" field, which some end-of-route behaviors set directly (separately from Sprite's own yOffset).</summary>
         public Vector2? SavedDrawOffset { get; set; }
 
+        /// <summary>
+        /// Saved value of the NPC's private "_startedEndOfRouteBehavior" field. doMiddleAnimation
+        /// only re-runs startRouteBehavior (which sets up the extended tempSpriteHeight/sourceRect
+        /// for poses like fishing) when this field already holds the behavior name — calling
+        /// doMiddleAnimation without it first set just rebuilds the plain walk-style animation with
+        /// normal dimensions, which is exactly what was happening: the extended height never came back.
+        /// </summary>
+        public string SavedStartedEndOfRouteBehavior { get; set; }
+
         /// <summary>Whether this NPC was walking toward the player when they noticed the kiss.</summary>
         public bool WasWalkingTowardPlayer          { get; set; }
 

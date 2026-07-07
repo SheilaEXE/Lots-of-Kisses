@@ -546,6 +546,7 @@ namespace LotsOfKisses
                 snapshot.SavedSpriteWidth = TryGetPrivateField(npc.Sprite, "spriteWidth") as int?;
                 snapshot.SavedTempSpriteHeight = TryGetPrivateField(npc.Sprite, "tempSpriteHeight") as int?;
                 snapshot.SavedDrawOffset = TryGetPrivateField(npc, "drawOffset") as Vector2?;
+                snapshot.SavedStartedEndOfRouteBehavior = TryGetPrivateField(npc, "_startedEndOfRouteBehavior") as string;
             }
             TrySetSpritePrivateField(npc.Sprite, "ignoreSourceRectUpdates", false);
             TrySetSpritePrivateField(npc.Sprite, "spriteWidth", 16);
@@ -609,7 +610,7 @@ namespace LotsOfKisses
         private void RestoreAllBystanders()
         {
             var routeSnapshots = new List<BystanderSnapshot>();
-            var specialPoseNpcs = new List<NPC>();
+            var specialPoseNpcs = new List<(NPC Npc, string StartedBehavior)>();
 
             foreach (var snapshot in activeBystanderSnapshots)
             {
@@ -664,21 +665,21 @@ namespace LotsOfKisses
                     TrySetSpritePrivateField(npc.Sprite, "tempSpriteHeight", snapshot.SavedTempSpriteHeight ?? -1);
                     TrySetSpritePrivateField(npc, "drawOffset", snapshot.SavedDrawOffset ?? Vector2.Zero);
                     TrySetSpritePrivateField(npc.Sprite, "ignoreSourceRectUpdates", snapshot.SavedIgnoreSourceRectUpdates ?? false);
+
+                    // A "special pose" (fishing, etc.) is one where vanilla was drawing an extended
+                    // multi-row sprite (tempSpriteHeight != -1, its own sentinel for "not
+                    // overridden") — NOT indicated by ignoreSourceRectUpdates, which turned out to
+                    // be False even for Willy's fishing pose. Re-run vanilla's own setup for these
+                    // instead of trusting our hand-restored CurrentAnimation/dimensions to keep
+                    // working — see specialPoseNpcs below.
+                    if (snapshot.SavedTempSpriteHeight.HasValue && snapshot.SavedTempSpriteHeight.Value != -1)
+                        specialPoseNpcs.Add((npc, snapshot.SavedStartedEndOfRouteBehavior));
+
                     snapshot.SavedSpriteWidth = null;
                     snapshot.SavedTempSpriteHeight = null;
                     snapshot.SavedDrawOffset = null;
-
-                    // If this behavior manages its own sourceRect (ignoreSourceRectUpdates was
-                    // true), don't try to hand-reconstruct the extended crop ourselves — ask
-                    // vanilla's own doMiddleAnimation to rebuild the animation/sourceRect/dimensions
-                    // from scratch instead, scheduled for just after this NPC stops being tracked
-                    // (see specialPoseNpcs below). UpdateSourceRect() is a no-op while this flag is
-                    // true, so leaving it to us was freezing whatever crop happened to be active
-                    // during the hold — the actual bug behind the "walks in place" look.
-                    if (snapshot.SavedIgnoreSourceRectUpdates == true)
-                        specialPoseNpcs.Add(npc);
-
                     snapshot.SavedIgnoreSourceRectUpdates = null;
+                    snapshot.SavedStartedEndOfRouteBehavior = null;
                 }
 
                 if (snapshot.CurrentAnimation != null && snapshot.CurrentAnimation.Count > 0)
@@ -751,19 +752,26 @@ namespace LotsOfKisses
                 // NPC_DoMiddleAnimation_SuppressForHeldBystander_Patch prefix would block this call.
                 DelayedAction.functionAfterDelay(() =>
                 {
-                    foreach (NPC npc in specialPoseNpcs)
+                    foreach (var entry in specialPoseNpcs)
                     {
+                        NPC npc = entry.Npc;
                         if (npc?.currentLocation == null || npc.Sprite == null)
                             continue;
 
                         try
                         {
+                            // doMiddleAnimation only re-runs startRouteBehavior (which sets up the
+                            // extended tempSpriteHeight/sourceRect) when "_startedEndOfRouteBehavior"
+                            // already holds the behavior name — set it back first.
+                            if (!string.IsNullOrEmpty(entry.StartedBehavior))
+                                TrySetSpritePrivateField(npc, "_startedEndOfRouteBehavior", entry.StartedBehavior);
+
                             MethodInfo method = npc.GetType().GetMethod("doMiddleAnimation",
                                 BindingFlags.Instance | BindingFlags.NonPublic);
                             method?.Invoke(npc, new object[] { null });
 
                             if (IsDebugTrackedNpc(npc))
-                                this.Monitor.Log($"[BYSTANDER] Re-ran vanilla doMiddleAnimation for {npc.Name} to rebuild its special pose.", LogLevel.Debug);
+                                this.Monitor.Log($"[BYSTANDER] Re-ran vanilla doMiddleAnimation for {npc.Name} (behavior='{entry.StartedBehavior}') to rebuild its special pose.", LogLevel.Debug);
                         }
                         catch (Exception ex)
                         {
