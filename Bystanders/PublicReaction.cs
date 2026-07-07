@@ -543,7 +543,7 @@ namespace LotsOfKisses
             if (snapshot.SavedIgnoreSourceRectUpdates == null)
             {
                 snapshot.SavedIgnoreSourceRectUpdates = TryGetPrivateField(npc.Sprite, "ignoreSourceRectUpdates") as bool? ?? false;
-                snapshot.SavedSpriteWidth = TryGetPrivateField(npc.Sprite, "spriteWidth") as int?;
+                snapshot.SavedSpriteWidth = TryGetPrivateField(npc.Sprite, "spriteWidth") as int? ?? npc.Sprite.SpriteWidth;
                 snapshot.SavedTempSpriteHeight = TryGetPrivateField(npc.Sprite, "tempSpriteHeight") as int?;
                 snapshot.SavedDrawOffset = TryGetPrivateField(npc, "drawOffset") as Vector2?;
                 snapshot.SavedStartedEndOfRouteBehavior = TryGetNetStringField(npc, "endOfRouteBehaviorName");

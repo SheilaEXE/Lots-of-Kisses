@@ -180,7 +180,14 @@ namespace LotsOfKisses
 
             try
             {
-                FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                // NOTE: walk the type hierarchy explicitly (GetField alone only searches fields
+                // DECLARED on the exact runtime type — it silently misses fields declared on a base
+                // class, which was intermittently causing reads of "spriteWidth" to fail while an
+                // adjacent field on the same object succeeded, depending on the object's exact
+                // runtime type).
+                FieldInfo field = null;
+                for (Type t = target.GetType(); t != null && field == null; t = t.BaseType)
+                    field = t.GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
                 if (field != null)
                     field.SetValue(target, value);
             }
@@ -197,7 +204,9 @@ namespace LotsOfKisses
 
             try
             {
-                FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                FieldInfo field = null;
+                for (Type t = target.GetType(); t != null && field == null; t = t.BaseType)
+                    field = t.GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
                 return field?.GetValue(target);
             }
             catch
