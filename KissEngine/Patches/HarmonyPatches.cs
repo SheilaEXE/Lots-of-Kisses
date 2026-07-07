@@ -260,9 +260,6 @@ namespace LotsOfKisses
                 if (snapshot == null)
                     return true; // not held — run normally
 
-                if (ModEntry.IsDebugTrackedNpc(__instance))
-                    ModEntry.Instance.Monitor.Log("[POSTFIX DEBUG] doMiddleAnimation SUPPRESSED for Willy (held as bystander).", LogLevel.Debug);
-
                 return false; // skip — this NPC is currently held watching a kiss
             }
             catch (Exception ex)
@@ -316,9 +313,6 @@ namespace LotsOfKisses
                 {
                     isReentering = false;
                 }
-
-                if (ModEntry.IsDebugTrackedNpc(npc))
-                    ModEntry.Instance.Monitor.Log($"[POSTFIX DEBUG] CurrentFrame setter caught an external change for Willy — forced back to {desiredFrame}.", LogLevel.Debug);
             }
             catch (Exception ex)
             {
@@ -350,17 +344,8 @@ namespace LotsOfKisses
 
                 int desiredFrame = ModEntry.Instance.GetHeldBystanderIdleFrame(__instance);
 
-                if (ModEntry.IsDebugTrackedNpc(__instance) && Game1.ticks % 30 == 0)
-                {
-                    int duplicateCount = __instance.currentLocation?.characters?.Count(c => c != null && c.Name == __instance.Name) ?? -1;
-                    ModEntry.Instance.Monitor.Log($"[POSTFIX DEBUG] NPC.draw Prefix tick check for '{__instance.Name}': live Frame={__instance.Sprite.CurrentFrame}, duplicate NPC instances named '{__instance.Name}' in this location: {duplicateCount}", LogLevel.Debug);
-                }
-
                 if (__instance.Sprite.CurrentFrame != desiredFrame || __instance.Sprite.CurrentAnimation != null)
                 {
-                    if (ModEntry.IsDebugTrackedNpc(__instance))
-                        ModEntry.Instance.Monitor.Log($"[POSTFIX DEBUG] NPC.draw Prefix: frame was {__instance.Sprite.CurrentFrame} (anim={(__instance.Sprite.CurrentAnimation != null)}) right before drawing — forcing to {desiredFrame}.", LogLevel.Debug);
-
                     __instance.Sprite.StopAnimation();
                     __instance.Sprite.ClearAnimation();
                     __instance.Sprite.CurrentAnimation = null;
@@ -393,72 +378,16 @@ namespace LotsOfKisses
                 if (__instance == null || ModEntry.Instance == null)
                     return;
 
-                bool isWilly = ModEntry.IsDebugTrackedNpc(__instance);
-
                 BystanderSnapshot snapshot = ModEntry.Instance.GetActiveStaticBystanderSnapshot(__instance);
 
                 if (snapshot == null)
                     return;
 
                 ModEntry.Instance.ForceStaticBystanderPose(__instance, snapshot);
-
-                if (isWilly)
-                    ModEntry.Instance.Monitor.Log($"[POSTFIX DEBUG] ForceStaticBystanderPose applied after vanilla update. Frame now={__instance.Sprite?.CurrentFrame}", LogLevel.Debug);
             }
             catch (Exception ex)
             {
                 ModEntry.Instance?.Monitor.Log($"[BYSTANDER POSE ENFORCE] Error re-applying held pose: {ex}", LogLevel.Error);
-            }
-        }
-    }
-
-    // ── TEMP DIAGNOSTIC: keeps eyes on a just-released bystander for a short window after
-    // restore, since our other logging only fires while the NPC is actively held — meaning
-    // whatever happens right after handoff (like the delayed "walks backward in place" bug)
-    // was completely invisible to us before. Remove once that's solved.
-    public static class PostReleaseDiagnostic
-    {
-        internal static readonly System.Collections.Generic.Dictionary<string, int> DebugWatchUntilTick =
-            new System.Collections.Generic.Dictionary<string, int>();
-    }
-
-    [HarmonyPatch(typeof(NPC), nameof(NPC.update), new[] { typeof(Microsoft.Xna.Framework.GameTime), typeof(GameLocation) })]
-    public static class NPC_Update_PostReleaseDiagnostic_Patch
-    {
-        static void Postfix(NPC __instance)
-        {
-            try
-            {
-                if (__instance == null || !ModEntry.IsDebugTrackedNpc(__instance))
-                    return;
-
-                if (!PostReleaseDiagnostic.DebugWatchUntilTick.TryGetValue(__instance.Name, out int untilTick) || Game1.ticks > untilTick)
-                    return;
-
-                var controller = __instance.controller;
-                string controllerInfo = "null";
-                if (controller != null)
-                {
-                    int pathCount = controller.pathToEndPoint?.Count ?? -1;
-                    controllerInfo = $"type={controller.GetType().Name} pathNodesLeft={pathCount} finalFacingDir={controller.finalFacingDirection}";
-                }
-
-                var sprite = __instance.Sprite;
-                object sourceRectObj = ModEntry.Instance.TryGetPrivateField(sprite, "sourceRect");
-                object spriteWidthObj = ModEntry.Instance.TryGetPrivateField(sprite, "spriteWidth");
-                object tempSpriteHeightObj = ModEntry.Instance.TryGetPrivateField(sprite, "tempSpriteHeight");
-                object ignoreSourceRectUpdatesObj = ModEntry.Instance.TryGetPrivateField(sprite, "ignoreSourceRectUpdates");
-
-                ModEntry.Instance.Monitor.Log(
-                    $"[POST-RELEASE DEBUG] Willy: Position={__instance.Position} Tile={__instance.TilePoint} " +
-                    $"Frame={sprite.CurrentFrame} HasAnim={(sprite.CurrentAnimation != null)} " +
-                    $"FacingDir={__instance.FacingDirection} IsMoving={__instance.isMoving()} MovementPause={__instance.movementPause} " +
-                    $"Controller=[{controllerInfo}] SourceRect={sourceRectObj} SpriteWidth={spriteWidthObj} " +
-                    $"TempSpriteHeight={tempSpriteHeightObj} IgnoreSourceRectUpdates={ignoreSourceRectUpdatesObj}", LogLevel.Debug);
-            }
-            catch (Exception ex)
-            {
-                ModEntry.Instance?.Monitor.Log($"[POST-RELEASE DEBUG] Error: {ex}", LogLevel.Error);
             }
         }
     }

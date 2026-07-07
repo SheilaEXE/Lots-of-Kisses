@@ -144,9 +144,6 @@ namespace LotsOfKisses
 
                 activeBystanderSnapshots.Add(snapshot);
 
-                if (IsDebugTrackedNpc(npc))
-                    this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: CAPTURED — Position={snapshot.Position} Tile={npc.TilePoint} Frame={snapshot.CurrentFrame} HasAnim={(snapshot.CurrentAnimation != null)} HadController={hadController} WasMoving={wasMoving} WasWalkingToward={isWalkingToward} SourceRect={TryGetPrivateField(npc.Sprite, "sourceRect")} SpriteWidth={TryGetPrivateField(npc.Sprite, "spriteWidth")} TempSpriteHeight={TryGetPrivateField(npc.Sprite, "tempSpriteHeight")} IgnoreSourceRectUpdates={TryGetPrivateField(npc.Sprite, "ignoreSourceRectUpdates")} EndOfRouteBehaviorName={TryGetNetStringField(npc, "endOfRouteBehaviorName")}", LogLevel.Debug);
-
                 // Mark this NPC as watching so other mods (e.g. Outfit Reactions) can skip
                 // starting their own reactions on them until they're released below.
                 npc.modData[BystanderWatchingModDataKey] = "1";
@@ -483,15 +480,6 @@ namespace LotsOfKisses
                 && !(s.WasPausedByMod || s.WasMoving || s.WasWalkingTowardPlayer));
         }
 
-        // Names currently being watched closely in the debug logs while we track down the
-        // fishing-pose bug. Add/remove names here instead of hardcoding "Willy" everywhere.
-        private static readonly HashSet<string> DebugTrackedNpcNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "Willy", "Carmen", "Blair", "Elias"
-        };
-
-        internal static bool IsDebugTrackedNpc(NPC npc) => npc != null && DebugTrackedNpcNames.Contains(npc.Name);
-
         /// <summary>
         /// Computes the idle frame a held bystander should show right now (facing the player).
         /// Used by the CurrentFrame setter patch to know what value to force back to when some
@@ -575,10 +563,6 @@ namespace LotsOfKisses
 
             int lookDirection = GetDirectionTowardPlayer(npc);
 
-            bool isWilly = IsDebugTrackedNpc(npc);
-            if (isWilly && Game1.ticks % 15 == 0)
-                this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: BEFORE hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} HasAnim={(npc.Sprite.CurrentAnimation != null)} FacingDir={npc.FacingDirection}", LogLevel.Debug);
-
             npc.Sprite.StopAnimation();
             npc.Sprite.ClearAnimation();
             npc.Sprite.CurrentAnimation = null;
@@ -602,9 +586,6 @@ namespace LotsOfKisses
             // condition makes NPC.draw decide to render that second layer. Clearing the behavior
             // name string itself is our best bet at making that condition false.
             TrySetSpritePrivateField(npc, "loadedEndOfRouteBehavior", null);
-
-            if (isWilly && Game1.ticks % 15 == 0)
-                this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: AFTER hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} LookDir={lookDirection}", LogLevel.Debug);
         }
 
         private void RestoreAllBystanders()
@@ -659,9 +640,6 @@ namespace LotsOfKisses
                 // UpdateSourceRect() call either computes correctly (normal NPCs) or safely no-ops
                 // (fishing-style NPCs, exactly like vanilla itself does — their sourceRect gets
                 // properly re-driven the next time vanilla's own fishing loop logic touches it).
-                if (IsDebugTrackedNpc(npc))
-                    this.Monitor.Log($"[RESTORE DEBUG] {npc.Name}: SavedSpriteWidth={snapshot.SavedSpriteWidth} SavedTempSpriteHeight={snapshot.SavedTempSpriteHeight} SavedIgnoreSourceRectUpdates={snapshot.SavedIgnoreSourceRectUpdates} SavedStartedEndOfRouteBehavior={snapshot.SavedStartedEndOfRouteBehavior}", LogLevel.Debug);
-
                 if (snapshot.SavedSpriteWidth.HasValue)
                 {
                     TrySetSpritePrivateField(npc.Sprite, "spriteWidth", snapshot.SavedSpriteWidth.Value);
@@ -719,14 +697,6 @@ namespace LotsOfKisses
                 }
 
                 this.Monitor.Log($"[BYSTANDER] {npc.Name} state restored (idle/static).", LogLevel.Trace);
-
-                if (IsDebugTrackedNpc(npc))
-                {
-                    // Watch this NPC for ~20 real seconds after release — see PostReleaseDiagnostic
-                    // in HarmonyPatches.cs for why this is needed (our normal logging only fires
-                    // while an NPC is actively held).
-                    PostReleaseDiagnostic.DebugWatchUntilTick[npc.Name] = Game1.ticks + 1200;
-                }
             }
 
             // Tiny safety pass: only removes any refreshed pause that might remain from an emote/animation tick.
@@ -772,9 +742,6 @@ namespace LotsOfKisses
                             MethodInfo method = npc.GetType().GetMethod("doMiddleAnimation",
                                 BindingFlags.Instance | BindingFlags.NonPublic);
                             method?.Invoke(npc, new object[] { null });
-
-                            if (IsDebugTrackedNpc(npc))
-                                this.Monitor.Log($"[BYSTANDER] Re-ran vanilla doMiddleAnimation for {npc.Name} (behavior='{entry.StartedBehavior}') to rebuild its special pose.", LogLevel.Debug);
                         }
                         catch (Exception ex)
                         {
