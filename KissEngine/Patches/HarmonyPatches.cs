@@ -327,6 +327,46 @@ namespace LotsOfKisses
         }
     }
 
+    // ── The absolute last word: NPC.draw itself. The CurrentFrame setter patch only caught one
+    // change out of many — meaning vanilla's internal code sets the private backing field
+    // directly rather than going through the public property, sailing right past that patch.
+    // There's no point chasing every internal write site individually anymore: force the correct
+    // frame right before the sprite is actually drawn to the screen. Nothing can write after
+    // this and still show up, since this runs immediately before the pixels hit the screen.
+    [HarmonyPatch(typeof(NPC), nameof(NPC.draw), new[] { typeof(Microsoft.Xna.Framework.Graphics.SpriteBatch) })]
+    public static class NPC_Draw_BystanderPoseEnforce_Patch
+    {
+        static void Prefix(NPC __instance)
+        {
+            try
+            {
+                if (__instance == null || __instance.Sprite == null || ModEntry.Instance == null)
+                    return;
+
+                BystanderSnapshot snapshot = ModEntry.Instance.GetActiveStaticBystanderSnapshot(__instance);
+                if (snapshot == null)
+                    return;
+
+                int desiredFrame = ModEntry.Instance.GetHeldBystanderIdleFrame(__instance);
+                if (__instance.Sprite.CurrentFrame != desiredFrame || __instance.Sprite.CurrentAnimation != null)
+                {
+                    if (__instance.Name == "Willy")
+                        ModEntry.Instance.Monitor.Log($"[POSTFIX DEBUG] NPC.draw Prefix: frame was {__instance.Sprite.CurrentFrame} (anim={(__instance.Sprite.CurrentAnimation != null)}) right before drawing — forcing to {desiredFrame}.", LogLevel.Debug);
+
+                    __instance.Sprite.StopAnimation();
+                    __instance.Sprite.ClearAnimation();
+                    __instance.Sprite.CurrentAnimation = null;
+                    __instance.Sprite.CurrentFrame = desiredFrame;
+                    __instance.Sprite.UpdateSourceRect();
+                }
+            }
+            catch (Exception ex)
+            {
+                ModEntry.Instance?.Monitor.Log($"[BYSTANDER POSE ENFORCE] Error in NPC.draw Prefix: {ex}", LogLevel.Error);
+            }
+        }
+    }
+
     // ── Ensures a held bystander's "looking at player" pose always has the last word for the
     // tick. Vanilla's own NPC.update can re-assert a scheduled/route-end animation (e.g. a
     // fishing idle loop) on the very same tick after our own hold code already ran, turning into
