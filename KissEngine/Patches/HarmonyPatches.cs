@@ -412,4 +412,48 @@ namespace LotsOfKisses
         }
     }
 
+    // ── TEMP DIAGNOSTIC: keeps eyes on a just-released bystander for a short window after
+    // restore, since our other logging only fires while the NPC is actively held — meaning
+    // whatever happens right after handoff (like the delayed "walks backward in place" bug)
+    // was completely invisible to us before. Remove once that's solved.
+    public static class PostReleaseDiagnostic
+    {
+        internal static readonly System.Collections.Generic.Dictionary<string, int> DebugWatchUntilTick =
+            new System.Collections.Generic.Dictionary<string, int>();
+    }
+
+    [HarmonyPatch(typeof(NPC), nameof(NPC.update), new[] { typeof(Microsoft.Xna.Framework.GameTime), typeof(GameLocation) })]
+    public static class NPC_Update_PostReleaseDiagnostic_Patch
+    {
+        static void Postfix(NPC __instance)
+        {
+            try
+            {
+                if (__instance == null || !ModEntry.IsDebugTrackedNpc(__instance))
+                    return;
+
+                if (!PostReleaseDiagnostic.DebugWatchUntilTick.TryGetValue(__instance.Name, out int untilTick) || Game1.ticks > untilTick)
+                    return;
+
+                var controller = __instance.controller;
+                string controllerInfo = "null";
+                if (controller != null)
+                {
+                    int pathCount = controller.pathToEndPoint?.Count ?? -1;
+                    controllerInfo = $"type={controller.GetType().Name} pathNodesLeft={pathCount} finalFacingDir={controller.finalFacingDirection}";
+                }
+
+                ModEntry.Instance.Monitor.Log(
+                    $"[POST-RELEASE DEBUG] Willy: Position={__instance.Position} Tile={__instance.TilePoint} " +
+                    $"Frame={__instance.Sprite.CurrentFrame} HasAnim={(__instance.Sprite.CurrentAnimation != null)} " +
+                    $"FacingDir={__instance.FacingDirection} IsMoving={__instance.isMoving()} MovementPause={__instance.movementPause} " +
+                    $"Controller=[{controllerInfo}]", LogLevel.Debug);
+            }
+            catch (Exception ex)
+            {
+                ModEntry.Instance?.Monitor.Log($"[POST-RELEASE DEBUG] Error: {ex}", LogLevel.Error);
+            }
+        }
+    }
+
 }

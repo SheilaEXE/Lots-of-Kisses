@@ -644,6 +644,31 @@ namespace LotsOfKisses
                 npc.FacingDirection = snapshot.FacingDirection;
                 npc.flip = snapshot.Flip;
 
+                // IMPORTANT: this must run BEFORE CurrentFrame/UpdateSourceRect below. Some
+                // end-of-route behaviors (fishing) rely on spriteWidth/tempSpriteHeight being
+                // widened/heightened and ignoreSourceRectUpdates being true to draw their combined
+                // two-row pose. Calling UpdateSourceRect() while those are still at our "held"
+                // 16x32/false values computes and bakes in a WRONG single-row crop for this frame
+                // number (frame indices that are valid in the extended layout can land on a
+                // completely different, wrong region — e.g. looking like a walk-cycle row — when
+                // read back with normal dimensions) — and once ignoreSourceRectUpdates flips back
+                // to true afterward, that wrong crop is permanently frozen, since UpdateSourceRect()
+                // becomes a no-op from then on. Restoring dimensions first means the later
+                // UpdateSourceRect() call either computes correctly (normal NPCs) or safely no-ops
+                // (fishing-style NPCs, exactly like vanilla itself does — their sourceRect gets
+                // properly re-driven the next time vanilla's own fishing loop logic touches it).
+                if (snapshot.SavedSpriteWidth.HasValue)
+                {
+                    TrySetSpritePrivateField(npc.Sprite, "spriteWidth", snapshot.SavedSpriteWidth.Value);
+                    TrySetSpritePrivateField(npc.Sprite, "tempSpriteHeight", snapshot.SavedTempSpriteHeight ?? -1);
+                    TrySetSpritePrivateField(npc, "drawOffset", snapshot.SavedDrawOffset ?? Vector2.Zero);
+                    TrySetSpritePrivateField(npc.Sprite, "ignoreSourceRectUpdates", snapshot.SavedIgnoreSourceRectUpdates ?? false);
+                    snapshot.SavedSpriteWidth = null;
+                    snapshot.SavedTempSpriteHeight = null;
+                    snapshot.SavedDrawOffset = null;
+                    snapshot.SavedIgnoreSourceRectUpdates = null;
+                }
+
                 if (snapshot.CurrentAnimation != null && snapshot.CurrentAnimation.Count > 0)
                 {
                     npc.Sprite.CurrentAnimation =
@@ -677,25 +702,15 @@ namespace LotsOfKisses
                     snapshot.SavedCurrentlyDoingEndOfRouteAnimation = null;
                 }
 
-                // Hand back the sourceRect/dimension state the end-of-route behavior (e.g. fishing)
-                // had set up, so its own two-row idle pose keeps working correctly once released —
-                // see the matching NOTE in ForceStaticBystanderPose.
-                if (snapshot.SavedSpriteWidth.HasValue)
-                {
-                    TrySetSpritePrivateField(npc.Sprite, "spriteWidth", snapshot.SavedSpriteWidth.Value);
-                    TrySetSpritePrivateField(npc.Sprite, "tempSpriteHeight", snapshot.SavedTempSpriteHeight ?? -1);
-                    TrySetSpritePrivateField(npc, "drawOffset", snapshot.SavedDrawOffset ?? Vector2.Zero);
-                    // Restore ignoreSourceRectUpdates LAST and skip our own UpdateSourceRect() call
-                    // below if it was true — otherwise our own restore would immediately stomp the
-                    // stretched two-row rect the behavior expects back once it resumes.
-                    TrySetSpritePrivateField(npc.Sprite, "ignoreSourceRectUpdates", snapshot.SavedIgnoreSourceRectUpdates ?? false);
-                    snapshot.SavedSpriteWidth = null;
-                    snapshot.SavedTempSpriteHeight = null;
-                    snapshot.SavedDrawOffset = null;
-                    snapshot.SavedIgnoreSourceRectUpdates = null;
-                }
-
                 this.Monitor.Log($"[BYSTANDER] {npc.Name} state restored (idle/static).", LogLevel.Trace);
+
+                if (IsDebugTrackedNpc(npc))
+                {
+                    // Watch this NPC for ~20 real seconds after release — see PostReleaseDiagnostic
+                    // in HarmonyPatches.cs for why this is needed (our normal logging only fires
+                    // while an NPC is actively held).
+                    PostReleaseDiagnostic.DebugWatchUntilTick[npc.Name] = Game1.ticks + 1200;
+                }
             }
 
             // Tiny safety pass: only removes any refreshed pause that might remain from an emote/animation tick.
