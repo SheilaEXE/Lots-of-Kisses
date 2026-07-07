@@ -269,10 +269,22 @@ namespace LotsOfKisses
 
                 if (snapshot?.SavedDoingEndOfRouteAnimation != null && snapshot.Npc != null)
                 {
-                    TrySetSpritePrivateField(snapshot.Npc, "doingEndOfRouteAnimation", snapshot.SavedDoingEndOfRouteAnimation.Value);
+                    TrySetNetBoolField(snapshot.Npc, "doingEndOfRouteAnimation", snapshot.SavedDoingEndOfRouteAnimation.Value);
                     TrySetSpritePrivateField(snapshot.Npc, "currentlyDoingEndOfRouteAnimation", snapshot.SavedCurrentlyDoingEndOfRouteAnimation ?? false);
                     snapshot.SavedDoingEndOfRouteAnimation = null;
                     snapshot.SavedCurrentlyDoingEndOfRouteAnimation = null;
+                }
+
+                if (snapshot?.SavedSpriteWidth != null && snapshot.Npc?.Sprite != null)
+                {
+                    TrySetSpritePrivateField(snapshot.Npc.Sprite, "spriteWidth", snapshot.SavedSpriteWidth.Value);
+                    TrySetSpritePrivateField(snapshot.Npc.Sprite, "tempSpriteHeight", snapshot.SavedTempSpriteHeight ?? -1);
+                    TrySetSpritePrivateField(snapshot.Npc, "drawOffset", snapshot.SavedDrawOffset ?? Vector2.Zero);
+                    TrySetSpritePrivateField(snapshot.Npc.Sprite, "ignoreSourceRectUpdates", snapshot.SavedIgnoreSourceRectUpdates ?? false);
+                    snapshot.SavedSpriteWidth = null;
+                    snapshot.SavedTempSpriteHeight = null;
+                    snapshot.SavedDrawOffset = null;
+                    snapshot.SavedIgnoreSourceRectUpdates = null;
                 }
             }
 
@@ -504,22 +516,61 @@ namespace LotsOfKisses
                 return;
 
             // NOTE: this used to null out npc.controller here, based on the theory that a
-            // leftover controller was silently repositioning the NPC. That wasn't it — and
-            // nulling the controller every tick while held may have actually been the trigger
-            // making vanilla re-run its own "just arrived at route end" check, re-spawning the
-            // fishing intro animation over and over. The REAL mechanism (confirmed by
-            // decompiling NPC.reallyDoAnimationAtEndOfScheduleRoute): vanilla's own
-            // "doingEndOfRouteAnimation" system spawns an independent TemporaryAnimatedSprite
-            // for things like a fishing idle pose, completely separate from npc.Sprite. No
-            // amount of clearing npc.Sprite touches it. Suppress the two private flags that
-            // gate it instead, and hand them back in RestoreAllBystanders.
+            // leftover controller was silently repositioning the NPC. That wasn't it. These two
+            // flags gate whether vanilla's "just arrived at route end" check re-triggers the
+            // route-end intro/behavior (see doMiddleAnimation / startRouteBehavior) — suppress
+            // them while held, and hand them back in RestoreAllBystanders.
             if (snapshot.SavedDoingEndOfRouteAnimation == null)
             {
-                snapshot.SavedDoingEndOfRouteAnimation = TryGetPrivateField(npc, "doingEndOfRouteAnimation") as bool?;
+                snapshot.SavedDoingEndOfRouteAnimation = TryGetNetBoolField(npc, "doingEndOfRouteAnimation");
                 snapshot.SavedCurrentlyDoingEndOfRouteAnimation = TryGetPrivateField(npc, "currentlyDoingEndOfRouteAnimation") as bool?;
             }
-            TrySetSpritePrivateField(npc, "doingEndOfRouteAnimation", false);
+            TrySetNetBoolField(npc, "doingEndOfRouteAnimation", false);
             TrySetSpritePrivateField(npc, "currentlyDoingEndOfRouteAnimation", false);
+
+            // NOTE: the real cause of the mismatched-frame bug for fishing (and any other
+            // end-of-route behavior that stacks two tilesheet rows into one drawn frame, like
+            // Willy's rod) isn't a separate sprite layer at all — decompiling confirmed
+            // Character.extendSourceRect(...) directly inflates/offsets Sprite.sourceRect to
+            // cover both rows, then sets Sprite.ignoreSourceRectUpdates = true. Every call below
+            // to CurrentFrame + UpdateSourceRect() was silently doing nothing while that flag
+            // stayed on (UpdateSourceRect() no-ops immediately when it's true), so the stretched/
+            // offset two-row rectangle from the fishing pose stayed on screen instead of a clean
+            // single-row idle frame — explaining why body and rod each showed a different, wrong
+            // slice of the tilesheet. Reset the flag and the dimensions it was paired with
+            // (spriteWidth/tempSpriteHeight) BEFORE touching CurrentFrame, so UpdateSourceRect()
+            // actually recomputes using this NPC's normal 16x32 single-frame dimensions.
+            if (snapshot.SavedIgnoreSourceRectUpdates == null)
+            {
+                snapshot.SavedIgnoreSourceRectUpdates = TryGetPrivateField(npc.Sprite, "ignoreSourceRectUpdates") as bool? ?? false;
+                snapshot.SavedSpriteWidth = TryGetPrivateField(npc.Sprite, "spriteWidth") as int?;
+                snapshot.SavedTempSpriteHeight = TryGetPrivateField(npc.Sprite, "tempSpriteHeight") as int?;
+                snapshot.SavedDrawOffset = TryGetPrivateField(npc, "drawOffset") as Vector2?;
+            }
+            TrySetSpritePrivateField(npc.Sprite, "ignoreSourceRectUpdates", false);
+            TrySetSpritePrivateField(npc.Sprite, "spriteWidth", 16);
+            TrySetSpritePrivateField(npc.Sprite, "tempSpriteHeight", -1); // vanilla's own sentinel for "use normal spriteHeight"
+            TrySetSpritePrivateField(npc, "drawOffset", Vector2.Zero);
+
+            // NOTE: this is the controller-nulling that was previously tried and reverted (see the
+            // old comment above) — but that attempt was made back when doingEndOfRouteAnimation was
+            // NEVER actually being suppressed (the NetBool bug), so NPC.update always took the
+            // "doing end of route animation" branch and the controller branch was never reached at
+            // all; nulling the controller back then couldn't have been what caused the repeated
+            // intro re-spawn — that was the NetBool mismatch loop the whole time. Now that
+            // doingEndOfRouteAnimation is genuinely false during hold, NPC.update actually falls
+            // through to `else if (controller != null) controller.update(...)` every tick — which
+            // silently drives the controller's own movement/animation logic in the background the
+            // entire time we're held (masked visually by our own frame-forcing patches), leaving
+            // its internal path state stale by the time we let go. That's what surfaced as
+            // "walks backward in place for a bit" a little while after the kiss ends: the
+            // controller finally gets to run its now-stale queued movement. Suspending it for real
+            // while held avoids that.
+            if (snapshot.SavedController == null && npc.controller != null)
+            {
+                snapshot.SavedController = npc.controller;
+                npc.controller = null;
+            }
 
             int lookDirection = GetDirectionTowardPlayer(npc);
 
@@ -542,6 +593,14 @@ namespace LotsOfKisses
             // drawn shifted toward the water even with the correct idle frame showing, looking
             // like a second figure near the water below the "real" one on the dock.
             TrySetSpritePrivateField(npc, "yOffset", 0f);
+
+            // NOTE: turns out the "ghost" isn't a second NPC or a position offset at all — it's a
+            // SEPARATE sprite layer (the fishing rod, its own 4-frame strip right below the body
+            // on the sheet) that vanilla draws independently whenever it still thinks the NPC's
+            // route ended in a "fish" behavior. Clearing npc.Sprite alone never touched whatever
+            // condition makes NPC.draw decide to render that second layer. Clearing the behavior
+            // name string itself is our best bet at making that condition false.
+            TrySetSpritePrivateField(npc, "loadedEndOfRouteBehavior", null);
 
             if (isWilly && Game1.ticks % 15 == 0)
                 this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: AFTER hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} LookDir={lookDirection}", LogLevel.Debug);
@@ -612,10 +671,28 @@ namespace LotsOfKisses
                 // Hand back vanilla's own end-of-route animation flags — see HoldBystanderWatching.
                 if (snapshot.SavedDoingEndOfRouteAnimation.HasValue)
                 {
-                    TrySetSpritePrivateField(npc, "doingEndOfRouteAnimation", snapshot.SavedDoingEndOfRouteAnimation.Value);
+                    TrySetNetBoolField(npc, "doingEndOfRouteAnimation", snapshot.SavedDoingEndOfRouteAnimation.Value);
                     TrySetSpritePrivateField(npc, "currentlyDoingEndOfRouteAnimation", snapshot.SavedCurrentlyDoingEndOfRouteAnimation ?? false);
                     snapshot.SavedDoingEndOfRouteAnimation = null;
                     snapshot.SavedCurrentlyDoingEndOfRouteAnimation = null;
+                }
+
+                // Hand back the sourceRect/dimension state the end-of-route behavior (e.g. fishing)
+                // had set up, so its own two-row idle pose keeps working correctly once released —
+                // see the matching NOTE in ForceStaticBystanderPose.
+                if (snapshot.SavedSpriteWidth.HasValue)
+                {
+                    TrySetSpritePrivateField(npc.Sprite, "spriteWidth", snapshot.SavedSpriteWidth.Value);
+                    TrySetSpritePrivateField(npc.Sprite, "tempSpriteHeight", snapshot.SavedTempSpriteHeight ?? -1);
+                    TrySetSpritePrivateField(npc, "drawOffset", snapshot.SavedDrawOffset ?? Vector2.Zero);
+                    // Restore ignoreSourceRectUpdates LAST and skip our own UpdateSourceRect() call
+                    // below if it was true — otherwise our own restore would immediately stomp the
+                    // stretched two-row rect the behavior expects back once it resumes.
+                    TrySetSpritePrivateField(npc.Sprite, "ignoreSourceRectUpdates", snapshot.SavedIgnoreSourceRectUpdates ?? false);
+                    snapshot.SavedSpriteWidth = null;
+                    snapshot.SavedTempSpriteHeight = null;
+                    snapshot.SavedDrawOffset = null;
+                    snapshot.SavedIgnoreSourceRectUpdates = null;
                 }
 
                 this.Monitor.Log($"[BYSTANDER] {npc.Name} state restored (idle/static).", LogLevel.Trace);

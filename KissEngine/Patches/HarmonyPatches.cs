@@ -367,6 +367,7 @@ namespace LotsOfKisses
                     __instance.Sprite.CurrentFrame = desiredFrame;
                     __instance.Sprite.UpdateSourceRect();
                     ModEntry.Instance.TrySetSpritePrivateField(__instance, "yOffset", 0f);
+                    ModEntry.Instance.TrySetSpritePrivateField(__instance, "loadedEndOfRouteBehavior", null);
                 }
             }
             catch (Exception ex)
@@ -395,9 +396,6 @@ namespace LotsOfKisses
                 bool isWilly = ModEntry.IsDebugTrackedNpc(__instance);
 
                 BystanderSnapshot snapshot = ModEntry.Instance.GetActiveStaticBystanderSnapshot(__instance);
-
-                if (isWilly)
-                    ModEntry.Instance.Monitor.Log($"[POSTFIX DEBUG] NPC.update ran for Willy. snapshotFound={(snapshot != null)}", LogLevel.Debug);
 
                 if (snapshot == null)
                     return;

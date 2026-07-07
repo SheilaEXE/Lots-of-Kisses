@@ -39,16 +39,34 @@ namespace LotsOfKisses
 
         /// <summary>
         /// Saved value of NPC's private "doingEndOfRouteAnimation" field, suppressed while this
-        /// NPC is held watching a kiss. This is the actual vanilla mechanism behind things like
-        /// Willy's fishing idle pose: it spawns an independent TemporaryAnimatedSprite overlay
-        /// (via a private "routeEndIntro" frame sequence) completely separate from npc.Sprite —
-        /// clearing/forcing npc.Sprite alone never touched it, which is why the NPC could appear
-        /// to show two different frames/positions at once while held.
+        /// NPC is held watching a kiss. Gates whether vanilla's "just arrived at route end" check
+        /// re-triggers the route-end intro/behavior (see doMiddleAnimation / startRouteBehavior)
+        /// while held.
         /// </summary>
         public bool? SavedDoingEndOfRouteAnimation { get; set; }
 
         /// <summary>Saved value of NPC's private "currentlyDoingEndOfRouteAnimation" field — see SavedDoingEndOfRouteAnimation.</summary>
         public bool? SavedCurrentlyDoingEndOfRouteAnimation { get; set; }
+
+        /// <summary>
+        /// Saved value of the Sprite's private "ignoreSourceRectUpdates" field. Some end-of-route
+        /// behaviors (e.g. fishing) call Character.extendSourceRect(...), which directly inflates/
+        /// offsets Sprite.sourceRect to cover two tilesheet rows at once (body + rod) and then sets
+        /// this flag to true. While true, AnimatedSprite.UpdateSourceRect() is a complete no-op
+        /// (confirmed by decompiling it: it returns immediately if this flag is set) — so forcing
+        /// CurrentFrame and calling UpdateSourceRect() while held did nothing, leaving the
+        /// stretched/offset two-row rectangle on screen instead of a normal single-row idle frame.
+        /// </summary>
+        public bool? SavedIgnoreSourceRectUpdates { get; set; }
+
+        /// <summary>Saved value of the Sprite's private "spriteWidth" field — some end-of-route behaviors widen this (e.g. to 32) as part of extendSourceRect.</summary>
+        public int? SavedSpriteWidth { get; set; }
+
+        /// <summary>Saved value of the Sprite's private "tempSpriteHeight" field — some end-of-route behaviors set this to double height (e.g. 64) to draw two tilesheet rows stacked as one frame. -1 is vanilla's own sentinel for "not overridden".</summary>
+        public int? SavedTempSpriteHeight { get; set; }
+
+        /// <summary>Saved value of the NPC's private "drawOffset" field, which some end-of-route behaviors set directly (separately from Sprite's own yOffset).</summary>
+        public Vector2? SavedDrawOffset { get; set; }
 
         /// <summary>Whether this NPC was walking toward the player when they noticed the kiss.</summary>
         public bool WasWalkingTowardPlayer          { get; set; }
