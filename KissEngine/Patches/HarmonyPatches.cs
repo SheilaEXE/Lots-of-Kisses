@@ -333,10 +333,10 @@ namespace LotsOfKisses
     // There's no point chasing every internal write site individually anymore: force the correct
     // frame right before the sprite is actually drawn to the screen. Nothing can write after
     // this and still show up, since this runs immediately before the pixels hit the screen.
-    [HarmonyPatch(typeof(NPC), nameof(NPC.draw), new[] { typeof(Microsoft.Xna.Framework.Graphics.SpriteBatch) })]
+    [HarmonyPatch(typeof(NPC), nameof(NPC.draw), new[] { typeof(Microsoft.Xna.Framework.Graphics.SpriteBatch), typeof(float) })]
     public static class NPC_Draw_BystanderPoseEnforce_Patch
     {
-        static void Prefix(NPC __instance)
+        static void Prefix(NPC __instance, float alpha)
         {
             try
             {
