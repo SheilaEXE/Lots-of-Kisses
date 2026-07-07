@@ -145,7 +145,7 @@ namespace LotsOfKisses
                 activeBystanderSnapshots.Add(snapshot);
 
                 if (IsDebugTrackedNpc(npc))
-                    this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: CAPTURED — Position={snapshot.Position} Tile={npc.TilePoint} Frame={snapshot.CurrentFrame} HasAnim={(snapshot.CurrentAnimation != null)} HadController={hadController} WasMoving={wasMoving} WasWalkingToward={isWalkingToward}", LogLevel.Debug);
+                    this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: CAPTURED — Position={snapshot.Position} Tile={npc.TilePoint} Frame={snapshot.CurrentFrame} HasAnim={(snapshot.CurrentAnimation != null)} HadController={hadController} WasMoving={wasMoving} WasWalkingToward={isWalkingToward} SourceRect={TryGetPrivateField(npc.Sprite, "sourceRect")} SpriteWidth={TryGetPrivateField(npc.Sprite, "spriteWidth")} TempSpriteHeight={TryGetPrivateField(npc.Sprite, "tempSpriteHeight")} IgnoreSourceRectUpdates={TryGetPrivateField(npc.Sprite, "ignoreSourceRectUpdates")}", LogLevel.Debug);
 
                 // Mark this NPC as watching so other mods (e.g. Outfit Reactions) can skip
                 // starting their own reactions on them until they're released below.

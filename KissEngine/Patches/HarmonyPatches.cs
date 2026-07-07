@@ -443,11 +443,18 @@ namespace LotsOfKisses
                     controllerInfo = $"type={controller.GetType().Name} pathNodesLeft={pathCount} finalFacingDir={controller.finalFacingDirection}";
                 }
 
+                var sprite = __instance.Sprite;
+                object sourceRectObj = ModEntry.Instance.TryGetPrivateField(sprite, "sourceRect");
+                object spriteWidthObj = ModEntry.Instance.TryGetPrivateField(sprite, "spriteWidth");
+                object tempSpriteHeightObj = ModEntry.Instance.TryGetPrivateField(sprite, "tempSpriteHeight");
+                object ignoreSourceRectUpdatesObj = ModEntry.Instance.TryGetPrivateField(sprite, "ignoreSourceRectUpdates");
+
                 ModEntry.Instance.Monitor.Log(
                     $"[POST-RELEASE DEBUG] Willy: Position={__instance.Position} Tile={__instance.TilePoint} " +
-                    $"Frame={__instance.Sprite.CurrentFrame} HasAnim={(__instance.Sprite.CurrentAnimation != null)} " +
+                    $"Frame={sprite.CurrentFrame} HasAnim={(sprite.CurrentAnimation != null)} " +
                     $"FacingDir={__instance.FacingDirection} IsMoving={__instance.isMoving()} MovementPause={__instance.movementPause} " +
-                    $"Controller=[{controllerInfo}]", LogLevel.Debug);
+                    $"Controller=[{controllerInfo}] SourceRect={sourceRectObj} SpriteWidth={spriteWidthObj} " +
+                    $"TempSpriteHeight={tempSpriteHeightObj} IgnoreSourceRectUpdates={ignoreSourceRectUpdatesObj}", LogLevel.Debug);
             }
             catch (Exception ex)
             {
