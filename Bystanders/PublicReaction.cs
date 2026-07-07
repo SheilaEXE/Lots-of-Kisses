@@ -144,7 +144,7 @@ namespace LotsOfKisses
 
                 activeBystanderSnapshots.Add(snapshot);
 
-                if (npc.Name == "Willy")
+                if (IsDebugTrackedNpc(npc))
                     this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: CAPTURED — Position={snapshot.Position} Tile={npc.TilePoint} Frame={snapshot.CurrentFrame} HasAnim={(snapshot.CurrentAnimation != null)} HadController={hadController} WasMoving={wasMoving} WasWalkingToward={isWalkingToward}", LogLevel.Debug);
 
                 // Mark this NPC as watching so other mods (e.g. Outfit Reactions) can skip
@@ -471,6 +471,15 @@ namespace LotsOfKisses
                 && !(s.WasPausedByMod || s.WasMoving || s.WasWalkingTowardPlayer));
         }
 
+        // Names currently being watched closely in the debug logs while we track down the
+        // fishing-pose bug. Add/remove names here instead of hardcoding "Willy" everywhere.
+        private static readonly HashSet<string> DebugTrackedNpcNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Willy", "Carmen", "Blair", "Elias"
+        };
+
+        internal static bool IsDebugTrackedNpc(NPC npc) => npc != null && DebugTrackedNpcNames.Contains(npc.Name);
+
         /// <summary>
         /// Computes the idle frame a held bystander should show right now (facing the player).
         /// Used by the CurrentFrame setter patch to know what value to force back to when some
@@ -514,7 +523,7 @@ namespace LotsOfKisses
 
             int lookDirection = GetDirectionTowardPlayer(npc);
 
-            bool isWilly = npc.Name == "Willy";
+            bool isWilly = IsDebugTrackedNpc(npc);
             if (isWilly && Game1.ticks % 15 == 0)
                 this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: BEFORE hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} HasAnim={(npc.Sprite.CurrentAnimation != null)} FacingDir={npc.FacingDirection}", LogLevel.Debug);
 
@@ -526,6 +535,13 @@ namespace LotsOfKisses
             npc.faceDirection(lookDirection);
             npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(lookDirection);
             npc.Sprite.UpdateSourceRect();
+
+            // NOTE: NPC.draw also reads a private "yOffset" field to vertically shift the drawn
+            // position for certain poses (e.g. leaning toward the water while fishing). Clearing
+            // the frame/animation alone never touched this — so the character could still be
+            // drawn shifted toward the water even with the correct idle frame showing, looking
+            // like a second figure near the water below the "real" one on the dock.
+            TrySetSpritePrivateField(npc, "yOffset", 0f);
 
             if (isWilly && Game1.ticks % 15 == 0)
                 this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: AFTER hold — Position={npc.Position} Tile={npc.TilePoint} Frame={npc.Sprite.CurrentFrame} LookDir={lookDirection}", LogLevel.Debug);

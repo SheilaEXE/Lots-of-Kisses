@@ -173,7 +173,7 @@ namespace LotsOfKisses
             return false;
         }
 
-        private void TrySetSpritePrivateField(object target, string fieldName, object value)
+        internal void TrySetSpritePrivateField(object target, string fieldName, object value)
         {
             if (target == null || string.IsNullOrEmpty(fieldName))
                 return;
@@ -190,7 +190,7 @@ namespace LotsOfKisses
             }
         }
 
-        private object TryGetPrivateField(object target, string fieldName)
+        internal object TryGetPrivateField(object target, string fieldName)
         {
             if (target == null || string.IsNullOrEmpty(fieldName))
                 return null;

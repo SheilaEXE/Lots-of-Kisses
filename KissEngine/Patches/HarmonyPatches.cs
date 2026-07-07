@@ -3,6 +3,7 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.GameData.Characters;
 using System;
+using System.Linq;
 
 namespace LotsOfKisses
 {
@@ -259,7 +260,7 @@ namespace LotsOfKisses
                 if (snapshot == null)
                     return true; // not held — run normally
 
-                if (__instance.Name == "Willy")
+                if (ModEntry.IsDebugTrackedNpc(__instance))
                     ModEntry.Instance.Monitor.Log("[POSTFIX DEBUG] doMiddleAnimation SUPPRESSED for Willy (held as bystander).", LogLevel.Debug);
 
                 return false; // skip — this NPC is currently held watching a kiss
@@ -316,7 +317,7 @@ namespace LotsOfKisses
                     isReentering = false;
                 }
 
-                if (npc.Name == "Willy")
+                if (ModEntry.IsDebugTrackedNpc(npc))
                     ModEntry.Instance.Monitor.Log($"[POSTFIX DEBUG] CurrentFrame setter caught an external change for Willy — forced back to {desiredFrame}.", LogLevel.Debug);
             }
             catch (Exception ex)
@@ -348,9 +349,16 @@ namespace LotsOfKisses
                     return;
 
                 int desiredFrame = ModEntry.Instance.GetHeldBystanderIdleFrame(__instance);
+
+                if (ModEntry.IsDebugTrackedNpc(__instance) && Game1.ticks % 30 == 0)
+                {
+                    int duplicateCount = __instance.currentLocation?.characters?.Count(c => c != null && c.Name == __instance.Name) ?? -1;
+                    ModEntry.Instance.Monitor.Log($"[POSTFIX DEBUG] NPC.draw Prefix tick check for '{__instance.Name}': live Frame={__instance.Sprite.CurrentFrame}, duplicate NPC instances named '{__instance.Name}' in this location: {duplicateCount}", LogLevel.Debug);
+                }
+
                 if (__instance.Sprite.CurrentFrame != desiredFrame || __instance.Sprite.CurrentAnimation != null)
                 {
-                    if (__instance.Name == "Willy")
+                    if (ModEntry.IsDebugTrackedNpc(__instance))
                         ModEntry.Instance.Monitor.Log($"[POSTFIX DEBUG] NPC.draw Prefix: frame was {__instance.Sprite.CurrentFrame} (anim={(__instance.Sprite.CurrentAnimation != null)}) right before drawing — forcing to {desiredFrame}.", LogLevel.Debug);
 
                     __instance.Sprite.StopAnimation();
@@ -358,6 +366,7 @@ namespace LotsOfKisses
                     __instance.Sprite.CurrentAnimation = null;
                     __instance.Sprite.CurrentFrame = desiredFrame;
                     __instance.Sprite.UpdateSourceRect();
+                    ModEntry.Instance.TrySetSpritePrivateField(__instance, "yOffset", 0f);
                 }
             }
             catch (Exception ex)
@@ -383,7 +392,7 @@ namespace LotsOfKisses
                 if (__instance == null || ModEntry.Instance == null)
                     return;
 
-                bool isWilly = __instance.Name == "Willy";
+                bool isWilly = ModEntry.IsDebugTrackedNpc(__instance);
 
                 BystanderSnapshot snapshot = ModEntry.Instance.GetActiveStaticBystanderSnapshot(__instance);
 
