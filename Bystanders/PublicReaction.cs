@@ -609,6 +609,7 @@ namespace LotsOfKisses
         private void RestoreAllBystanders()
         {
             var routeSnapshots = new List<BystanderSnapshot>();
+            var specialPoseNpcs = new List<NPC>();
 
             foreach (var snapshot in activeBystanderSnapshots)
             {
@@ -666,6 +667,17 @@ namespace LotsOfKisses
                     snapshot.SavedSpriteWidth = null;
                     snapshot.SavedTempSpriteHeight = null;
                     snapshot.SavedDrawOffset = null;
+
+                    // If this behavior manages its own sourceRect (ignoreSourceRectUpdates was
+                    // true), don't try to hand-reconstruct the extended crop ourselves — ask
+                    // vanilla's own doMiddleAnimation to rebuild the animation/sourceRect/dimensions
+                    // from scratch instead, scheduled for just after this NPC stops being tracked
+                    // (see specialPoseNpcs below). UpdateSourceRect() is a no-op while this flag is
+                    // true, so leaving it to us was freezing whatever crop happened to be active
+                    // during the hold — the actual bug behind the "walks in place" look.
+                    if (snapshot.SavedIgnoreSourceRectUpdates == true)
+                        specialPoseNpcs.Add(npc);
+
                     snapshot.SavedIgnoreSourceRectUpdates = null;
                 }
 
@@ -731,6 +743,35 @@ namespace LotsOfKisses
             bystanderRestoreSafetyTimer = 0;
             bystanderRestorePartner = null;
             bystanderRestoreForceStart = false;
+
+            if (specialPoseNpcs.Count > 0)
+            {
+                // Must run AFTER ClearActiveBystanderSnapshots() above, and after at least one tick,
+                // so GetActiveStaticBystanderSnapshot no longer finds these NPCs — otherwise our own
+                // NPC_DoMiddleAnimation_SuppressForHeldBystander_Patch prefix would block this call.
+                DelayedAction.functionAfterDelay(() =>
+                {
+                    foreach (NPC npc in specialPoseNpcs)
+                    {
+                        if (npc?.currentLocation == null || npc.Sprite == null)
+                            continue;
+
+                        try
+                        {
+                            MethodInfo method = npc.GetType().GetMethod("doMiddleAnimation",
+                                BindingFlags.Instance | BindingFlags.NonPublic);
+                            method?.Invoke(npc, new object[] { null });
+
+                            if (IsDebugTrackedNpc(npc))
+                                this.Monitor.Log($"[BYSTANDER] Re-ran vanilla doMiddleAnimation for {npc.Name} to rebuild its special pose.", LogLevel.Debug);
+                        }
+                        catch (Exception ex)
+                        {
+                            this.Monitor.Log($"[BYSTANDER] Failed to re-run doMiddleAnimation for {npc.Name}: {ex}", LogLevel.Error);
+                        }
+                    }
+                }, 100);
+            }
         }
 
         private void ReleaseRouteBystanderPauseOnly(BystanderSnapshot snapshot)
