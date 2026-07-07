@@ -238,6 +238,40 @@ namespace LotsOfKisses
         }
     }
 
+    // ── The REAL source of the per-tick tug-of-war: NPC.doMiddleAnimation is the private method
+    // NPC.reallyDoAnimationAtEndOfScheduleRoute schedules itself into via a self-rescheduling
+    // Game1 DelayedAction chain — completely separate from NPC.update, so patching update alone
+    // (see the Postfix below) can win most ticks but still loses on whichever tick this callback
+    // fires, since Game1's DelayedAction queue is processed independently of NPC.update. Skipping
+    // this method entirely while the NPC is held as a stationary bystander stops the fishing-pose
+    // frame sequence from ever touching Sprite during that window, at the source.
+    [HarmonyPatch(typeof(NPC), "doMiddleAnimation")]
+    public static class NPC_DoMiddleAnimation_SuppressForHeldBystander_Patch
+    {
+        static bool Prefix(NPC __instance)
+        {
+            try
+            {
+                if (__instance == null || ModEntry.Instance == null)
+                    return true;
+
+                BystanderSnapshot snapshot = ModEntry.Instance.GetActiveStaticBystanderSnapshot(__instance);
+                if (snapshot == null)
+                    return true; // not held — run normally
+
+                if (__instance.Name == "Willy")
+                    ModEntry.Instance.Monitor.Log("[POSTFIX DEBUG] doMiddleAnimation SUPPRESSED for Willy (held as bystander).", LogLevel.Debug);
+
+                return false; // skip — this NPC is currently held watching a kiss
+            }
+            catch (Exception ex)
+            {
+                ModEntry.Instance?.Monitor.Log($"[BYSTANDER POSE ENFORCE] Error suppressing doMiddleAnimation: {ex}", LogLevel.Error);
+                return true;
+            }
+        }
+    }
+
     // ── Ensures a held bystander's "looking at player" pose always has the last word for the
     // tick. Vanilla's own NPC.update can re-assert a scheduled/route-end animation (e.g. a
     // fishing idle loop) on the very same tick after our own hold code already ran, turning into
