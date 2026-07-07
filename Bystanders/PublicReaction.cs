@@ -659,6 +659,9 @@ namespace LotsOfKisses
                 // UpdateSourceRect() call either computes correctly (normal NPCs) or safely no-ops
                 // (fishing-style NPCs, exactly like vanilla itself does — their sourceRect gets
                 // properly re-driven the next time vanilla's own fishing loop logic touches it).
+                if (IsDebugTrackedNpc(npc))
+                    this.Monitor.Log($"[RESTORE DEBUG] {npc.Name}: SavedSpriteWidth={snapshot.SavedSpriteWidth} SavedTempSpriteHeight={snapshot.SavedTempSpriteHeight} SavedIgnoreSourceRectUpdates={snapshot.SavedIgnoreSourceRectUpdates} SavedStartedEndOfRouteBehavior={snapshot.SavedStartedEndOfRouteBehavior}", LogLevel.Debug);
+
                 if (snapshot.SavedSpriteWidth.HasValue)
                 {
                     TrySetSpritePrivateField(npc.Sprite, "spriteWidth", snapshot.SavedSpriteWidth.Value);
