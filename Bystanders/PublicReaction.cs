@@ -472,6 +472,17 @@ namespace LotsOfKisses
         }
 
         /// <summary>
+        /// Computes the idle frame a held bystander should show right now (facing the player).
+        /// Used by the CurrentFrame setter patch to know what value to force back to when some
+        /// external vanilla system tries to change it out from under us.
+        /// </summary>
+        internal int GetHeldBystanderIdleFrame(NPC npc)
+        {
+            int lookDirection = GetDirectionTowardPlayer(npc);
+            return GetNpcIdleFrameForDirection(lookDirection);
+        }
+
+        /// <summary>
         /// Forces the "looking at player, idle" pose for a stationary special-pose bystander (e.g.
         /// fishing at a fixed spot). Called both from the normal per-tick hold loop and, via
         /// Harmony postfix on NPC.update, right after vanilla's own update — so our pose always

@@ -272,6 +272,61 @@ namespace LotsOfKisses
         }
     }
 
+    // ── The final, catch-all defense: AnimatedSprite has no self-contained Update method — frame
+    // changes always come from some external caller (Animate, setCurrentAnimation, or setting
+    // CurrentFrame directly), and we've found multiple different vanilla sources doing this for a
+    // fishing NPC's idle pose (reallyDoAnimationAtEndOfScheduleRoute's DelayedAction chain, and at
+    // least one more we haven't identified). Rather than keep chasing each one individually,
+    // patch the one place all of them funnel through: the CurrentFrame setter itself. If the
+    // sprite's Owner is an NPC currently held as a bystander, immediately force the frame back to
+    // our desired value — whoever just tried to change it loses, no matter who they are.
+    // Uses a reentrancy guard since forcing the value back calls this same setter again.
+    [HarmonyPatch(typeof(StardewValley.AnimatedSprite), nameof(StardewValley.AnimatedSprite.CurrentFrame), MethodType.Setter)]
+    public static class AnimatedSprite_SetCurrentFrame_BystanderPoseEnforce_Patch
+    {
+        [ThreadStatic]
+        private static bool isReentering;
+
+        static void Postfix(StardewValley.AnimatedSprite __instance)
+        {
+            if (isReentering)
+                return;
+
+            try
+            {
+                if (!(__instance?.Owner is NPC npc) || ModEntry.Instance == null)
+                    return;
+
+                BystanderSnapshot snapshot = ModEntry.Instance.GetActiveStaticBystanderSnapshot(npc);
+                if (snapshot == null)
+                    return;
+
+                int desiredFrame = ModEntry.Instance.GetHeldBystanderIdleFrame(npc);
+                if (__instance.CurrentFrame == desiredFrame)
+                    return;
+
+                isReentering = true;
+                try
+                {
+                    __instance.CurrentFrame = desiredFrame;
+                    __instance.UpdateSourceRect();
+                }
+                finally
+                {
+                    isReentering = false;
+                }
+
+                if (npc.Name == "Willy")
+                    ModEntry.Instance.Monitor.Log($"[POSTFIX DEBUG] CurrentFrame setter caught an external change for Willy — forced back to {desiredFrame}.", LogLevel.Debug);
+            }
+            catch (Exception ex)
+            {
+                isReentering = false;
+                ModEntry.Instance?.Monitor.Log($"[BYSTANDER POSE ENFORCE] Error in CurrentFrame setter patch: {ex}", LogLevel.Error);
+            }
+        }
+    }
+
     // ── Ensures a held bystander's "looking at player" pose always has the last word for the
     // tick. Vanilla's own NPC.update can re-assert a scheduled/route-end animation (e.g. a
     // fishing idle loop) on the very same tick after our own hold code already ran, turning into
