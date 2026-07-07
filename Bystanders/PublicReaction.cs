@@ -145,7 +145,7 @@ namespace LotsOfKisses
                 activeBystanderSnapshots.Add(snapshot);
 
                 if (IsDebugTrackedNpc(npc))
-                    this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: CAPTURED — Position={snapshot.Position} Tile={npc.TilePoint} Frame={snapshot.CurrentFrame} HasAnim={(snapshot.CurrentAnimation != null)} HadController={hadController} WasMoving={wasMoving} WasWalkingToward={isWalkingToward} SourceRect={TryGetPrivateField(npc.Sprite, "sourceRect")} SpriteWidth={TryGetPrivateField(npc.Sprite, "spriteWidth")} TempSpriteHeight={TryGetPrivateField(npc.Sprite, "tempSpriteHeight")} IgnoreSourceRectUpdates={TryGetPrivateField(npc.Sprite, "ignoreSourceRectUpdates")}", LogLevel.Debug);
+                    this.Monitor.Log($"[FRAME DEBUG] {npc.Name}: CAPTURED — Position={snapshot.Position} Tile={npc.TilePoint} Frame={snapshot.CurrentFrame} HasAnim={(snapshot.CurrentAnimation != null)} HadController={hadController} WasMoving={wasMoving} WasWalkingToward={isWalkingToward} SourceRect={TryGetPrivateField(npc.Sprite, "sourceRect")} SpriteWidth={TryGetPrivateField(npc.Sprite, "spriteWidth")} TempSpriteHeight={TryGetPrivateField(npc.Sprite, "tempSpriteHeight")} IgnoreSourceRectUpdates={TryGetPrivateField(npc.Sprite, "ignoreSourceRectUpdates")} EndOfRouteBehaviorName={TryGetNetStringField(npc, "endOfRouteBehaviorName")}", LogLevel.Debug);
 
                 // Mark this NPC as watching so other mods (e.g. Outfit Reactions) can skip
                 // starting their own reactions on them until they're released below.
@@ -546,7 +546,7 @@ namespace LotsOfKisses
                 snapshot.SavedSpriteWidth = TryGetPrivateField(npc.Sprite, "spriteWidth") as int?;
                 snapshot.SavedTempSpriteHeight = TryGetPrivateField(npc.Sprite, "tempSpriteHeight") as int?;
                 snapshot.SavedDrawOffset = TryGetPrivateField(npc, "drawOffset") as Vector2?;
-                snapshot.SavedStartedEndOfRouteBehavior = TryGetPrivateField(npc, "_startedEndOfRouteBehavior") as string;
+                snapshot.SavedStartedEndOfRouteBehavior = TryGetNetStringField(npc, "endOfRouteBehaviorName");
             }
             TrySetSpritePrivateField(npc.Sprite, "ignoreSourceRectUpdates", false);
             TrySetSpritePrivateField(npc.Sprite, "spriteWidth", 16);

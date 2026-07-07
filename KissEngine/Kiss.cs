@@ -262,6 +262,34 @@ namespace LotsOfKisses
             }
         }
 
+        /// <summary>
+        /// Same NetField unwrapping as TryGetNetBoolField/TrySetNetBoolField, but for NetString
+        /// fields (e.g. "endOfRouteBehaviorName") — which unlike "_startedEndOfRouteBehavior" (a
+        /// plain string that's only populated transiently, during the route-end intro) holds the
+        /// behavior name persistently the entire time the NPC is settled into that pose. Use this
+        /// one to recover the behavior name after the fact, not the transient field.
+        /// </summary>
+        internal string TryGetNetStringField(object target, string fieldName)
+        {
+            if (target == null || string.IsNullOrEmpty(fieldName))
+                return null;
+
+            try
+            {
+                FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                object netField = field?.GetValue(target);
+                if (netField == null)
+                    return null;
+
+                PropertyInfo valueProp = netField.GetType().GetProperty("Value");
+                return valueProp?.GetValue(netField) as string;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         private void CaptureNpcPreKissSpecialAction(NPC npc)
         {
             if (npc == null || npc.Sprite == null || npc.currentLocation == null)
