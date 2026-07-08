@@ -830,7 +830,7 @@ namespace LotsOfKisses
             // (e.g. a future update renames them), at least clear the visible text so it's not
             // stuck showing the same line forever — strictly better than a permanently stuck line.
             if (!foundAnyField)
-                npc.showTextAboveHead("");
+                ShowTextAboveHeadWithPipeSupport(npc, "");
         }
 
         /// <summary>
@@ -868,7 +868,7 @@ namespace LotsOfKisses
 
             if (!string.IsNullOrEmpty(line))
             {
-                npc.showTextAboveHead(line);
+                ShowTextAboveHeadWithPipeSupport(npc, line);
 
                 // Keep this bystander quiet for a few cycles after speaking, giving the bubble
                 // time to fully close before they're eligible to speak again.

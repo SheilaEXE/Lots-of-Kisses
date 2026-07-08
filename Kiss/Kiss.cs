@@ -1246,12 +1246,12 @@ namespace LotsOfKisses
                         {
                             if (!HasBystandersOnScreen() && !string.IsNullOrEmpty(postLine))
                             {
-                                postNpc.showTextAboveHead(postLine);
+                                ShowTextAboveHeadWithPipeSupport(postNpc, postLine);
                                 dialogueCooldown = 120;
                             }
                             else if (HasBystandersOnScreen() && !string.IsNullOrEmpty(publicLine))
                             {
-                                postNpc.showTextAboveHead(publicLine);
+                                ShowTextAboveHeadWithPipeSupport(postNpc, publicLine);
                                 dialogueCooldown = 120;
                             }
                         }
@@ -1295,12 +1295,12 @@ namespace LotsOfKisses
                     {
                         if (!HasBystandersWithLineOfSight() && !string.IsNullOrEmpty(postLine))
                         {
-                            postNpc.showTextAboveHead(postLine);
+                            ShowTextAboveHeadWithPipeSupport(postNpc, postLine);
                             dialogueCooldown = 120;
                         }
                         else if (HasBystandersWithLineOfSight() && !string.IsNullOrEmpty(publicLine))
                         {
-                            postNpc.showTextAboveHead(publicLine);
+                            ShowTextAboveHeadWithPipeSupport(postNpc, publicLine);
                             dialogueCooldown = 120;
                         }
                     }
@@ -1417,7 +1417,7 @@ namespace LotsOfKisses
                 Game1.activeClickableMenu == null)
             {
 
-                spouse.showTextAboveHead(kissPostLine);
+                ShowTextAboveHeadWithPipeSupport(spouse, kissPostLine);
                 kissPostLineTriggered = true;
                 dialogueCooldown = 120;
             }
@@ -1429,7 +1429,7 @@ namespace LotsOfKisses
                      Game1.activeClickableMenu == null)
             {
 
-                spouse.showTextAboveHead(kissPostLine);
+                ShowTextAboveHeadWithPipeSupport(spouse, kissPostLine);
                 kissPostLineTriggered = true;
                 dialogueCooldown = 120;
             }
@@ -1602,7 +1602,7 @@ namespace LotsOfKisses
                         {
                             if (!string.IsNullOrEmpty(fullBagLine))
                             {
-                                npc.showTextAboveHead(fullBagLine);
+                                ShowTextAboveHeadWithPipeSupport(npc, fullBagLine);
                             }
                             else if (giftItems != null && giftItems.Count > 0)
                             {
@@ -1613,7 +1613,7 @@ namespace LotsOfKisses
                                 }
 
                                 if (!string.IsNullOrEmpty(presentLine))
-                                    npc.showTextAboveHead(presentLine);
+                                    ShowTextAboveHeadWithPipeSupport(npc, presentLine);
                             }
                         }
                         else
@@ -1623,7 +1623,7 @@ namespace LotsOfKisses
                                 surpriseLine = GetDialogueLine("approachKiss", 1, 30, npc);
                                 if (!string.IsNullOrEmpty(surpriseLine))
                                 {
-                                    npc.showTextAboveHead(surpriseLine);
+                                    ShowTextAboveHeadWithPipeSupport(npc, surpriseLine);
                                     SetApproachKissBlockTimer(npc, 300);
                                     approachKissDialogueLastTimeOfDay = kissTimeOfDay;
                                 }

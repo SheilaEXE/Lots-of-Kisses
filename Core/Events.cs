@@ -327,6 +327,7 @@ namespace LotsOfKisses
             UpdateContinuousKissPlayerLeanEffect();
             UpdateDeferredNpcSpecialActionRestore();
             UpdateBystanderRestore();
+            UpdatePipeTextQueues();
 
             NPC spouse = GetSpouse();
             if (spouse == null)
