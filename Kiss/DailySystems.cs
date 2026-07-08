@@ -293,14 +293,25 @@ namespace LotsOfKisses
                 return;
             }
 
-            RememberPassiveLookOriginalPose(npc);
-
             Vector2 diff = Game1.player.Position - npc.Position;
 
-            if (Math.Abs(diff.X) > Math.Abs(diff.Y))
-                npc.faceDirection(diff.X > 0 ? 1 : 3);
-            else
-                npc.faceDirection(diff.Y > 0 ? 2 : 0);
+            int playerDirection = Math.Abs(diff.X) > Math.Abs(diff.Y)
+                ? (diff.X > 0 ? 1 : 3)
+                : (diff.Y > 0 ? 2 : 0);
+
+            // "Eyes on the back of his head" fix: if the player is directly behind the NPC
+            // (opposite of whichever way he's currently facing), he shouldn't notice/turn to
+            // look — he can't see behind himself. Facing direction: 0=up, 1=right, 2=down,
+            // 3=left; opposite pairs are (0,2) and (1,3), i.e. (dir + 2) % 4. Checked before
+            // RememberPassiveLookOriginalPose so bailing here leaves no state behind — no pose
+            // saved, no restore timer started, nothing to undo.
+            int oppositeOfCurrentFacing = (npc.FacingDirection + 2) % 4;
+            if (playerDirection == oppositeOfCurrentFacing)
+                return;
+
+            RememberPassiveLookOriginalPose(npc);
+
+            npc.faceDirection(playerDirection);
 
             passiveLookRestoreTimer = Math.Max(passiveLookRestoreTimer, 180); // 3 segundos
         }
