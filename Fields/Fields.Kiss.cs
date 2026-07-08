@@ -5,12 +5,12 @@ namespace LotsOfKisses
 {
     public partial class ModEntry
     {
-// ======================================================================
+        // =====================================================================
         // FIELDS
-// ======================================================================
-// ======================================================================
+        // =====================================================================
+        // =====================================================================
         // BEIJO SIMPLES / LEGADO
-// ======================================================================
+        // =====================================================================
         private int kissDialogueTimer = 0;
         private int kissDelayTimer = 0;
         private NPC pendingKissNpc = null;
@@ -33,9 +33,9 @@ namespace LotsOfKisses
         private int outsideBumpPauseTimer = 0;
         private int outsideBumpPauseToken = 0;
 
-// ======================================================================
+        // =====================================================================
         // POST-KISS / PROXIMITY
-// ======================================================================
+        // =====================================================================
         private bool kissPostSequenceActive = false;
         private NPC kissPostSequenceNpc = null;
         private float lastKissPostDistance = -1f;
@@ -43,9 +43,9 @@ namespace LotsOfKisses
         private string kissPostLine = null;
         private int kissProximityTimer = 0;
 
-// ======================================================================
+        // =====================================================================
         // CONTINUOUS KISS / MULTI-KISSES
-// ======================================================================
+        // =====================================================================
         internal bool continuousKissActive = false;
         private NPC continuousKissNpc = null;
         private int continuousKissTimer = 0;
@@ -60,9 +60,9 @@ namespace LotsOfKisses
         private const int ContinuousKissHoldTicks = 60;
         private bool continuousKissWasTouchingSpouse = false;
 
-// ======================================================================
+        // =====================================================================
         // EFEITO VISUAL DO TIER 3: FARMER SE APROXIMA EM PIXELS E VOLTA
-// ======================================================================
+        // =====================================================================
         private bool continuousKissPlayerLeanInTriggered = false;
         private bool continuousKissPlayerLeanOutTriggered = false;
         private bool continuousKissPlayerLeanAnimationActive = false;
@@ -82,9 +82,9 @@ namespace LotsOfKisses
         private NPC pendingPublicMultiKissShyNpc = null;
         private int pendingPublicMultiKissShyEmoteTimer = 0;
 
-// ======================================================================
+        // =====================================================================
         // NPC VISUAL RESET AFTER KISS
-// ======================================================================
+        // =====================================================================
         internal NPC pendingNpcKissResetNpc = null;
         internal int pendingNpcKissResetTimer = 0;
         internal int pendingNpcKissResetDirection = -1;

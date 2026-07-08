@@ -3,13 +3,12 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.GameData.Characters;
 using System;
-using System.Linq;
 
 namespace LotsOfKisses
 {
-// ======================================================================
+    // ===================================================================================================================================================================================================================================================
     // HARMONYPATCH PARA AUMENTAR O DELAY DO BEIJO NORMAL DO CONJUGE, DEIXANDO O MOMENTO MAIS LONGO OU MAIS CURTO
-// ======================================================================
+    // ===================================================================================================================================================================================================================================================
     [HarmonyPatch(typeof(NPC), nameof(NPC.checkAction), new[] { typeof(Farmer), typeof(GameLocation) })]
     public static class NPC_CheckAction_KissDelay_Patch
     {
@@ -70,9 +69,9 @@ namespace LotsOfKisses
         }
     }
 
-// ======================================================================
+    // ===================================================================================================================================================================================================================================================
     // HARMONYPATCH PARA AUMENTAR O DELAY DO BEIJO NORMAL DO JOGADOR, DEIXANDO O MOMENTO MAIS LONGO OU MAIS CURTO
-// ======================================================================
+    // ===================================================================================================================================================================================================================================================
     [HarmonyPatch(typeof(Farmer), nameof(Farmer.PerformKiss))]
     public static class Farmer_PerformKiss_KissDelay_Patch
     {
@@ -147,9 +146,9 @@ namespace LotsOfKisses
             }
         }
     }
-// ======================================================================
+    // ===================================================================================================================================================================================================================================================
     // BLOCK DIALOGUE OPENED BY THE AUTOMATIC KISS CLICK
-// ======================================================================
+    // ===================================================================================================================================================================================================================================================
     [HarmonyPatch(typeof(Game1), nameof(Game1.drawDialogue), new[] { typeof(NPC) })]
     public static class Game1_DrawDialogue_SuppressAutoKissDialogue_Patch
     {
@@ -239,15 +238,19 @@ namespace LotsOfKisses
         }
     }
 
-    // ── The REAL source of the per-tick tug-of-war: NPC.doMiddleAnimation is the private method
-    // NPC.reallyDoAnimationAtEndOfScheduleRoute schedules itself into via a self-rescheduling
-    // Game1 DelayedAction chain — completely separate from NPC.update, so patching update alone
-    // (see the Postfix below) can win most ticks but still loses on whichever tick this callback
-    // fires, since Game1's DelayedAction queue is processed independently of NPC.update. Skipping
-    // this method entirely while the NPC is held as a stationary bystander stops the fishing-pose
-    // frame sequence from ever touching Sprite during that window, at the source.
+    // ── Suppresses NPC.doMiddleAnimation (the private method vanilla's own
+    // reallyDoAnimationAtEndOfScheduleRoute schedules itself into via a self-rescheduling Game1
+    // DelayedAction chain — completely separate from NPC.update, so our own per-tick pose-forcing
+    // code in HoldBystanderWatching can "win" most ticks but still loses on whichever tick this
+    // callback independently fires) for a bystander currently held watching a kiss. Without this,
+    // vanilla can re-run the fishing pose's extended sourceRect setup on top of our own forced
+    // idle frame mid-hold, showing the wrong tilesheet row. Scoped as narrowly as possible: only
+    // suppressed for NPCs IsHeldAsFishingBystander returns true for (a bystander currently in an
+    // active kiss-watching snapshot AND genuinely holding a captured fishing/special-pose
+    // behavior name) — never touches the romantic partner, walking NPCs, or anything outside this
+    // specific hold window.
     [HarmonyPatch(typeof(NPC), "doMiddleAnimation")]
-    public static class NPC_DoMiddleAnimation_SuppressForHeldBystander_Patch
+    public static class NPC_DoMiddleAnimation_SuppressForHeldFishingBystander_Patch
     {
         static bool Prefix(NPC __instance)
         {
@@ -256,138 +259,15 @@ namespace LotsOfKisses
                 if (__instance == null || ModEntry.Instance == null)
                     return true;
 
-                BystanderSnapshot snapshot = ModEntry.Instance.GetActiveStaticBystanderSnapshot(__instance);
-                if (snapshot == null)
-                    return true; // not held — run normally
+                if (!ModEntry.Instance.IsHeldAsFishingBystander(__instance))
+                    return true; // not a held fishing bystander — run normally
 
-                return false; // skip — this NPC is currently held watching a kiss
+                return false; // skip — this NPC's pose is being held for a kiss reaction
             }
             catch (Exception ex)
             {
-                ModEntry.Instance?.Monitor.Log($"[BYSTANDER POSE ENFORCE] Error suppressing doMiddleAnimation: {ex}", LogLevel.Error);
+                ModEntry.Instance?.Monitor.Log($"[BYSTANDER FISHING HOLD] Error suppressing doMiddleAnimation: {ex}", LogLevel.Error);
                 return true;
-            }
-        }
-    }
-
-    // ── The final, catch-all defense: AnimatedSprite has no self-contained Update method — frame
-    // changes always come from some external caller (Animate, setCurrentAnimation, or setting
-    // CurrentFrame directly), and we've found multiple different vanilla sources doing this for a
-    // fishing NPC's idle pose (reallyDoAnimationAtEndOfScheduleRoute's DelayedAction chain, and at
-    // least one more we haven't identified). Rather than keep chasing each one individually,
-    // patch the one place all of them funnel through: the CurrentFrame setter itself. If the
-    // sprite's Owner is an NPC currently held as a bystander, immediately force the frame back to
-    // our desired value — whoever just tried to change it loses, no matter who they are.
-    // Uses a reentrancy guard since forcing the value back calls this same setter again.
-    [HarmonyPatch(typeof(StardewValley.AnimatedSprite), nameof(StardewValley.AnimatedSprite.CurrentFrame), MethodType.Setter)]
-    public static class AnimatedSprite_SetCurrentFrame_BystanderPoseEnforce_Patch
-    {
-        [ThreadStatic]
-        private static bool isReentering;
-
-        static void Postfix(StardewValley.AnimatedSprite __instance)
-        {
-            if (isReentering)
-                return;
-
-            try
-            {
-                if (!(__instance?.Owner is NPC npc) || ModEntry.Instance == null)
-                    return;
-
-                BystanderSnapshot snapshot = ModEntry.Instance.GetActiveStaticBystanderSnapshot(npc);
-                if (snapshot == null)
-                    return;
-
-                int desiredFrame = ModEntry.Instance.GetHeldBystanderIdleFrame(npc);
-                if (__instance.CurrentFrame == desiredFrame)
-                    return;
-
-                isReentering = true;
-                try
-                {
-                    __instance.CurrentFrame = desiredFrame;
-                    __instance.UpdateSourceRect();
-                }
-                finally
-                {
-                    isReentering = false;
-                }
-            }
-            catch (Exception ex)
-            {
-                isReentering = false;
-                ModEntry.Instance?.Monitor.Log($"[BYSTANDER POSE ENFORCE] Error in CurrentFrame setter patch: {ex}", LogLevel.Error);
-            }
-        }
-    }
-
-    // ── The absolute last word: NPC.draw itself. The CurrentFrame setter patch only caught one
-    // change out of many — meaning vanilla's internal code sets the private backing field
-    // directly rather than going through the public property, sailing right past that patch.
-    // There's no point chasing every internal write site individually anymore: force the correct
-    // frame right before the sprite is actually drawn to the screen. Nothing can write after
-    // this and still show up, since this runs immediately before the pixels hit the screen.
-    [HarmonyPatch(typeof(NPC), nameof(NPC.draw), new[] { typeof(Microsoft.Xna.Framework.Graphics.SpriteBatch), typeof(float) })]
-    public static class NPC_Draw_BystanderPoseEnforce_Patch
-    {
-        static void Prefix(NPC __instance, float alpha)
-        {
-            try
-            {
-                if (__instance == null || __instance.Sprite == null || ModEntry.Instance == null)
-                    return;
-
-                BystanderSnapshot snapshot = ModEntry.Instance.GetActiveStaticBystanderSnapshot(__instance);
-                if (snapshot == null)
-                    return;
-
-                int desiredFrame = ModEntry.Instance.GetHeldBystanderIdleFrame(__instance);
-
-                if (__instance.Sprite.CurrentFrame != desiredFrame || __instance.Sprite.CurrentAnimation != null)
-                {
-                    __instance.Sprite.StopAnimation();
-                    __instance.Sprite.ClearAnimation();
-                    __instance.Sprite.CurrentAnimation = null;
-                    __instance.Sprite.CurrentFrame = desiredFrame;
-                    __instance.Sprite.UpdateSourceRect();
-                    ModEntry.Instance.TrySetSpritePrivateField(__instance, "yOffset", 0f);
-                    ModEntry.Instance.TrySetSpritePrivateField(__instance, "loadedEndOfRouteBehavior", null);
-                }
-            }
-            catch (Exception ex)
-            {
-                ModEntry.Instance?.Monitor.Log($"[BYSTANDER POSE ENFORCE] Error in NPC.draw Prefix: {ex}", LogLevel.Error);
-            }
-        }
-    }
-
-    // ── Ensures a held bystander's "looking at player" pose always has the last word for the
-    // tick. Vanilla's own NPC.update can re-assert a scheduled/route-end animation (e.g. a
-    // fishing idle loop) on the very same tick after our own hold code already ran, turning into
-    // a per-tick tug-of-war where whichever side writes last is what actually gets drawn. Running
-    // this as a Postfix on NPC.update guarantees we always write last, for NPCs currently held as
-    // a stationary bystander.
-    [HarmonyPatch(typeof(NPC), nameof(NPC.update), new[] { typeof(Microsoft.Xna.Framework.GameTime), typeof(GameLocation) })]
-    public static class NPC_Update_BystanderPoseEnforce_Patch
-    {
-        static void Postfix(NPC __instance)
-        {
-            try
-            {
-                if (__instance == null || ModEntry.Instance == null)
-                    return;
-
-                BystanderSnapshot snapshot = ModEntry.Instance.GetActiveStaticBystanderSnapshot(__instance);
-
-                if (snapshot == null)
-                    return;
-
-                ModEntry.Instance.ForceStaticBystanderPose(__instance, snapshot);
-            }
-            catch (Exception ex)
-            {
-                ModEntry.Instance?.Monitor.Log($"[BYSTANDER POSE ENFORCE] Error re-applying held pose: {ex}", LogLevel.Error);
             }
         }
     }

@@ -32,7 +32,7 @@ namespace LotsOfKisses
             // (e.g. Sebastian playing video games, Abigail sitting on the couch) that never clears
             // on its own — unlike a regular queued dialogue, it's recalculated fresh every time
             // checkAction runs, so stashing CurrentDialogue alone doesn't help here. Suppressing it
-            // through NPC.HasLocationOverrideDialogue (Harmony Prefix below) makes checkAction take
+            // through NPC.HasLocationOverrideDialogue (Harmony Prefix) makes checkAction take
             // the kiss branch instead, without needing to touch or restore anything on the NPC itself
             // — the same override line is recalculated fresh next time the player clicks normally.
             bool previousSuppressLocationOverride = suppressLocationOverrideDialogueDuringAutoKissClick;
@@ -100,9 +100,9 @@ namespace LotsOfKisses
                 }
             }
         }
-// ======================================================================
+        // =========================================================================================================================================
         // CONTINUOUS KISS LOGIC — START, MAINTENANCE AND END (including bump kiss, which can escalate outside the farm)
-// ======================================================================
+        // =========================================================================================================================================
 
         private int RollContinuousKissTier()
         {
@@ -113,6 +113,7 @@ namespace LotsOfKisses
             if (roll < 0.40) return 2;
             return 1;
         }
+
 
         private sealed class NpcPreKissSpecialActionSnapshot
         {
@@ -126,28 +127,48 @@ namespace LotsOfKisses
             public List<FarmerSprite.AnimationFrame> CurrentAnimation;
         }
 
-        private System.Collections.Generic.Dictionary<string, NpcPreKissSpecialActionSnapshot> preKissSpecialActionSnapshotsByNpc = new();
-        private System.Collections.Generic.Dictionary<string, int> preKissSpecialActionRestoreDelayTicksByNpc = new();
+        private NpcPreKissSpecialActionSnapshot preKissSpecialActionSnapshot = null;
+        private int preKissSpecialActionRestoreDelayTicks = 0;
         private const float NpcSpecialActionRestoreDistance = 300f;
+
+        private int TryGetAnimationFrameIndex(FarmerSprite.AnimationFrame frame)
+        {
+            try
+            {
+                object boxed = frame;
+                FieldInfo field = boxed.GetType().GetField("frame", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (field != null && field.GetValue(boxed) is int fieldValue)
+                    return fieldValue;
+
+                PropertyInfo property = boxed.GetType().GetProperty("Frame", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (property != null && property.GetValue(boxed) is int propertyValue)
+                    return propertyValue;
+            }
+            catch
+            {
+                // If the internal structure changes, the CurrentFrame fallback still covers the common cases.
+            }
+
+            return -1;
+        }
 
         private bool HasNpcPreKissSpecialAction(NPC npc)
         {
-            return npc != null && preKissSpecialActionSnapshotsByNpc.ContainsKey(npc.Name);
+            return npc != null &&
+                   preKissSpecialActionSnapshot != null &&
+                   preKissSpecialActionSnapshot.Npc == npc;
         }
 
-        private void ClearNpcPreKissSpecialAction(NPC npc = null, string npcNameOverride = null)
+        private void ClearNpcPreKissSpecialAction(NPC npc = null)
         {
-            if (npc == null && npcNameOverride == null)
-            {
-                // No specific NPC given — clear everything (used on day change, warp, etc).
-                preKissSpecialActionSnapshotsByNpc.Clear();
-                preKissSpecialActionRestoreDelayTicksByNpc.Clear();
+            if (preKissSpecialActionSnapshot == null)
                 return;
-            }
 
-            string key = npc?.Name ?? npcNameOverride;
-            preKissSpecialActionSnapshotsByNpc.Remove(key);
-            preKissSpecialActionRestoreDelayTicksByNpc.Remove(key);
+            if (npc == null || preKissSpecialActionSnapshot.Npc == npc)
+            {
+                preKissSpecialActionSnapshot = null;
+                preKissSpecialActionRestoreDelayTicks = 0;
+            }
         }
 
         private bool IsKissSystemHoldingNpc(NPC npc)
@@ -173,21 +194,14 @@ namespace LotsOfKisses
             return false;
         }
 
-        internal void TrySetSpritePrivateField(object target, string fieldName, object value)
+        private void TrySetSpritePrivateField(object target, string fieldName, object value)
         {
             if (target == null || string.IsNullOrEmpty(fieldName))
                 return;
 
             try
             {
-                // NOTE: walk the type hierarchy explicitly (GetField alone only searches fields
-                // DECLARED on the exact runtime type — it silently misses fields declared on a base
-                // class, which was intermittently causing reads of "spriteWidth" to fail while an
-                // adjacent field on the same object succeeded, depending on the object's exact
-                // runtime type).
-                FieldInfo field = null;
-                for (Type t = target.GetType(); t != null && field == null; t = t.BaseType)
-                    field = t.GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 if (field != null)
                     field.SetValue(target, value);
             }
@@ -204,9 +218,7 @@ namespace LotsOfKisses
 
             try
             {
-                FieldInfo field = null;
-                for (Type t = target.GetType(); t != null && field == null; t = t.BaseType)
-                    field = t.GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 return field?.GetValue(target);
             }
             catch
@@ -217,16 +229,14 @@ namespace LotsOfKisses
 
         /// <summary>
         /// "doingEndOfRouteAnimation" is NOT a plain bool — it's a NetBool (a synced netcode field
-        /// wrapping the real value in its own ".Value" property). Confirmed by decompiling
-        /// NPC.update: every read/write of it goes through get_Value()/set_Value(), never the field
-        /// directly. TrySetSpritePrivateField silently failed on it every time (wrong CLR type,
-        /// exception swallowed by its catch block) — so this flag was NEVER actually being
-        /// suppressed, despite looking like it worked. That mismatch (real NetBool staying true
-        /// while our code kept forcing the plain-bool "currentlyDoingEndOfRouteAnimation" to false)
-        /// made vanilla re-trigger reallyDoAnimationAtEndOfScheduleRoute() — the route-end INTRO,
-        /// which includes a brief walk-in animation — every single tick for the whole hold,
-        /// corrupting the pose state that's left behind once restored. Use these instead for that
-        /// one field specifically.
+        /// wrapping the real value in its own ".Value" property). Every read/write of it goes
+        /// through get_Value()/set_Value(), never the field directly. TrySetSpritePrivateField
+        /// silently fails on it (wrong CLR type, exception swallowed) — so that flag was never
+        /// actually being suppressed with the plain-field helper. Leaving it true while we hold an
+        /// NPC in an idle pose makes vanilla re-trigger reallyDoAnimationAtEndOfScheduleRoute() —
+        /// the route-end INTRO, which includes a brief walk-in animation — on top of our own
+        /// forced frame, corrupting the pose (e.g. showing the wrong row of the tilesheet). Use
+        /// these NetField-aware helpers for that field specifically.
         /// </summary>
         internal void TrySetNetBoolField(object target, string fieldName, bool value)
         {
@@ -304,36 +314,8 @@ namespace LotsOfKisses
             if (npc == null || npc.Sprite == null || npc.currentLocation == null)
                 return;
 
-            // Never overwrite an existing snapshot for this NPC — the FIRST captured pose is the
-            // real "original" state, and every later cycle of the same multi-kiss chain should
-            // restore back to that one, not to whatever pose the NPC happened to be forced into
-            // mid-chain (e.g. the idle frame we snap them to right below, or a later kiss cycle's
-            // intermediate state).
-            if (preKissSpecialActionSnapshotsByNpc.ContainsKey(npc.Name))
+            if (preKissSpecialActionSnapshot != null && preKissSpecialActionSnapshot.Npc == npc)
                 return;
-
-            // NOTE: UpdateSpouseLookAtPlayer (DailySystems.cs) turns the NPC to face the player
-            // as soon as they're close, well before any kiss starts — so by now the NPC's pose
-            // may already be "looking at player", not the real original (e.g. Sebastian fishing,
-            // facing north). That system keeps its own memory of the true original pose to undo
-            // its own turn later, but loses it too easily (see below). Adopt it here instead, so
-            // the two systems don't fight over the same NPC.
-            int? passiveLookFacingOverride = null;
-            int? passiveLookFrameOverride = null;
-            bool hasPassiveLookOverride = false;
-            if (passiveLookRestoreActive && passiveLookRestoreNpcName == npc.Name)
-            {
-                if (passiveLookRestoreFacing >= 0)
-                    passiveLookFacingOverride = passiveLookRestoreFacing;
-                if (passiveLookRestoreFrame >= 0)
-                    passiveLookFrameOverride = passiveLookRestoreFrame;
-
-                hasPassiveLookOverride = passiveLookFacingOverride.HasValue || passiveLookFrameOverride.HasValue;
-
-                // Don't clear the passive-look memory yet — only once it's actually saved into
-                // the kiss snapshot below. Clearing early risks losing it if the capture below
-                // ends up skipped (e.g. a frame-0 pose wrongly read as "nothing special").
-            }
 
             List<FarmerSprite.AnimationFrame> animation = null;
             if (npc.Sprite.CurrentAnimation != null && npc.Sprite.CurrentAnimation.Count > 0)
@@ -341,44 +323,28 @@ namespace LotsOfKisses
 
             bool isWalking = npc.isMoving();
             bool hasSpecialAnimation = animation != null && animation.Count > 0;
-            int effectiveFrame = passiveLookFrameOverride ?? npc.Sprite.CurrentFrame;
-            int effectiveFacing = passiveLookFacingOverride ?? npc.FacingDirection;
-            // NOTE: used to also require CurrentFrame >= 16 to count as "special enough to
-            // save" — but many special poses (billiards, sitting, washing dishes) use lower
-            // frame indices, so that silently skipped capturing them. A pose confirmed by the
-            // passive-look system always counts, even at frame 0 (e.g. just standing north) —
-            // there the "specialness" is the facing direction, not the frame index.
-            bool hasSpecialStaticFrame = hasPassiveLookOverride || effectiveFrame != 0;
+            bool hasSpecialStaticFrame = npc.Sprite.CurrentFrame >= 16;
 
             // If the NPC is walking with no special animation or frame, skip capture —
             // unless it's late night (22h+) where walking means going home and we still want the kiss to work.
             if (isWalking && !hasSpecialAnimation && !hasSpecialStaticFrame && Game1.timeOfDay < 2200)
-            {
                 return;
-            }
 
             // If truly idle with no special state at all, nothing to capture.
             if (!isWalking && !hasSpecialAnimation && !hasSpecialStaticFrame)
-            {
                 return;
-            }
 
-            if (hasPassiveLookOverride)
-                ClearPassiveLookOriginalPose();
-
-            var snapshot = new NpcPreKissSpecialActionSnapshot
+            preKissSpecialActionSnapshot = new NpcPreKissSpecialActionSnapshot
             {
                 Npc = npc,
                 Location = npc.currentLocation,
-                FacingDirection = effectiveFacing,
-                CurrentFrame = effectiveFrame,
+                FacingDirection = npc.FacingDirection,
+                CurrentFrame = npc.Sprite.CurrentFrame,
                 Flip = npc.flip,
                 MovementPause = (int)npc.movementPause,
                 AddedSpeed = (int)npc.addedSpeed,
                 CurrentAnimation = animation
             };
-
-            preKissSpecialActionSnapshotsByNpc[npc.Name] = snapshot;
 
             // Pause movement temporarily so the vanilla kiss animation can play.
             // The controller is never touched — it resumes when movementPause reaches 0.
@@ -395,15 +361,18 @@ namespace LotsOfKisses
             npc.Sprite.UpdateSourceRect();
 
             this.Monitor.Log(
-                $"[SPECIAL ACTION SAVED BEFORE KISS] npc={npc.Name} frame={snapshot.CurrentFrame} anim={(animation != null ? animation.Count : 0)} walking={isWalking}",
-                LogLevel.Debug
+                $"[SPECIAL ACTION SAVED BEFORE KISS] npc={npc.Name} frame={preKissSpecialActionSnapshot.CurrentFrame} anim={(animation != null ? animation.Count : 0)} walking={isWalking}",
+                LogLevel.Trace
             );
         }
 
-        private bool TryRestoreNpcPreKissSpecialAction(NPC npc, bool clearAfterRestore)
+        private bool TryRestoreNpcPreKissSpecialAction(bool clearAfterRestore)
         {
-            if (npc == null || !preKissSpecialActionSnapshotsByNpc.TryGetValue(npc.Name, out var snapshot))
+            NpcPreKissSpecialActionSnapshot snapshot = preKissSpecialActionSnapshot;
+            if (snapshot == null || snapshot.Npc == null)
                 return false;
+
+            NPC npc = snapshot.Npc;
 
             if (npc.Sprite == null || npc.currentLocation == null || npc.currentLocation != snapshot.Location)
             {
@@ -436,7 +405,7 @@ namespace LotsOfKisses
 
                 this.Monitor.Log(
                     $"[SPECIAL ACTION RESTORED AFTER KISS] npc={npc.Name} frame={snapshot.CurrentFrame} anim={(snapshot.CurrentAnimation != null ? snapshot.CurrentAnimation.Count : 0)}",
-                    LogLevel.Debug
+                    LogLevel.Trace
                 );
 
                 if (clearAfterRestore)
@@ -454,67 +423,39 @@ namespace LotsOfKisses
 
         private void UpdateDeferredNpcSpecialActionRestore()
         {
-            if (preKissSpecialActionSnapshotsByNpc.Count == 0)
+            NpcPreKissSpecialActionSnapshot snapshot = preKissSpecialActionSnapshot;
+            if (snapshot == null)
+                return;
+
+            NPC npc = snapshot.Npc;
+            if (npc == null || npc.Sprite == null || npc.currentLocation == null || Game1.player == null)
             {
+                ClearNpcPreKissSpecialAction(npc);
                 return;
             }
 
-            // Snapshot the key list since we may mutate the dictionary (via ClearNpcPreKissSpecialAction)
-            // while iterating.
-            var npcNames = new List<string>(preKissSpecialActionSnapshotsByNpc.Keys);
-
-            foreach (string npcName in npcNames)
+            if (npc.currentLocation != Game1.player.currentLocation)
             {
-                if (!preKissSpecialActionSnapshotsByNpc.TryGetValue(npcName, out var snapshot))
-                    continue;
-
-                NPC npc = snapshot.Npc;
-                if (npc == null || npc.Sprite == null || npc.currentLocation == null || Game1.player == null)
-                {
-                    ClearNpcPreKissSpecialAction(npc, npcName);
-                    continue;
-                }
-
-                // Player left the NPC's location entirely (e.g. walked out of the Saloon, off the
-                // beach/pier). This is just as much a sign that the player moved away as the
-                // distance check below — actually restore the pose here, don't just discard the
-                // snapshot. Discarding without restoring is what left the NPC frozen in the idle
-                // frame forever whenever "walking far away" meant leaving the room instead of
-                // walking to the other side of it.
-                if (npc.currentLocation != Game1.player.currentLocation)
-                {
-                    if (!IsKissSystemHoldingNpc(npc))
-                        TryRestoreNpcPreKissSpecialAction(npc, clearAfterRestore: true);
-                    else
-                        ClearNpcPreKissSpecialAction(npc, npcName);
-                    continue;
-                }
-
-                if (IsKissSystemHoldingNpc(npc))
-                {
-                    continue;
-                }
-
-                int delayTicks = preKissSpecialActionRestoreDelayTicksByNpc.TryGetValue(npcName, out int t) ? t : 0;
-                if (delayTicks > 0)
-                {
-                    preKissSpecialActionRestoreDelayTicksByNpc[npcName] = delayTicks - 1;
-                    continue;
-                }
-
-                if (Game1.activeClickableMenu != null || Game1.dialogueUp)
-                {
-                    continue;
-                }
-
-                float dist = DistanceToPlayer(npc);
-                if (dist < NpcSpecialActionRestoreDistance)
-                {
-                    continue;
-                }
-
-                TryRestoreNpcPreKissSpecialAction(npc, clearAfterRestore: true);
+                ClearNpcPreKissSpecialAction(npc);
+                return;
             }
+
+            if (IsKissSystemHoldingNpc(npc))
+                return;
+
+            if (preKissSpecialActionRestoreDelayTicks > 0)
+            {
+                preKissSpecialActionRestoreDelayTicks--;
+                return;
+            }
+
+            if (Game1.activeClickableMenu != null || Game1.dialogueUp)
+                return;
+
+            if (DistanceToPlayer(npc) < NpcSpecialActionRestoreDistance)
+                return;
+
+            TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
         }
 
         /// <summary>Ticks left before this specific NPC can trigger a new bump-kiss cooldown line/gift. Per-NPC, so kissing one partner doesn't block trying with another right after.</summary>
@@ -803,27 +744,18 @@ namespace LotsOfKisses
 
             npc.controller = null;
             npc.Halt();
+            npc.Sprite.StopAnimation();
+            npc.Sprite.ClearAnimation();
+            npc.Sprite.CurrentAnimation = null;
+
+            // Hard reset — fully clears controller and animation state.
+            npc.flip = false;
+            npc.faceDirection(npc.FacingDirection);
+            npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(npc.FacingDirection);
+
             npc.movementPause = 0;
             npc.addedSpeed = 0;
-
-            // If a snapshot is still saved for this NPC, skip forcing the idle frame/animation
-            // reset here — UpdateDeferredNpcSpecialActionRestore will restore the real
-            // pose/animation once the player walks far enough away. Forcing the idle frame in
-            // this "wake up" step (which always ran immediately when a multi-kiss ends,
-            // regardless of a saved snapshot) was overwriting the special pose before the
-            // distance-based restore ever got a chance to run.
-            if (!HasNpcPreKissSpecialAction(npc))
-            {
-                npc.Sprite.StopAnimation();
-                npc.Sprite.ClearAnimation();
-                npc.Sprite.CurrentAnimation = null;
-
-                // Hard reset — fully clears controller and animation state.
-                npc.flip = false;
-                npc.faceDirection(npc.FacingDirection);
-                npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(npc.FacingDirection);
-                npc.Sprite.UpdateSourceRect();
-            }
+            npc.Sprite.UpdateSourceRect();
 
             playerWasTouchingSpouse = false;
             kissProximityTimer = 0;
@@ -841,12 +773,6 @@ namespace LotsOfKisses
 
                 npc.controller = null;
                 npc.Halt();
-                npc.movementPause = 0;
-
-                // Same reasoning as above: don't stomp a pose that's still waiting to be restored.
-                if (HasNpcPreKissSpecialAction(npc))
-                    return;
-
                 npc.Sprite.StopAnimation();
                 npc.Sprite.ClearAnimation();
                 npc.Sprite.CurrentAnimation = null;
@@ -874,9 +800,9 @@ namespace LotsOfKisses
             }
         }
 
-// ======================================================================
+        // =========================================================================================================================================
         // Harmony prefix controlling whether the partner NPC's schedule check runs normally or is suppressed to hold them in a continuous kiss without the game forcibly interrupting the sequence.
-// ======================================================================
+        // =========================================================================================================================================
         public static bool CheckSchedule_Prefix(NPC __instance)
         {
             if (allowForcedScheduleCheck)
@@ -911,9 +837,9 @@ namespace LotsOfKisses
             return !shouldBlock;
         }
 
-// ======================================================================
+        // ========================================================================================================================================
         // Outdoor bump-kiss pause: briefly pauses the NPC after a bump kiss to prevent them from teleporting or walking away before the kiss can escalate into a continuous kiss.
-// ======================================================================
+        // ========================================================================================================================================
         private void UpdateOutsideBumpPause(NPC spouse)
         {
             if (!outsideBumpPauseActive || outsideBumpPauseNpc == null)
@@ -1030,59 +956,36 @@ namespace LotsOfKisses
 
             bool triggered = TryCheckActionForAutoKissWithoutDialogue(npc);
 
-            // checkAction only plays the real vanilla kiss pose for the player's actual spouse —
-            // for a dating partner (not yet married) it does nothing, unless some other mod (e.g.
-            // Hugs and Kisses, or a polyamory mod) happens to be installed and patches it. If it's
-            // not installed and this is a dating partner, do it ourselves: manually play the same
-            // kiss pose the game already ships on every datable NPC's tilesheet, and call the real
-            // Farmer.PerformKiss so the player's own animation matches too. This mod's existing
-            // friendship/sound/emote logic elsewhere is untouched — this only supplies the missing
-            // vanilla pose + PerformKiss call.
-            if (!triggered
-                && this.Config?.EnableBoyfriendKisses == true
-                && IsDatingPartner(npc.Name)
-                && !IsCurrentSpouse(npc.Name))
-            {
-                triggered = TryPerformManualVanillaDatingKiss(npc);
-            }
-
             if (triggered && playSound)
                 Game1.playSound("dwop");
 
             return triggered;
         }
 
-        // Manually replicates the piece of the vanilla spouse-kiss flow that checkAction never
-        // exposes for dating partners: setting the NPC's kiss pose frame (flipped to face the
-        // player correctly) and calling Farmer.PerformKiss so the player's own kiss animation
-        // plays for real, instead of just this mod's own effects running on top of nothing.
-        private bool TryPerformManualVanillaDatingKiss(NPC npc)
+        // Tries to trigger the game's built-in continuous kiss reaction (fires when the player kisses while already very close to the NPC) to reuse the game's animation and visual effects. This reaction is temperamental and may not fire every time, but adds significant immersion when it does.
+        private bool TryTriggerVanillaContinuousKiss(NPC npc)
         {
-            if (npc == null || npc.Sprite == null || Game1.player == null)
+            if (npc == null || npc.currentLocation != Game1.player.currentLocation)
                 return false;
 
-            int kissFrame = GetVanillaKissFrame(npc.Name);
-            bool poseFacesRight = GetVanillaKissFacingRight(npc.Name);
+            if (GetApproachKissBlockTimer(npc) > 0)
+                return false;
 
-            bool flip = (poseFacesRight && npc.FacingDirection == 3)
-                     || (!poseFacesRight && npc.FacingDirection == 1);
+            if (Game1.activeClickableMenu != null)
+                return false;
 
-            int delay = Game1.IsMultiplayer ? 1000 : 10;
-            npc.movementPause = delay;
+            float distance = DistanceToPlayer(npc);
+            if (distance > 72f)
+                return false;
 
-            npc.Sprite.setCurrentAnimation(new List<FarmerSprite.AnimationFrame>
-            {
-                new FarmerSprite.AnimationFrame(kissFrame, delay, false, flip, npc.haltMe, true)
-            });
-            npc.Sprite.UpdateSourceRect();
+            FaceEachOther(npc);
 
-            int playerFaceDirection = 1; // right
-            if ((poseFacesRight && !flip) || (!poseFacesRight && flip))
-                playerFaceDirection = 3; // left
+            bool triggered = TryCheckActionForAutoKissWithoutDialogue(npc);
 
-            Game1.player.PerformKiss(playerFaceDirection);
+            if (triggered)
+                Game1.playSound("dwop");
 
-            return true;
+            return triggered;
         }
 
         // Releases the NPC from the continuous kiss state (animation, controller, etc.) after the sequence ends. Staged with delays to prevent teleports or schedule interruptions before the NPC is fully freed.
@@ -1122,25 +1025,6 @@ namespace LotsOfKisses
                 if (spouse == null || spouse.currentLocation != Game1.player.currentLocation)
                     return;
 
-                didReactThisTick = false;
-                kissProximityTimer = 0;
-                continuousKissPendingRestart = false;
-                continuousKissGapTimer = 0;
-                continuousKissActive = false;
-                continuousKissNpc = null;
-                kissPostSequenceActive = false;
-                kissPostSequenceNpc = null;
-
-                // If a snapshot is still saved for this NPC, don't overwrite the idle frame —
-                // UpdateDeferredNpcSpecialActionRestore will restore the special pose/animation
-                // once the player moves far enough away. Forcing the idle frame here would
-                // permanently overwrite that restoration, which is exactly what was happening to
-                // NPCs with a location-override pose (e.g. Sebastian playing video games): this
-                // delayed cleanup ran a moment after the kiss ended and stomped the idle frame
-                // back on top before the distance-based restore ever got a chance to run.
-                if (HasNpcPreKissSpecialAction(spouse))
-                    return;
-
                 spouse.Halt();
                 spouse.controller = null;
                 spouse.movementPause = 0;
@@ -1153,6 +1037,15 @@ namespace LotsOfKisses
                 spouse.faceDirection(spouse.FacingDirection);
                 spouse.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(spouse.FacingDirection);
                 spouse.Sprite.UpdateSourceRect();
+
+                didReactThisTick = false;
+                kissProximityTimer = 0;
+                continuousKissPendingRestart = false;
+                continuousKissGapTimer = 0;
+                continuousKissActive = false;
+                continuousKissNpc = null;
+                kissPostSequenceActive = false;
+                kissPostSequenceNpc = null;
             }, 220);
 
             DelayedAction.functionAfterDelay(() =>
@@ -1168,12 +1061,6 @@ namespace LotsOfKisses
         private void RestoreSpouseScheduleAfterMultiKiss(NPC spouse)
         {
             if (spouse == null || spouse.currentLocation == null)
-                return;
-
-            // Same reasoning as the 220ms delayed cleanup above: don't stomp the idle frame on
-            // top of a pose/animation that's still waiting to be restored by
-            // UpdateDeferredNpcSpecialActionRestore once the player walks away.
-            if (HasNpcPreKissSpecialAction(spouse))
                 return;
 
             spouse.Halt();
@@ -1195,9 +1082,9 @@ namespace LotsOfKisses
 
             ForceScheduleCheckNow(spouse);
         }
-// ======================================================================
+        // =========================================================================================================================================
         // NPC position reset after a kiss (prevents stuck animations or unexpected teleports)
-// ======================================================================
+        // =========================================================================================================================================
         private void UpdatePendingNpcKissReset(NPC spouse)
         {
             if (!pendingNpcKissResetQueued || pendingNpcKissResetNpc == null)
@@ -1265,12 +1152,12 @@ namespace LotsOfKisses
             pendingPublicMultiKissShyNpc = null;
             pendingPublicMultiKissShyEmoteTimer = 0;
         }
-// ======================================================================
+        // =====================================================================
         // MAIN SYSTEMS / UPDATE LOOPS
-// ======================================================================
-// ======================================================================
+        // =====================================================================
+        // =====================================================================
         // SINGLE KISS LOGIC
-// ======================================================================
+        // ====================================================================
         private void UpdateKissSystem(NPC spouse)
         {
             if (!kissSequenceActive || pendingKissNpc == null)
@@ -1313,9 +1200,9 @@ namespace LotsOfKisses
                 }
             }
         }
-// ======================================================================
+        // =====================================================================
         // CONTINUOUS KISS LOGIC
-// ======================================================================
+        // =====================================================================
         private void UpdateContinuousKissSystem(NPC spouse)
         {
             if (spouse == null)
@@ -1359,12 +1246,12 @@ namespace LotsOfKisses
                         {
                             if (!HasBystandersOnScreen() && !string.IsNullOrEmpty(postLine))
                             {
-                                ShowTextAboveHeadWithPipeSupport(postNpc, postLine);
+                                postNpc.showTextAboveHead(postLine);
                                 dialogueCooldown = 120;
                             }
                             else if (HasBystandersOnScreen() && !string.IsNullOrEmpty(publicLine))
                             {
-                                ShowTextAboveHeadWithPipeSupport(postNpc, publicLine);
+                                postNpc.showTextAboveHead(publicLine);
                                 dialogueCooldown = 120;
                             }
                         }
@@ -1408,12 +1295,12 @@ namespace LotsOfKisses
                     {
                         if (!HasBystandersWithLineOfSight() && !string.IsNullOrEmpty(postLine))
                         {
-                            ShowTextAboveHeadWithPipeSupport(postNpc, postLine);
+                            postNpc.showTextAboveHead(postLine);
                             dialogueCooldown = 120;
                         }
                         else if (HasBystandersWithLineOfSight() && !string.IsNullOrEmpty(publicLine))
                         {
-                            ShowTextAboveHeadWithPipeSupport(postNpc, publicLine);
+                            postNpc.showTextAboveHead(publicLine);
                             dialogueCooldown = 120;
                         }
                     }
@@ -1491,9 +1378,9 @@ namespace LotsOfKisses
             continuousKissGapTimer = 25;
             continuousKissTier = RollContinuousKissTier();
         }
-// ======================================================================
+        // =====================================================================
         // POST-KISS LOGIC (DIALOGUE, ROUTE DEVIATION, ETC.)
-// ======================================================================
+        // ======================================================================
         private void UpdatePostKissSystem(NPC spouse)
         {
             if (!kissPostSequenceActive || kissPostSequenceNpc == null)
@@ -1522,6 +1409,7 @@ namespace LotsOfKisses
 
             bool playerStartedMovingAway = distance > lastKissPostDistance + 2f;
 
+
             if (!kissPostLineTriggered &&
                 !string.IsNullOrEmpty(kissPostLine) &&
                 distance >= 120f &&
@@ -1529,7 +1417,7 @@ namespace LotsOfKisses
                 Game1.activeClickableMenu == null)
             {
 
-                ShowTextAboveHeadWithPipeSupport(spouse, kissPostLine);
+                spouse.showTextAboveHead(kissPostLine);
                 kissPostLineTriggered = true;
                 dialogueCooldown = 120;
             }
@@ -1541,7 +1429,7 @@ namespace LotsOfKisses
                      Game1.activeClickableMenu == null)
             {
 
-                ShowTextAboveHeadWithPipeSupport(spouse, kissPostLine);
+                spouse.showTextAboveHead(kissPostLine);
                 kissPostLineTriggered = true;
                 dialogueCooldown = 120;
             }
@@ -1557,7 +1445,7 @@ namespace LotsOfKisses
                 // Past the restore distance — restore first, then release.
                 // Prevents WakeNpcAfterMultiKiss from overwriting the idle frame on top of the restored animation.
                 if (HasNpcPreKissSpecialAction(spouse))
-                    TryRestoreNpcPreKissSpecialAction(spouse, clearAfterRestore: true);
+                    TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
 
                 ResetPostKissState();
                 ReleaseNpcAfterMultiKiss(spouse);
@@ -1565,9 +1453,9 @@ namespace LotsOfKisses
                 return;
             }
         }
-// ======================================================================
+        // ===================================================================
         // BEIJO AO ESBARRAR
-// ======================================================================
+        // ===================================================================
         private void UpdateBumpKissSystem(NPC npc, float distance)
         {
             if (npc == null || !Context.IsWorldReady)
@@ -1714,7 +1602,7 @@ namespace LotsOfKisses
                         {
                             if (!string.IsNullOrEmpty(fullBagLine))
                             {
-                                ShowTextAboveHeadWithPipeSupport(npc, fullBagLine);
+                                npc.showTextAboveHead(fullBagLine);
                             }
                             else if (giftItems != null && giftItems.Count > 0)
                             {
@@ -1725,7 +1613,7 @@ namespace LotsOfKisses
                                 }
 
                                 if (!string.IsNullOrEmpty(presentLine))
-                                    ShowTextAboveHeadWithPipeSupport(npc, presentLine);
+                                    npc.showTextAboveHead(presentLine);
                             }
                         }
                         else
@@ -1735,7 +1623,7 @@ namespace LotsOfKisses
                                 surpriseLine = GetDialogueLine("approachKiss", 1, 30, npc);
                                 if (!string.IsNullOrEmpty(surpriseLine))
                                 {
-                                    ShowTextAboveHeadWithPipeSupport(npc, surpriseLine);
+                                    npc.showTextAboveHead(surpriseLine);
                                     SetApproachKissBlockTimer(npc, 300);
                                     approachKissDialogueLastTimeOfDay = kissTimeOfDay;
                                 }

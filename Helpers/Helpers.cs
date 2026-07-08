@@ -67,9 +67,6 @@ namespace LotsOfKisses
             if (this.Config?.PolyamorySupport != true)
                 return false;
 
-            if (this.Config?.EnableBoyfriendKisses != true)
-                return false;
-
             if (!Context.IsWorldReady || Game1.player == null)
                 return false;
 
@@ -190,17 +187,10 @@ namespace LotsOfKisses
         }
 
         /// <summary>
-        /// True when there is an unobstructed tile path between the NPC and the player —
-        /// walls, closed doors, and solid tiles block the line. Mirrors the same check used
-        /// in Outfit Reactions so both mods treat room visibility consistently.
-        /// </summary>
-        /// <summary>
-        /// Locations where line-of-sight checking is skipped entirely — every romantic-eligible
-        /// NPC in the location is treated as able to see the player, regardless of raycast
-        /// results. Needed because the game has no way to distinguish a real wall from a large
-        /// piece of map furniture (pool tables, counters, etc) — both live on the same
-        /// "Buildings" layer with the same collision flag, so a structural-only check isn't
-        /// possible. Add location names here as more false-positive cases are found.
+        /// Locations where the tile-passability check below produces false positives — furniture,
+        /// decorations, and other passable-looking objects get flagged as blocking, so NPCs in
+        /// these locations never reacted to a kiss even when clearly visible in the same room.
+        /// Skip the line-of-sight check entirely here; distance/on-screen checks still apply.
         /// </summary>
         private static readonly HashSet<string> LineOfSightExemptLocations = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -208,6 +198,11 @@ namespace LotsOfKisses
             "Saloon",
         };
 
+        /// <summary>
+        /// True when there is an unobstructed tile path between the NPC and the player —
+        /// walls, closed doors, and solid tiles block the line. Mirrors the same check used
+        /// in Outfit Reactions so both mods treat room visibility consistently.
+        /// </summary>
         private static bool HasLineOfSightToPlayer(NPC npc)
         {
             if (npc == null || Game1.player == null || npc.currentLocation == null)

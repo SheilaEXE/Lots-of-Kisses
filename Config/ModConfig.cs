@@ -17,13 +17,6 @@ namespace LotsOfKisses
         // Enable or disable the bump kiss when running toward a partner.
         public bool BumpKissEnabled { get; set; } = true;
 
-        // Enable or disable the whole kiss system for dating partners (boyfriend/girlfriend, not
-        // married). When false, this mod only does anything for the player's spouse — dating
-        // partners are treated as regular NPCs. Vanilla kissing a dating partner still needs a
-        // separate mod (e.g. Hugs and Kisses) either way; this just controls whether THIS mod's
-        // own kiss system (multi-kiss, bump kiss, bystander reactions, etc.) engages with them.
-        public bool EnableBoyfriendKisses { get; set; } = true;
-
         // Treat all romantic NPCs as valid kiss partners, including those from other mods.
         // Always true — not exposed in GMCM, but kept configurable for advanced users via config.json.
         public bool PolyamorySupport { get; set; } = true;
