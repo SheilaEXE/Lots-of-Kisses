@@ -28,8 +28,8 @@ namespace LotsOfKisses
         private int approachKissDialogueLastTimeOfDay = -1;
         private bool bystanderRestoreForceStart = false; // set when publicMultiKiss dialogue fires — bypasses kiss-state wait
         private string pendingKissCycleLine = null;
-        private bool outsideBumpPauseActive = false;
-        private NPC outsideBumpPauseNpc = null;
+        internal bool outsideBumpPauseActive = false;
+        internal NPC outsideBumpPauseNpc = null;
         private int outsideBumpPauseTimer = 0;
         private int outsideBumpPauseToken = 0;
 

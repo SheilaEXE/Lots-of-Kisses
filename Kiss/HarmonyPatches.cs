@@ -272,4 +272,47 @@ namespace LotsOfKisses
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // Harmony prefix controlling whether the partner NPC's schedule check runs normally or is
+    // suppressed to hold them in a continuous kiss without the game forcibly interrupting the
+    // sequence. Registered manually in ModEntry.Entry (not via [HarmonyPatch] attribute), since
+    // it needs to target NPC.checkSchedule directly rather than through PatchAll's auto-discovery.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    public static class NPC_CheckSchedule_ContinuousKissHold_Patch
+    {
+        public static bool CheckSchedule_Prefix(NPC __instance)
+        {
+            if (ModEntry.allowForcedScheduleCheck)
+            {
+                if (ModEntry.Instance != null && __instance != null)
+                {
+                    ModEntry.Instance.Monitor.Log(
+                        $"[CHECKSCHEDULE PREFIX] ALLOWED BY FORCE | npc={__instance.Name} currentLoc={__instance.currentLocation?.NameOrUniqueName ?? "null"}",
+                        LogLevel.Trace
+                    );
+                }
+
+                return true;
+            }
+
+            if (ModEntry.Instance == null || !Context.IsWorldReady || Game1.player == null)
+                return true;
+
+            if (__instance == null)
+                return true;
+
+            if (ModEntry.Instance.outsideBumpPauseNpc != __instance)
+                return true;
+
+            if (!ModEntry.Instance.IsSupportedRomanticPartner(__instance.Name))
+                return true;
+
+            bool shouldBlock =
+                ModEntry.Instance.outsideBumpPauseActive &&
+                !ModEntry.Instance.IsHomeOrFarmLocation();
+
+            return !shouldBlock;
+        }
+    }
+
 }

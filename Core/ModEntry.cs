@@ -37,7 +37,7 @@ namespace LotsOfKisses
 
             harmony.Patch(
                 original: AccessTools.Method(typeof(NPC), nameof(NPC.checkSchedule)),
-                prefix: new HarmonyMethod(typeof(ModEntry), nameof(CheckSchedule_Prefix))
+                prefix: new HarmonyMethod(typeof(NPC_CheckSchedule_ContinuousKissHold_Patch), nameof(NPC_CheckSchedule_ContinuousKissHold_Patch.CheckSchedule_Prefix))
             );
 
             harmony.PatchAll();

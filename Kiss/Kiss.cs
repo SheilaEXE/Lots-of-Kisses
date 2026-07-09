@@ -800,43 +800,6 @@ namespace LotsOfKisses
             }
         }
 
-        // =========================================================================================================================================
-        // Harmony prefix controlling whether the partner NPC's schedule check runs normally or is suppressed to hold them in a continuous kiss without the game forcibly interrupting the sequence.
-        // =========================================================================================================================================
-        public static bool CheckSchedule_Prefix(NPC __instance)
-        {
-            if (allowForcedScheduleCheck)
-            {
-                if (Instance != null && __instance != null)
-                {
-                    Instance.Monitor.Log(
-                        $"[CHECKSCHEDULE PREFIX] ALLOWED BY FORCE | npc={__instance.Name} currentLoc={__instance.currentLocation?.NameOrUniqueName ?? "null"}",
-                        LogLevel.Trace
-                    );
-                }
-
-                return true;
-            }
-
-            if (Instance == null || !Context.IsWorldReady || Game1.player == null)
-                return true;
-
-            if (__instance == null)
-                return true;
-
-            if (Instance.outsideBumpPauseNpc != __instance)
-                return true;
-
-            if (!Instance.IsSupportedRomanticPartner(__instance.Name))
-                return true;
-
-            bool shouldBlock =
-                Instance.outsideBumpPauseActive &&
-                !Instance.IsHomeOrFarmLocation();
-
-            return !shouldBlock;
-        }
-
         // ========================================================================================================================================
         // Outdoor bump-kiss pause: briefly pauses the NPC after a bump kiss to prevent them from teleporting or walking away before the kiss can escalate into a continuous kiss.
         // ========================================================================================================================================

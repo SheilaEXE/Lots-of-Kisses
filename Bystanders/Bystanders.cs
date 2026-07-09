@@ -15,10 +15,18 @@ namespace LotsOfKisses
         private static readonly double[] BystanderNoticeChance = { 0.30, 0.60, 0.90 };
 
         /// <summary>Chance (0–1) that a noticing bystander plays an embarrassed emote.</summary>
-        private const double BystanderEmoteChance = 0.30;
+        private const double BystanderEmoteChance = 0.15;
 
         /// <summary>Chance (0–1) that a noticing bystander says a crowd reaction line above their head.</summary>
         private const double CrowdReactionLineChance = 0.10;
+
+        /// <summary>
+        /// Max number of bystanders allowed to have a crowd-reaction speech bubble open at the
+        /// same time, so a big crowd doesn't spam half a dozen bubbles across the screen at once.
+        /// Others simply keep re-rolling their own independent chance each cycle (gated by their
+        /// own cooldown) until a slot opens up — there's no explicit queue, just an open slot.
+        /// </summary>
+        private const int MaxConcurrentCrowdReactionSpeakers = 2;
 
         /// <summary>Ticks to wait after the public multi-kiss dialogue closes / kiss scene ends before releasing bystanders.</summary>
         private const int BystanderRestoreDelayTicks = 120; // ~2s
@@ -48,6 +56,18 @@ namespace LotsOfKisses
         // ── State ────────────────────────────────────────────────────────────
 
         private readonly List<BystanderSnapshot> activeBystanderSnapshots = new();
+
+        /// <summary>How many bystanders currently have a crowd-reaction bubble open right now.</summary>
+        private int activeCrowdReactionSpeakerCount = 0;
+
+        /// <summary>
+        /// Per-NPC set of crowd-reaction dialogue keys (e.g. "ReactionAbigail.3") already shown
+        /// this session, so the same line doesn't repeat for that NPC — a fresh one is picked each
+        /// time until the whole pool has been used, then it cycles back around instead of going
+        /// silent forever.
+        /// </summary>
+        private readonly Dictionary<string, HashSet<string>> usedCrowdReactionKeysByNpc = new();
+
         private bool bystanderRestorePending = false;
         private bool bystanderRestoreCountdownStarted = false;
         private int bystanderRestoreTimer = 0;
@@ -214,6 +234,12 @@ namespace LotsOfKisses
                     if (snapshot.CrowdReactionBubbleCloseTicks == 0 && snapshot.Npc != null)
                     {
                         ForceCloseSpeechBubble(snapshot.Npc);
+
+                        // The bubble that was reserving this slot is now actually gone — free it
+                        // up so another waiting bystander can take their turn. Clamped at 0 as a
+                        // safety net in case of any bookkeeping edge case, so this can never go
+                        // negative and silently block every future reaction.
+                        activeCrowdReactionSpeakerCount = Math.Max(0, activeCrowdReactionSpeakerCount - 1);
                     }
                 }
             }
@@ -253,6 +279,11 @@ namespace LotsOfKisses
                 snapshot?.Npc?.modData?.Remove(BystanderWatchingModDataKey);
 
             activeBystanderSnapshots.Clear();
+
+            // Safety net: if this runs while some bystander's bubble was still open (an early/
+            // abrupt kiss-end path), their reserved slot would otherwise never get freed since
+            // TickCrowdReactionCooldowns will never see their snapshot again to decrement it.
+            activeCrowdReactionSpeakerCount = 0;
         }
 
         /// <summary>
@@ -850,20 +881,28 @@ namespace LotsOfKisses
             if (npc == null || random.NextDouble() >= CrowdReactionLineChance)
                 return;
 
+            // Cap how many bystanders can have a bubble open at once. No explicit queue — a
+            // bystander who loses this roll just keeps re-rolling their own independent chance
+            // next cycle (see the cooldown-gated loop in TriggerBystanderReactions) until a slot
+            // opens up, which happens naturally once someone else's bubble closes (see
+            // TickCrowdReactionCooldowns decrementing activeCrowdReactionSpeakerCount below).
+            if (activeCrowdReactionSpeakerCount >= MaxConcurrentCrowdReactionSpeakers)
+                return;
+
             string line;
 
             if (IsChildNpc(npc))
             {
-                line = GetSimpleDialogueLine("CrowdReaction.Child", 1, 10);
+                line = GetSimpleDialogueLineNoRepeat(npc, "CrowdReaction.Child", 1, 10);
             }
             else
             {
                 // "Reaction<Name>" has no separator between the prefix and the NPC name
                 // (e.g. "ReactionAbigail.1"), unlike the mod's usual "{prefix}.{name}.{n}" pattern.
-                line = GetSimpleDialogueLine($"Reaction{npc.Name}", 1, 10);
+                line = GetSimpleDialogueLineNoRepeat(npc, $"Reaction{npc.Name}", 1, 10);
 
                 if (string.IsNullOrEmpty(line))
-                    line = GetSimpleDialogueLine("CrowdReaction", 1, 30);
+                    line = GetSimpleDialogueLineNoRepeat(npc, "CrowdReaction", 1, 30);
             }
 
             if (!string.IsNullOrEmpty(line))
@@ -878,34 +917,80 @@ namespace LotsOfKisses
                 // bubble timer — force-close it after a fixed 3 real seconds instead of relying
                 // on that timer to count down on its own.
                 snapshot.CrowdReactionBubbleCloseTicks = 180; // 3s at 60 ticks/sec
+
+                // Reserve a speaking slot until this bubble actually closes (see
+                // TickCrowdReactionCooldowns, which decrements this the moment
+                // CrowdReactionBubbleCloseTicks reaches 0 and the bubble is force-closed).
+                activeCrowdReactionSpeakerCount++;
             }
         }
 
         /// <summary>
         /// Looks up "{prefix}.{n}" translation keys directly (content pack first, then i18n),
-        /// picking a random number in [min, max]. Used for crowd reaction pools that don't
-        /// follow the mod's usual per-NPC dialogue key pattern.
+        /// picking a random number in [min, max] — but never repeats a specific "{prefix}.{n}"
+        /// key already shown for this NPC this session. Once every key in this prefix's pool has
+        /// been used for this NPC, the pool cycles back around (forgetting what was used) instead
+        /// of going silent forever.
         /// </summary>
-        private string GetSimpleDialogueLine(string prefix, int min, int max)
+        private string GetSimpleDialogueLineNoRepeat(NPC npc, string prefix, int min, int max)
         {
-            if (string.IsNullOrEmpty(prefix))
+            if (npc == null || string.IsNullOrEmpty(prefix))
                 return null;
 
+            if (!usedCrowdReactionKeysByNpc.TryGetValue(npc.Name, out HashSet<string> usedKeys))
+            {
+                usedKeys = new HashSet<string>();
+                usedCrowdReactionKeysByNpc[npc.Name] = usedKeys;
+            }
+
+            string result = TryPickUnusedDialogueLine(prefix, min, max, usedKeys);
+            if (!string.IsNullOrEmpty(result))
+                return result;
+
+            // Every key in this prefix's pool has already been used (or none exist) — forget what
+            // was used for this specific prefix and try once more fresh, so the NPC cycles back
+            // through their lines instead of falling silent for the rest of the session. Only the
+            // keys belonging to THIS prefix are dropped, so progress on other prefixes/pools for
+            // this NPC (e.g. a personalized pool vs. the generic fallback) isn't reset together.
+            usedKeys.RemoveWhere(key => key.StartsWith(prefix + ".", StringComparison.Ordinal));
+            return TryPickUnusedDialogueLine(prefix, min, max, usedKeys);
+        }
+
+        private string TryPickUnusedDialogueLine(string prefix, int min, int max, HashSet<string> usedKeys)
+        {
+            // Try a handful of random picks first (cheap, and avoids always favoring low numbers
+            // when the pool is mostly unused).
             for (int i = 0; i < 10; i++)
             {
                 int number = random.Next(min, max + 1);
-                string value = GetSimpleDialogueKey(prefix, number);
+                string key = $"{prefix}.{number}";
 
+                if (usedKeys.Contains(key))
+                    continue;
+
+                string value = GetSimpleDialogueKey(prefix, number);
                 if (!string.IsNullOrEmpty(value))
+                {
+                    usedKeys.Add(key);
                     return value;
+                }
             }
 
+            // Fall back to scanning the whole range in order, in case random picks kept landing
+            // on already-used or non-existent keys.
             for (int number = min; number <= max; number++)
             {
-                string value = GetSimpleDialogueKey(prefix, number);
+                string key = $"{prefix}.{number}";
 
+                if (usedKeys.Contains(key))
+                    continue;
+
+                string value = GetSimpleDialogueKey(prefix, number);
                 if (!string.IsNullOrEmpty(value))
+                {
+                    usedKeys.Add(key);
                     return value;
+                }
             }
 
             return null;

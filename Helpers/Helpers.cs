@@ -353,5 +353,36 @@ namespace LotsOfKisses
 
             return Vector2.Distance(npc.Position, Game1.player.Position);
         }
+
+        // Moved here from Fields/GeneralFields.cs — these are logic helpers, not field
+        // declarations, so they belong with the rest of the mod's helper methods.
+        private bool HasReadableDialogueWaiting(NPC npc)
+        {
+            if (npc == null || Game1.player == null)
+                return false;
+
+            if (kissBlockAfterDialogueTimer > 0)
+                return true;
+
+            if (Game1.dialogueUp || Game1.activeClickableMenu != null)
+                return true;
+
+            if (npc.CurrentDialogue != null && npc.CurrentDialogue.Count > 0)
+                return true;
+
+            return false;
+        }
+
+        // Reads the cross-mod flag written by the Outfit Reactions mod (NatrollEXE.OutfitReactions)
+        // into the Farmer's modData. While present, an outfit reaction is in progress (noticing,
+        // generating, or dialogue open) and kisses must hold off so the two mods don't collide.
+        // Using modData means no hard dependency or load-order requirement between the mods.
+        private const string OutfitReactionsActiveModDataKey = "NatrollEXE.OutfitReactions/ReactionActive";
+
+        private bool IsOutfitReactionActive()
+        {
+            return Game1.player?.modData != null
+                && Game1.player.modData.ContainsKey(OutfitReactionsActiveModDataKey);
+        }
     }
 }
