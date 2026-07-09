@@ -384,5 +384,143 @@ namespace LotsOfKisses
             return Game1.player?.modData != null
                 && Game1.player.modData.ContainsKey(OutfitReactionsActiveModDataKey);
         }
+
+        // Moved here from Kiss/Kiss.cs — generic sprite/NetField reflection helpers used across
+        // multiple files (Kiss.cs, Bystanders.cs), not specific to kiss logic itself.
+        private int TryGetAnimationFrameIndex(FarmerSprite.AnimationFrame frame)
+        {
+            try
+            {
+                object boxed = frame;
+                FieldInfo field = boxed.GetType().GetField("frame", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (field != null && field.GetValue(boxed) is int fieldValue)
+                    return fieldValue;
+
+                PropertyInfo property = boxed.GetType().GetProperty("Frame", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (property != null && property.GetValue(boxed) is int propertyValue)
+                    return propertyValue;
+            }
+            catch
+            {
+                // If the internal structure changes, the CurrentFrame fallback still covers the common cases.
+            }
+
+            return -1;
+        }
+
+        private void TrySetSpritePrivateField(object target, string fieldName, object value)
+        {
+            if (target == null || string.IsNullOrEmpty(fieldName))
+                return;
+
+            try
+            {
+                FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (field != null)
+                    field.SetValue(target, value);
+            }
+            catch
+            {
+                // Campo interno opcional.
+            }
+        }
+
+        internal object TryGetPrivateField(object target, string fieldName)
+        {
+            if (target == null || string.IsNullOrEmpty(fieldName))
+                return null;
+
+            try
+            {
+                FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                return field?.GetValue(target);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// "doingEndOfRouteAnimation" is NOT a plain bool — it's a NetBool (a synced netcode field
+        /// wrapping the real value in its own ".Value" property). Every read/write of it goes
+        /// through get_Value()/set_Value(), never the field directly. TrySetSpritePrivateField
+        /// silently fails on it (wrong CLR type, exception swallowed) — so that flag was never
+        /// actually being suppressed with the plain-field helper. Leaving it true while we hold an
+        /// NPC in an idle pose makes vanilla re-trigger reallyDoAnimationAtEndOfScheduleRoute() —
+        /// the route-end INTRO, which includes a brief walk-in animation — on top of our own
+        /// forced frame, corrupting the pose (e.g. showing the wrong row of the tilesheet). Use
+        /// these NetField-aware helpers for that field specifically.
+        /// </summary>
+        internal void TrySetNetBoolField(object target, string fieldName, bool value)
+        {
+            if (target == null || string.IsNullOrEmpty(fieldName))
+                return;
+
+            try
+            {
+                FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                object netField = field?.GetValue(target);
+                if (netField == null)
+                    return;
+
+                PropertyInfo valueProp = netField.GetType().GetProperty("Value");
+                if (valueProp != null && valueProp.CanWrite)
+                    valueProp.SetValue(netField, value);
+            }
+            catch
+            {
+                // Campo interno opcional.
+            }
+        }
+
+        internal bool? TryGetNetBoolField(object target, string fieldName)
+        {
+            if (target == null || string.IsNullOrEmpty(fieldName))
+                return null;
+
+            try
+            {
+                FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                object netField = field?.GetValue(target);
+                if (netField == null)
+                    return null;
+
+                PropertyInfo valueProp = netField.GetType().GetProperty("Value");
+                return valueProp?.GetValue(netField) as bool?;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Same NetField unwrapping as TryGetNetBoolField/TrySetNetBoolField, but for NetString
+        /// fields (e.g. "endOfRouteBehaviorName") — which unlike "_startedEndOfRouteBehavior" (a
+        /// plain string that's only populated transiently, during the route-end intro) holds the
+        /// behavior name persistently the entire time the NPC is settled into that pose. Use this
+        /// one to recover the behavior name after the fact, not the transient field.
+        /// </summary>
+        internal string TryGetNetStringField(object target, string fieldName)
+        {
+            if (target == null || string.IsNullOrEmpty(fieldName))
+                return null;
+
+            try
+            {
+                FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                object netField = field?.GetValue(target);
+                if (netField == null)
+                    return null;
+
+                PropertyInfo valueProp = netField.GetType().GetProperty("Value");
+                return valueProp?.GetValue(netField) as string;
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }
