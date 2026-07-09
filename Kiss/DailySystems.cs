@@ -179,12 +179,14 @@ namespace LotsOfKisses
                 return;
             }
 
-            // If a special animation started, treat it as a state change.
-            if (HasSpecialSpriteAnimation(npc))
-            {
-                ClearPassiveLookOriginalPose();
-                return;
-            }
+            // BUGFIX: this used to also bail out (clearing without ever restoring) whenever
+            // HasSpecialSpriteAnimation(npc) was true — but that's true very often even for a
+            // completely stationary NPC, since vanilla's own small periodic idle fidget
+            // animations set Sprite.CurrentAnimation briefly and constantly. That meant this
+            // function almost never actually got to run the facing restore below — it just kept
+            // discarding the memory instead, leaving the NPC stuck facing sideways forever. A
+            // passing fidget animation doesn't affect FacingDirection, so there's no real
+            // conflict in restoring it regardless.
 
             if (passiveLookRestoreFacing >= 0)
                 npc.FacingDirection = passiveLookRestoreFacing;
@@ -230,24 +232,47 @@ namespace LotsOfKisses
                 return;
             }
 
-            // If the NPC gained a controller, started walking, changed tile or location,
-            // or entered a special animation, treat it as a state change.
-            bool changedState =
+            // BUGFIX: this used to lump npc.controller/isMoving/location-or-tile-change/
+            // HasSpecialSpriteAnimation all together into one "changedState" check that called
+            // ClearPassiveLookOriginalPose() — which only forgets the saved pose, it never
+            // actually sets the NPC's facing back. HasSpecialSpriteAnimation in particular
+            // (npc.Sprite.CurrentAnimation != null) goes true very often even for a genuinely
+            // stationary NPC — vanilla's own small periodic idle fidget animations trigger it
+            // constantly — so the memory was usually getting silently discarded within a second
+            // or two of him turning to look, long before the distance check ever got a chance to
+            // run, leaving him stuck facing sideways forever with nothing left to restore him.
+            //
+            // Genuine movement (a real controller, or actually walking) is the only case where
+            // forcing his facing back would visibly fight what's driving him — that's the only
+            // case that should abandon the memory without restoring. A changed location/tile
+            // means the saved pose no longer applies to where he is now, so that's abandoned
+            // without restoring too. Everything else (distance, or a passing idle animation)
+            // should actually restore his facing, not just quietly give up on it.
+            bool isActivelyMovingOrControlled =
                 npc.controller != null ||
-                npc.isMoving() ||
-                npc.currentLocation == null ||
-                npc.currentLocation.NameOrUniqueName != passiveLookRestoreLocationName ||
-                npc.TilePoint != passiveLookRestoreTile ||
-                HasSpecialSpriteAnimation(npc);
+                npc.isMoving();
 
-            if (changedState)
+            if (isActivelyMovingOrControlled)
             {
                 ClearPassiveLookOriginalPose();
                 return;
             }
 
+            bool locationOrTileChanged =
+                npc.currentLocation == null ||
+                npc.currentLocation.NameOrUniqueName != passiveLookRestoreLocationName ||
+                npc.TilePoint != passiveLookRestoreTile;
+
+            if (locationOrTileChanged)
+            {
+                ClearPassiveLookOriginalPose();
+                return;
+            }
+
+            // Restore once the player has clearly moved away — Sheilinha adjusted this from an
+            // initial 260f up to 600f after checking in-game that 260f still looked too close.
             bool shouldRestore =
-                distance >= 1000f;
+                distance >= 600f;
 
             if (shouldRestore)
             {
