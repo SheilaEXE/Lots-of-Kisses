@@ -336,6 +336,16 @@ namespace LotsOfKisses
             if (spouse == null)
                 return;
 
+            // If the player sits down mid-chain (e.g. in a chair the NPC walked them next to),
+            // cleanly end the sequence instead of leaving it running with a seated player —
+            // ForceEndContinuousKiss releases the NPC properly, same as when they leave the
+            // location, rather than just silently skipping updates and leaving them stuck.
+            if (Game1.player.IsSitting())
+            {
+                ForceEndContinuousKiss(spouse ?? continuousKissNpc);
+                return;
+            }
+
             // Pause (don't cancel) the multi-kiss cycle while any menu is open — inventory,
             // map, GMCM, etc. This is separate from the pending-dialogue block that was
             // intentionally removed: an open menu means the player actively paused to look at

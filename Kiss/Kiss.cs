@@ -413,6 +413,14 @@ namespace LotsOfKisses
             if (!kissSequenceActive || pendingKissNpc == null)
                 return;
 
+            // Same reasoning as the other kiss systems: don't let a kiss sequence continue
+            // running while the player is seated.
+            if (Game1.player.IsSitting())
+            {
+                ResetKissState();
+                return;
+            }
+
             if (spouse.currentLocation != Game1.currentLocation || pendingKissNpc != spouse)
             {
                 ResetKissState();
@@ -530,6 +538,11 @@ namespace LotsOfKisses
         private void UpdateBumpKissSystem(NPC npc, float distance)
         {
             if (npc == null || !Context.IsWorldReady)
+                return;
+
+            // Don't let a bump kiss trigger while the player is seated (e.g. chair/bench) — they
+            // can't meaningfully act or move away normally while sitting.
+            if (Game1.player.IsSitting())
                 return;
 
             // Same reasoning as UpdateContinuousKissSystem: a menu being open shouldn't let the
