@@ -15,12 +15,12 @@ namespace LotsOfKisses
         // ========================================================================================================================================
         // Outdoor bump-kiss pause: briefly pauses the NPC after a bump kiss to prevent them from teleporting or walking away before the kiss can escalate into a continuous kiss.
         // ========================================================================================================================================
-        private void UpdateOutsideBumpPause(NPC spouse)
+        private void UpdateOutsideBumpPause(NPC partner)
         {
             if (!outsideBumpPauseActive || outsideBumpPauseNpc == null)
                 return;
 
-            if (spouse == null || spouse != outsideBumpPauseNpc)
+            if (partner == null || partner != outsideBumpPauseNpc)
             {
                 ResetOutsideBumpPause();
                 return;
@@ -32,7 +32,7 @@ namespace LotsOfKisses
                 return;
             }
 
-            if (spouse.currentLocation != Game1.player.currentLocation)
+            if (partner.currentLocation != Game1.player.currentLocation)
             {
                 ResetOutsideBumpPause();
                 return;
@@ -56,12 +56,12 @@ namespace LotsOfKisses
                 return;
             }
 
-            float distance = DistanceToPlayer(spouse);
+            float distance = DistanceToPlayer(partner);
 
             if (distance >= 600f) // Far enough to assume the player moved away or the NPC warped — cancel the pause to avoid locking the NPC unnecessarily.
             {
                 this.Monitor.Log(
-                    $"[OUTSIDE BUMP PAUSE EXIT] npc={spouse.Name} dist={distance:F1} timer={outsideBumpPauseTimer} loc={spouse.currentLocation?.NameOrUniqueName ?? "null"}",
+                    $"[OUTSIDE BUMP PAUSE EXIT] npc={partner.Name} dist={distance:F1} timer={outsideBumpPauseTimer} loc={partner.currentLocation?.NameOrUniqueName ?? "null"}",
                     LogLevel.Warn
                 );
 
@@ -69,11 +69,11 @@ namespace LotsOfKisses
                 return;
             }
 
-            spouse.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
+            partner.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
 
             // Short pause — doesn't kill the controller.
-            if (spouse.movementPause < 6)
-                spouse.movementPause = 6;
+            if (partner.movementPause < 6)
+                partner.movementPause = 6;
         }
 
         // activates the outdoor pause after a bump kiss to prevent NPC teleport or walk-away before the kiss can escalate

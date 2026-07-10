@@ -80,7 +80,7 @@ namespace LotsOfKisses
         /// Called when a public multi-kiss cycle completes. Scans visible NPCs,
         /// saves their state, turns them toward the player, and maybe plays an emote.
         /// </summary>
-        internal void TriggerBystanderReactions(int kissTier, NPC spouse)
+        internal void TriggerBystanderReactions(int kissTier, NPC partner)
         {
             if (Game1.currentLocation == null || Game1.player == null)
                 return;
@@ -89,7 +89,7 @@ namespace LotsOfKisses
             if (locName == "Farm" || locName == "FarmHouse")
                 return;
 
-            if (IsPrivateKissMoment(spouse))
+            if (IsPrivateKissMoment(partner))
                 return;
 
             int tierIndex = Math.Clamp(kissTier - 1, 0, BystanderNoticeChance.Length - 1);
@@ -145,7 +145,7 @@ namespace LotsOfKisses
                 }
 
                 // Save state. We don't touch controller/queued paths; bystanders use the same gentle
-                // hold idea as the spouse's outside bump-kiss pause.
+                // hold idea as the partner's outside bump-kiss pause.
                 var snapshot = new BystanderSnapshot
                 {
                     Npc              = npc,
@@ -744,7 +744,7 @@ namespace LotsOfKisses
             if (snapshot.Location != null && npc.currentLocation != snapshot.Location)
                 return;
 
-            // Route NPCs work like the spouse outside bump-kiss pause: stop refreshing movementPause
+            // Route NPCs work like the partner outside bump-kiss pause: stop refreshing movementPause
             // and let vanilla continue the route by itself.
             npc.movementPause = 0;
 

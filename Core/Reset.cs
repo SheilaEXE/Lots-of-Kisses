@@ -11,7 +11,7 @@ namespace LotsOfKisses
             kissCycleTimer = 0;
             kissRepeatTimer = 0;
             holdingKissPose = false;
-            playerWasTouchingSpouse = false;
+            playerWasTouchingPartner = false;
             pendingKissCycleLine = null;
         }
 

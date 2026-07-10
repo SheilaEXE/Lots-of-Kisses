@@ -57,15 +57,15 @@ namespace LotsOfKisses
         // UTILITY HELPERS
         // =====================================================================
 
-        private void ForceScheduleCheckNow(NPC spouse)
+        private void ForceScheduleCheckNow(NPC partner)
         {
-            if (spouse == null || spouse.currentLocation == null)
+            if (partner == null || partner.currentLocation == null)
                 return;
 
             try
             {
                 allowForcedScheduleCheck = true;
-                spouse.checkSchedule(Game1.timeOfDay);
+                partner.checkSchedule(Game1.timeOfDay);
             }
             finally
             {

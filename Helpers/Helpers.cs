@@ -157,7 +157,7 @@ namespace LotsOfKisses
             return npc != null && npc.Age == NPC.child;
         }
 
-        internal bool IsPrivateKissMoment(NPC spouse)
+        internal bool IsPrivateKissMoment(NPC partner)
         {
             GameLocation loc = Game1.currentLocation;
             if (loc == null || loc.IsOutdoors)
@@ -173,7 +173,7 @@ namespace LotsOfKisses
             // because isTilePassable blocks the raycast, same logic as Outfit Reactions.
             foreach (NPC npc in loc.characters)
             {
-                if (npc == null || npc == spouse)
+                if (npc == null || npc == partner)
                     continue;
 
                 if (IsSupportedRomanticPartner(npc.Name))
@@ -243,7 +243,7 @@ namespace LotsOfKisses
             return true;
         }
 
-        private NPC GetSpouse()
+        private NPC GetPartner()
         {
             return GetRomanticPartnerForCurrentContext();
         }
@@ -261,7 +261,7 @@ namespace LotsOfKisses
             if (nearestPartner != null)
                 return nearestPartner;
 
-            // Fallback to preserve legacy behaviour when the official spouse is not in the current map.
+            // Fallback to preserve legacy behaviour when the official partner is not in the current map.
             if (IsOfficialSpouse(Game1.player.spouse))
                 return Game1.getCharacterFromName(Game1.player.spouse);
 

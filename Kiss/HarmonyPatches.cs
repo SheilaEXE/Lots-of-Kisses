@@ -23,7 +23,7 @@ namespace LotsOfKisses
                     return;
 
                 // Core guard:
-                // Lots of Kisses only modifies the delay when the Spouse themselves initiated the kiss.
+                // Lots of Kisses only modifies the delay when the Partner themselves initiated the kiss.
                 if (ModEntry.Instance.LotsOfKissesKissPatchActive != true)
                     return;
 
@@ -37,16 +37,16 @@ namespace LotsOfKisses
                 if (data == null || __instance.Sprite == null)
                     return;
 
-                int spouseFrame = data.KissSpriteIndex;
+                int partnerFrame = data.KissSpriteIndex;
 
-                bool currentFrameIsKiss = __instance.Sprite.CurrentFrame == spouseFrame;
+                bool currentFrameIsKiss = __instance.Sprite.CurrentFrame == partnerFrame;
                 bool animationContainsKissFrame = false;
 
                 if (__instance.Sprite.CurrentAnimation != null)
                 {
                     foreach (FarmerSprite.AnimationFrame frame in __instance.Sprite.CurrentAnimation)
                     {
-                        if (frame.frame == spouseFrame)
+                        if (frame.frame == partnerFrame)
                         {
                             animationContainsKissFrame = true;
                             break;

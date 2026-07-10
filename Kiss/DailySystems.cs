@@ -10,45 +10,45 @@ namespace LotsOfKisses
         // ======================================================================================================
         // LOOK-AT-PLAYER / DISTANCE NOTICE SYSTEM
         // ======================================================================================================
-        private void UpdateDailySpouseSystems(NPC spouse)
+        private void UpdateDailyPartnerSystems(NPC partner)
         {
-            if (spouse == null || !Context.IsWorldReady)
+            if (partner == null || !Context.IsWorldReady)
                 return;
 
-            float distance = DistanceToPlayer(spouse);
+            float distance = DistanceToPlayer(partner);
 
             // CONTINUOUS KISS SYSTEM
             if (!continuousKissActive &&
                 !kissSequenceActive &&
                 !kissPostSequenceActive &&
-                !spouse.isSleeping.Value &&
+                !partner.isSleeping.Value &&
                 Game1.activeClickableMenu == null &&
                 Game1.player.canMove &&
                 !Game1.player.IsSitting() && // Don't let the player be pulled into a kiss chain while seated (e.g. chair/bench) — they can't act or move away normally while sitting.
-                talkedToSpouseToday &&
+                talkedToPartnerToday &&
                 this.Config.MultiKissEnabled)
             {
-                float touchDistance = DistanceToPlayer(spouse);
-                bool touchingSpouseNow = touchDistance <= 64f;
+                float touchDistance = DistanceToPlayer(partner);
+                bool touchingPartnerNow = touchDistance <= 64f;
 
                 // Key check: whether the player and NPC are aligned horizontally (side by side).
-                Vector2 diff = Game1.player.Position - spouse.Position;
+                Vector2 diff = Game1.player.Position - partner.Position;
                 bool isHorizontal = Math.Abs(diff.X) > Math.Abs(diff.Y);
 
                 // Only allows the kiss if they are touching AND horizontally aligned.
-                if (!touchingSpouseNow || !isHorizontal)
+                if (!touchingPartnerNow || !isHorizontal)
                 {
                     continuousKissTouchHoldTimer = 0;
-                    continuousKissWasTouchingSpouse = false;
+                    continuousKissWasTouchingPartner = false;
                 }
-                else if (!continuousKissWasTouchingSpouse)
+                else if (!continuousKissWasTouchingPartner)
                 {
                     continuousKissTouchHoldTimer = ContinuousKissHoldTicks;
-                    continuousKissWasTouchingSpouse = true;
+                    continuousKissWasTouchingPartner = true;
                 }
                 else if (continuousKissTouchHoldTimer <= 0)
                 {
-                    StartContinuousKiss(spouse, RollContinuousKissTier(), true);
+                    StartContinuousKiss(partner, RollContinuousKissTier(), true);
                     didReactThisTick = true;
                     return;
                 }
@@ -56,12 +56,12 @@ namespace LotsOfKisses
             else
             {
                 continuousKissTouchHoldTimer = 0;
-                continuousKissWasTouchingSpouse = false;
+                continuousKissWasTouchingPartner = false;
             }
 
-            UpdateBumpKissSystem(spouse, distance);
-            UpdateSpouseLookAtPlayer(spouse, distance);
-            UpdateSpouseNoticeFromDistance(spouse, distance);
+            UpdateBumpKissSystem(partner, distance);
+            UpdatePartnerLookAtPlayer(partner, distance);
+            UpdatePartnerNoticeFromDistance(partner, distance);
         }
         private bool IsNpcBusyForPassiveReaction(NPC npc)
         {
@@ -287,7 +287,7 @@ namespace LotsOfKisses
         // ===================================================================
         // SEGUINDO COM O OLHAR
         // ===================================================================
-        private void UpdateSpouseLookAtPlayer(NPC npc, float distance)
+        private void UpdatePartnerLookAtPlayer(NPC npc, float distance)
         {
             if (npc == null || !Context.IsWorldReady)
                 return;
@@ -345,7 +345,7 @@ namespace LotsOfKisses
         // =========================================================================
         // IF THE PLAYER IS FAR ENOUGH AWAY BUT STILL WITHIN NOTICE RANGE, THE PARTNER REACTS
         // =========================================================================
-        private void UpdateSpouseNoticeFromDistance(NPC npc, float distance)
+        private void UpdatePartnerNoticeFromDistance(NPC npc, float distance)
         {
             if (npc == null || !Context.IsWorldReady)
                 return;
@@ -356,9 +356,9 @@ namespace LotsOfKisses
                 return;
             }
 
-            const float minNoticeDistance = 300f; // Below this the spouse already notices naturally, no "notice from afar" reaction needed.
-            const float maxNoticeDistance = 600f; // Above this the spouse can't see the player, so a "notice from afar" reaction makes no sense.
-            const float approachThreshold = 8f;   // Minimum distance the player must close before the spouse reacts, to avoid reactions when just passing by.
+            const float minNoticeDistance = 300f; // Below this the partner already notices naturally, no "notice from afar" reaction needed.
+            const float maxNoticeDistance = 600f; // Above this the partner can't see the player, so a "notice from afar" reaction makes no sense.
+            const float approachThreshold = 8f;   // Minimum distance the player must close before the partner reacts, to avoid reactions when just passing by.
 
             bool isInNoticeZone = distance < maxNoticeDistance && distance > minNoticeDistance;
             bool hadPreviousDistance = lastNoticeDistance >= 0f;
@@ -403,7 +403,7 @@ namespace LotsOfKisses
                 cooldown <= 0 &&
                 noticeEmoteCooldown <= 0 &&
                 passiveLookBlockAfterDialogueTimer <= 0 &&
-                talkedToSpouseToday &&
+                talkedToPartnerToday &&
                 !didReactThisTick)
             {
                 if (!CanSafelyTurnNpcForPassiveLook(npc))

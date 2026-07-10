@@ -7,18 +7,18 @@ namespace LotsOfKisses
 {
     public partial class ModEntry
     {
-        private string GetDialogueLine(string prefix, int min, int max, NPC spouse)
+        private string GetDialogueLine(string prefix, int min, int max, NPC partner)
         {
             if (string.IsNullOrEmpty(prefix))
                 return null;
 
-            string spouseName = spouse?.Name;
+            string partnerName = partner?.Name;
             string playerGender = Game1.player != null && Game1.player.IsMale ? "male" : "female";
 
             for (int i = 0; i < 10; i++)
             {
                 int number = random.Next(min, max + 1);
-                string value = TryGetDialogueKey(prefix, number, spouseName, playerGender);
+                string value = TryGetDialogueKey(prefix, number, partnerName, playerGender);
 
                 if (!string.IsNullOrEmpty(value))
                     return value;
@@ -26,7 +26,7 @@ namespace LotsOfKisses
 
             for (int number = min; number <= max; number++)
             {
-                string value = TryGetDialogueKey(prefix, number, spouseName, playerGender);
+                string value = TryGetDialogueKey(prefix, number, partnerName, playerGender);
 
                 if (!string.IsNullOrEmpty(value))
                     return value;
@@ -71,15 +71,15 @@ namespace LotsOfKisses
             return items;
         }
 
-        private string TryGetDialogueKey(string prefix, int number, string spouseName, string playerGender)
+        private string TryGetDialogueKey(string prefix, int number, string partnerName, string playerGender)
         {
-            if (!IsSupportedRomanticNpc(spouseName))
+            if (!IsSupportedRomanticNpc(partnerName))
                 return null;
 
             List<string> keys = new List<string>
             {
-                $"{prefix}.{spouseName}.{playerGender}.{number}",
-                $"{prefix}.{spouseName}.{number}",
+                $"{prefix}.{partnerName}.{playerGender}.{number}",
+                $"{prefix}.{partnerName}.{number}",
                 $"{prefix}.{playerGender}.{number}",
                 $"{prefix}.{number}"
             };

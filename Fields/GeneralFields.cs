@@ -50,6 +50,6 @@ namespace LotsOfKisses
         // DAILY ROUTINE / DIALOGUES
         // =====================================================================
         private bool wasInNoticeZone = false;
-        private bool talkedToSpouseToday = false;
+        private bool talkedToPartnerToday = false;
     }
 }

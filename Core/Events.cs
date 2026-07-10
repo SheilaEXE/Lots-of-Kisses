@@ -9,7 +9,7 @@ namespace LotsOfKisses
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
             lastDayChecked = Game1.dayOfMonth;
-            talkedToSpouseToday = false;
+            talkedToPartnerToday = false;
             didReactThisTick = false;
             wasInNoticeZone = false;
             lastNoticeDistance = -1f;
@@ -41,13 +41,13 @@ namespace LotsOfKisses
             if (Game1.player?.spouse != null)
             {
                 if (IsOfficialSpouse(Game1.player.spouse))
-                    this.Monitor.Log($"[PARTNER DETECTION] Official spouse detected: {Game1.player.spouse}. Compatible with mod.", LogLevel.Info);
+                    this.Monitor.Log($"[PARTNER DETECTION] Official partner detected: {Game1.player.spouse}. Compatible with mod.", LogLevel.Info);
                 else
-                    this.Monitor.Log($"[PARTNER DETECTION] Official spouse detected: {Game1.player.spouse}. Not compatible with mod at this time.", LogLevel.Warn);
+                    this.Monitor.Log($"[PARTNER DETECTION] Official partner detected: {Game1.player.spouse}. Not compatible with mod at this time.", LogLevel.Warn);
             }
             else
             {
-                this.Monitor.Log("[PARTNER DETECTION] No official spouse found.", LogLevel.Trace);
+                this.Monitor.Log("[PARTNER DETECTION] No official partner found.", LogLevel.Trace);
             }
 
             // Polyamory spouses
@@ -95,7 +95,7 @@ namespace LotsOfKisses
         private void OnDayStarted(object sender, DayStartedEventArgs e)
         {
             lastDayChecked = Game1.dayOfMonth;
-            talkedToSpouseToday = false;
+            talkedToPartnerToday = false;
 
             lastNoticeDistance = -1f;
             outsideBumpPauseActive = false;
@@ -130,7 +130,7 @@ namespace LotsOfKisses
             if (Game1.dayOfMonth != lastDayChecked)
             {
                 lastDayChecked = Game1.dayOfMonth;
-                talkedToSpouseToday = false;
+                talkedToPartnerToday = false;
     
                 ResetKissState();
                 ResetContinuousKissState();
@@ -162,7 +162,7 @@ namespace LotsOfKisses
             wasDialogueOrMenuOpenLastTick = false;
 
             wasInNoticeZone = false;
-            talkedToSpouseToday = false;
+            talkedToPartnerToday = false;
 
             ClearActiveBystanderSnapshots();
             bystanderRestorePending = false;
@@ -196,7 +196,7 @@ namespace LotsOfKisses
         }
 
         /// <summary>
-        /// Re-applies the movementPause hold on the spouse and any active bystanders right after
+        /// Re-applies the movementPause hold on the partner and any active bystanders right after
         /// the game window regains focus. The game's own movementPause countdown keeps running
         /// even while the window is unfocused (it's driven by Game1's internal clock, not by this
         /// mod's update loop), so a hold that was supposed to last through a multi-kiss cycle may
@@ -209,9 +209,9 @@ namespace LotsOfKisses
             if (continuousKissActive && continuousKissNpc != null)
                 continuousKissNpc.movementPause = System.Math.Max(continuousKissNpc.movementPause, 60);
 
-            NPC spouse = GetSpouse();
-            if (spouse != null && (kissSequenceActive || kissPostSequenceActive))
-                spouse.movementPause = System.Math.Max(spouse.movementPause, 60);
+            NPC partner = GetPartner();
+            if (partner != null && (kissSequenceActive || kissPostSequenceActive))
+                partner.movementPause = System.Math.Max(partner.movementPause, 60);
 
             foreach (var snapshot in activeBystanderSnapshots)
             {
@@ -329,12 +329,12 @@ namespace LotsOfKisses
             UpdateBystanderRestore();
             UpdatePipeTextQueues();
 
-            NPC spouse = GetSpouse();
-            if (spouse == null)
+            NPC partner = GetPartner();
+            if (partner == null)
                 return;
 
-            UpdateOutsideBumpPause(spouse);
-            UpdatePendingNpcKissReset(spouse);
+            UpdateOutsideBumpPause(partner);
+            UpdatePendingNpcKissReset(partner);
 
             // Cross-mod block: while an Outfit Reactions reaction is in progress (noticing, generating,
             // or dialogue open), do not start or run the automatic kiss systems. Any kiss already
@@ -342,16 +342,16 @@ namespace LotsOfKisses
             // The flag lives in the Farmer's modData, so this needs no hard dependency or load order.
             if (IsOutfitReactionActive() && !continuousKissActive && !kissSequenceActive && !kissPostSequenceActive)
             {
-                UpdatePostKissSystem(spouse);
-                UpdateDailySpouseSystems(spouse);
+                UpdatePostKissSystem(partner);
+                UpdateDailyPartnerSystems(partner);
                 return;
             }
 
-            UpdateKissSystem(spouse);
-            UpdateContinuousKissSystem(spouse);
-            UpdatePostKissSystem(spouse);
+            UpdateKissSystem(partner);
+            UpdateContinuousKissSystem(partner);
+            UpdatePostKissSystem(partner);
             UpdatePendingPublicMultiKissShyEmote();
-            UpdateDailySpouseSystems(spouse);
+            UpdateDailyPartnerSystems(partner);
         }
 
         private void OnWarped(object sender, WarpedEventArgs e)
@@ -396,18 +396,18 @@ namespace LotsOfKisses
             if (!e.Button.IsActionButton())
                 return;
 
-            NPC spouse = GetSpouse();
-            if (spouse == null)
+            NPC partner = GetPartner();
+            if (partner == null)
                 return;
 
             if (!Game1.player.canMove)
                 return;
 
-            float distance = DistanceToPlayer(spouse);
+            float distance = DistanceToPlayer(partner);
             if (distance > 120f)
                 return;
 
-            talkedToSpouseToday = true;
+            talkedToPartnerToday = true;
         }
     }
 }

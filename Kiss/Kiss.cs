@@ -185,7 +185,7 @@ namespace LotsOfKisses
                 return false;
 
             // Cross-mod block: hold off on any automatic kiss while an Outfit Reactions reaction is
-            // in progress (noticing, generating, or dialogue open) for any boyfriend/spouse. The flag
+            // in progress (noticing, generating, or dialogue open) for any boyfriend/partner. The flag
             // lives in the Farmer's modData so this works without a hard dependency or load order.
             if (IsOutfitReactionActive())
                 return false;
@@ -239,54 +239,54 @@ namespace LotsOfKisses
         }
 
         // Releases the NPC from the continuous kiss state (animation, controller, etc.) after the sequence ends. Staged with delays to prevent teleports or schedule interruptions before the NPC is fully freed.
-        private void ReleaseNpcAfterMultiKiss(NPC spouse)
+        private void ReleaseNpcAfterMultiKiss(NPC partner)
         {
-            if (spouse == null)
+            if (partner == null)
                 return;
 
-            WakeNpcAfterMultiKiss(spouse, true);
+            WakeNpcAfterMultiKiss(partner, true);
 
             DelayedAction.functionAfterDelay(() =>
             {
-                if (spouse == null || spouse.currentLocation == null)
+                if (partner == null || partner.currentLocation == null)
                     return;
 
                 // If a snapshot is still saved for this NPC, don't overwrite the idle frame —
                 // UpdateDeferredNpcSpecialActionRestore will restore the animation when the player moves away.
-                if (HasNpcPreKissSpecialAction(spouse))
+                if (HasNpcPreKissSpecialAction(partner))
                     return;
 
-                spouse.Halt();
-                spouse.controller = null;
-                spouse.movementPause = 0;
-                spouse.addedSpeed = 0;
+                partner.Halt();
+                partner.controller = null;
+                partner.movementPause = 0;
+                partner.addedSpeed = 0;
 
-                spouse.Sprite.StopAnimation();
-                spouse.Sprite.ClearAnimation();
-                spouse.Sprite.CurrentAnimation = null;
-                spouse.flip = false;
-                spouse.faceDirection(spouse.FacingDirection);
-                spouse.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(spouse.FacingDirection);
-                spouse.Sprite.UpdateSourceRect();
+                partner.Sprite.StopAnimation();
+                partner.Sprite.ClearAnimation();
+                partner.Sprite.CurrentAnimation = null;
+                partner.flip = false;
+                partner.faceDirection(partner.FacingDirection);
+                partner.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(partner.FacingDirection);
+                partner.Sprite.UpdateSourceRect();
             }, 80);
 
             DelayedAction.functionAfterDelay(() =>
             {
-                if (spouse == null || spouse.currentLocation != Game1.player.currentLocation)
+                if (partner == null || partner.currentLocation != Game1.player.currentLocation)
                     return;
 
-                spouse.Halt();
-                spouse.controller = null;
-                spouse.movementPause = 0;
-                spouse.addedSpeed = 0;
+                partner.Halt();
+                partner.controller = null;
+                partner.movementPause = 0;
+                partner.addedSpeed = 0;
 
-                spouse.Sprite.StopAnimation();
-                spouse.Sprite.ClearAnimation();
-                spouse.Sprite.CurrentAnimation = null;
-                spouse.flip = false;
-                spouse.faceDirection(spouse.FacingDirection);
-                spouse.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(spouse.FacingDirection);
-                spouse.Sprite.UpdateSourceRect();
+                partner.Sprite.StopAnimation();
+                partner.Sprite.ClearAnimation();
+                partner.Sprite.CurrentAnimation = null;
+                partner.flip = false;
+                partner.faceDirection(partner.FacingDirection);
+                partner.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(partner.FacingDirection);
+                partner.Sprite.UpdateSourceRect();
 
                 didReactThisTick = false;
                 kissProximityTimer = 0;
@@ -300,42 +300,42 @@ namespace LotsOfKisses
 
             DelayedAction.functionAfterDelay(() =>
             {
-                if (spouse == null)
+                if (partner == null)
                     return;
 
-                RestoreSpouseScheduleAfterMultiKiss(spouse);
+                RestorePartnerScheduleAfterMultiKiss(partner);
             }, 420);
         }
 
         // Restores the partner NPC's schedule after a continuous kiss to ensure they resume their routine normally. Called with a delay to avoid the game interrupting the schedule mid-sequence.
-        private void RestoreSpouseScheduleAfterMultiKiss(NPC spouse)
+        private void RestorePartnerScheduleAfterMultiKiss(NPC partner)
         {
-            if (spouse == null || spouse.currentLocation == null)
+            if (partner == null || partner.currentLocation == null)
                 return;
 
-            spouse.Halt();
-            spouse.controller = null;
-            spouse.movementPause = 0;
-            spouse.addedSpeed = 0;
-            spouse.queuedSchedulePaths.Clear();
+            partner.Halt();
+            partner.controller = null;
+            partner.movementPause = 0;
+            partner.addedSpeed = 0;
+            partner.queuedSchedulePaths.Clear();
 
-            spouse.Sprite.StopAnimation();
-            spouse.Sprite.ClearAnimation();
-            spouse.Sprite.CurrentAnimation = null;
-            spouse.flip = false;
-            spouse.faceDirection(spouse.FacingDirection);
-            spouse.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(spouse.FacingDirection);
-            spouse.Sprite.UpdateSourceRect();
+            partner.Sprite.StopAnimation();
+            partner.Sprite.ClearAnimation();
+            partner.Sprite.CurrentAnimation = null;
+            partner.flip = false;
+            partner.faceDirection(partner.FacingDirection);
+            partner.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(partner.FacingDirection);
+            partner.Sprite.UpdateSourceRect();
 
             // Do NOT clear CurrentDialogue here.
             // Another mod may have queued dialogue on the NPC.
 
-            ForceScheduleCheckNow(spouse);
+            ForceScheduleCheckNow(partner);
         }
         // =========================================================================================================================================
         // NPC position reset after a kiss (prevents stuck animations or unexpected teleports)
         // =========================================================================================================================================
-        private void UpdatePendingNpcKissReset(NPC spouse)
+        private void UpdatePendingNpcKissReset(NPC partner)
         {
             if (!pendingNpcKissResetQueued || pendingNpcKissResetNpc == null)
                 return;
@@ -408,7 +408,7 @@ namespace LotsOfKisses
         // =====================================================================
         // SINGLE KISS LOGIC
         // ====================================================================
-        private void UpdateKissSystem(NPC spouse)
+        private void UpdateKissSystem(NPC partner)
         {
             if (!kissSequenceActive || pendingKissNpc == null)
                 return;
@@ -421,13 +421,13 @@ namespace LotsOfKisses
                 return;
             }
 
-            if (spouse.currentLocation != Game1.currentLocation || pendingKissNpc != spouse)
+            if (partner.currentLocation != Game1.currentLocation || pendingKissNpc != partner)
             {
                 ResetKissState();
                 return;
             }
 
-            float distance = DistanceToPlayer(spouse);
+            float distance = DistanceToPlayer(partner);
 
             if (distance > 120f)
             {
@@ -435,7 +435,7 @@ namespace LotsOfKisses
                 return;
             }
 
-            FaceEachOther(spouse);
+            FaceEachOther(partner);
 
             if (!holdingKissPose)
             {
@@ -450,7 +450,7 @@ namespace LotsOfKisses
                 if (kissRepeatTimer <= 0)
                 {
                     kissPostSequenceActive = true;
-                    kissPostSequenceNpc = spouse;
+                    kissPostSequenceNpc = partner;
                     lastKissPostDistance = distance;
                     kissPostLineTriggered = false;
                     kissPostLine = pendingKissCycleLine;
@@ -461,12 +461,12 @@ namespace LotsOfKisses
         // =====================================================================
         // POST-KISS LOGIC (DIALOGUE, ROUTE DEVIATION, ETC.)
         // ======================================================================
-        private void UpdatePostKissSystem(NPC spouse)
+        private void UpdatePostKissSystem(NPC partner)
         {
             if (!kissPostSequenceActive || kissPostSequenceNpc == null)
                 return;
 
-            if (kissPostSequenceNpc != spouse)
+            if (kissPostSequenceNpc != partner)
             {
 
                 ReleaseNpcAfterMultiKiss(kissPostSequenceNpc);
@@ -474,15 +474,15 @@ namespace LotsOfKisses
                 return;
             }
 
-            if (spouse.currentLocation != Game1.currentLocation)
+            if (partner.currentLocation != Game1.currentLocation)
             {
 
-                ReleaseNpcAfterMultiKiss(spouse);
+                ReleaseNpcAfterMultiKiss(partner);
                 ResetPostKissState();
                 return;
             }
 
-            float distance = DistanceToPlayer(spouse);
+            float distance = DistanceToPlayer(partner);
 
             if (lastKissPostDistance < 0f)
                 lastKissPostDistance = distance;
@@ -496,7 +496,7 @@ namespace LotsOfKisses
                 Game1.activeClickableMenu == null)
             {
 
-                ShowTextAboveHeadWithPipeSupport(spouse, kissPostLine);
+                ShowTextAboveHeadWithPipeSupport(partner, kissPostLine);
                 kissPostLineTriggered = true;
                 dialogueCooldown = 120;
             }
@@ -508,7 +508,7 @@ namespace LotsOfKisses
                      Game1.activeClickableMenu == null)
             {
 
-                ShowTextAboveHeadWithPipeSupport(spouse, kissPostLine);
+                ShowTextAboveHeadWithPipeSupport(partner, kissPostLine);
                 kissPostLineTriggered = true;
                 dialogueCooldown = 120;
             }
@@ -518,16 +518,16 @@ namespace LotsOfKisses
             if (distance > 160f)
             {
                 // Not yet at restore distance — hold here.
-                if (HasNpcPreKissSpecialAction(spouse) && distance < NpcSpecialActionRestoreDistance)
+                if (HasNpcPreKissSpecialAction(partner) && distance < NpcSpecialActionRestoreDistance)
                     return;
 
                 // Past the restore distance — restore first, then release.
                 // Prevents WakeNpcAfterMultiKiss from overwriting the idle frame on top of the restored animation.
-                if (HasNpcPreKissSpecialAction(spouse))
+                if (HasNpcPreKissSpecialAction(partner))
                     TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
 
                 ResetPostKissState();
-                ReleaseNpcAfterMultiKiss(spouse);
+                ReleaseNpcAfterMultiKiss(partner);
 
                 return;
             }
@@ -552,7 +552,7 @@ namespace LotsOfKisses
 
             bool touching = distance <= 64f;
             bool useOutsideApproachKissHold = !IsHomeOrFarmLocation();
-            bool justStartedTouchingSpouse = touching && !playerWasTouchingSpouse;
+            bool justStartedTouchingPartner = touching && !playerWasTouchingPartner;
 
             // Inside the farm/house: no long lock or special hold.
             if (!useOutsideApproachKissHold)
@@ -578,7 +578,7 @@ namespace LotsOfKisses
                 approachKissHoldNpc = null;
                 approachKissHoldToken++;
 
-                playerWasTouchingSpouse = touching;
+                playerWasTouchingPartner = touching;
                 return;
             }
 
@@ -586,7 +586,7 @@ namespace LotsOfKisses
             bool isHorizontal = Math.Abs(diff.X) > Math.Abs(diff.Y);
 
             if (this.Config.BumpKissEnabled &&
-                justStartedTouchingSpouse &&
+                justStartedTouchingPartner &&
                 isHorizontal &&
                 Game1.player.isMoving() &&
                 Game1.timeOfDay < 2400 &&
@@ -596,7 +596,7 @@ namespace LotsOfKisses
                 !kissSequenceActive &&
                 pendingKissNpc == null &&
                 !continuousKissActive &&
-                talkedToSpouseToday)
+                talkedToPartnerToday)
             {
                 CaptureNpcPreKissSpecialAction(npc);
 
@@ -723,7 +723,7 @@ namespace LotsOfKisses
                 // Give priority to the bump kiss:
                 // Clear the multi-kiss hold and prevent it from re-entering immediately on the same touch.
                 continuousKissTouchHoldTimer = 0;
-                continuousKissWasTouchingSpouse = false;
+                continuousKissWasTouchingPartner = false;
                 continuousKissPendingRestart = false;
 
                 // Only outside the farm/house does the partner pause after the bump kiss
@@ -781,7 +781,7 @@ namespace LotsOfKisses
                 cooldown = 100; // Brief cooldown before allowing another touch reaction, so the partner doesn't react repeatedly if the player stands still next to them.
                 dialogueCooldown = 350;
                 didReactThisTick = true;
-                playerWasTouchingSpouse = true;
+                playerWasTouchingPartner = true;
                 return;
             }
 
@@ -802,7 +802,7 @@ namespace LotsOfKisses
                 approachKissRearmPending = false;
             }
 
-            playerWasTouchingSpouse = touching;
+            playerWasTouchingPartner = touching;
         }
     }
 } //👈 FINAL DO NAMESPACE

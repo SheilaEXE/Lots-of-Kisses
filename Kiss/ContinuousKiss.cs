@@ -64,7 +64,7 @@ namespace LotsOfKisses
             continuousKissPendingRestart = false;
             continuousKissGapTimer = 0;
             continuousKissTouchHoldTimer = 0;
-            continuousKissWasTouchingSpouse = true;
+            continuousKissWasTouchingPartner = true;
             continuousKissVanillaTriggered = vanillaTriggered;
         }
 
@@ -139,12 +139,12 @@ namespace LotsOfKisses
         // Slides the farmer a few pixels toward their partner during tier 3.
         // Applies only the delta between the previous and the new offset,
         // so the player doesn't get locked to an absolute position if they try to move.
-        private void StartContinuousKissPlayerLeanIn(NPC spouse)
+        private void StartContinuousKissPlayerLeanIn(NPC partner)
         {
-            if (Game1.player == null || spouse == null)
+            if (Game1.player == null || partner == null)
                 return;
 
-            Vector2 direction = GetContinuousKissPlayerLeanDirection(spouse);
+            Vector2 direction = GetContinuousKissPlayerLeanDirection(partner);
             if (direction == Vector2.Zero)
                 return;
 
@@ -166,9 +166,9 @@ namespace LotsOfKisses
             continuousKissPlayerLeanOutTriggered = true;
         }
 
-        private Vector2 GetContinuousKissPlayerLeanDirection(NPC spouse)
+        private Vector2 GetContinuousKissPlayerLeanDirection(NPC partner)
         {
-            if (Game1.player == null || spouse == null)
+            if (Game1.player == null || partner == null)
                 return Vector2.Zero;
 
             // First tries to use the direction the farmer is currently facing.
@@ -180,7 +180,7 @@ namespace LotsOfKisses
 
             // Fallback: if the farmer isn't facing left or right for any reason,
             // fall back to the horizontal position of the partner.
-            float diffX = spouse.Position.X - Game1.player.Position.X;
+            float diffX = partner.Position.X - Game1.player.Position.X;
 
             if (Math.Abs(diffX) > 0.1f)
                 return new Vector2(Math.Sign(diffX), 0f);
@@ -253,9 +253,9 @@ namespace LotsOfKisses
             ResetPostKissState();
 
             kissProximityTimer = 0;
-            playerWasTouchingSpouse = false;
+            playerWasTouchingPartner = false;
             continuousKissTouchHoldTimer = 0;
-            continuousKissWasTouchingSpouse = false;
+            continuousKissWasTouchingPartner = false;
             continuousKissVanillaTriggered = false;
 
             activeKissVisualDelayMs = bumpKissVisualDelayMs;
@@ -285,11 +285,11 @@ namespace LotsOfKisses
             npc.addedSpeed = 0;
             npc.Sprite.UpdateSourceRect();
 
-            playerWasTouchingSpouse = false;
+            playerWasTouchingPartner = false;
             kissProximityTimer = 0;
             activeKissVisualDelayMs = bumpKissVisualDelayMs;
             continuousKissTouchHoldTimer = 0;
-            continuousKissWasTouchingSpouse = false;
+            continuousKissWasTouchingPartner = false;
 
             DelayedAction.functionAfterDelay(() =>
             {
@@ -331,9 +331,9 @@ namespace LotsOfKisses
         // =====================================================================
         // CONTINUOUS KISS LOGIC
         // =====================================================================
-        private void UpdateContinuousKissSystem(NPC spouse)
+        private void UpdateContinuousKissSystem(NPC partner)
         {
-            if (spouse == null)
+            if (partner == null)
                 return;
 
             // If the player sits down mid-chain (e.g. in a chair the NPC walked them next to),
@@ -342,7 +342,7 @@ namespace LotsOfKisses
             // location, rather than just silently skipping updates and leaving them stuck.
             if (Game1.player.IsSitting())
             {
-                ForceEndContinuousKiss(spouse ?? continuousKissNpc);
+                ForceEndContinuousKiss(partner ?? continuousKissNpc);
                 return;
             }
 
@@ -358,7 +358,7 @@ namespace LotsOfKisses
             {
                 if (continuousKissNpc == null || continuousKissNpc.currentLocation != Game1.player.currentLocation)
                 {
-                    ForceEndContinuousKiss(spouse ?? continuousKissNpc);
+                    ForceEndContinuousKiss(partner ?? continuousKissNpc);
                     return;
                 }
 
@@ -406,21 +406,21 @@ namespace LotsOfKisses
             if (!continuousKissActive || continuousKissNpc == null)
                 return;
 
-            if (continuousKissNpc != spouse || spouse.currentLocation != Game1.player.currentLocation)
+            if (continuousKissNpc != partner || partner.currentLocation != Game1.player.currentLocation)
             {
-                ForceEndContinuousKiss(spouse);
+                ForceEndContinuousKiss(partner);
                 return;
             }
 
-            float distance = DistanceToPlayer(spouse);
+            float distance = DistanceToPlayer(partner);
 
             if (distance > 90f)
             {
-                NPC postNpc = spouse;
+                NPC postNpc = partner;
                 string postLine = GetDialogueLine("kissReaction", 1, 10, postNpc);
                 string publicLine = GetDialogueLine("PublicKissReaction", 1, 2, postNpc);
 
-                ScheduleBystanderRestore(spouse);
+                ScheduleBystanderRestore(partner);
                 ResetContinuousKissState();
                 activeKissVisualDelayMs = bumpKissVisualDelayMs;
 
@@ -449,7 +449,7 @@ namespace LotsOfKisses
 
             if (!continuousKissVanillaTriggered && distance <= 72f)
             {
-                bool vanillaTriggered = TryTriggerRomanticContinuousKiss(spouse);
+                bool vanillaTriggered = TryTriggerRomanticContinuousKiss(partner);
                 continuousKissVanillaTriggered = vanillaTriggered;
             }
 
@@ -462,7 +462,7 @@ namespace LotsOfKisses
                     int totalTicks = MsToTicks(2000);
                     if (continuousKissTimer <= totalTicks / 2)
                     {
-                        spouse.doEmote(20);
+                        partner.doEmote(20);
                         Game1.player.doEmote(20);
                         continuousKissHeartTriggered = true;
                     }
@@ -474,12 +474,12 @@ namespace LotsOfKisses
 
                     // After 2.5 seconds: farmer slides a few pixels toward the partner.
                     if (!continuousKissPlayerLeanInTriggered && elapsedTicks >= MsToTicks(ContinuousKissTier3LeanInDelayMs))
-                        StartContinuousKissPlayerLeanIn(spouse);
+                        StartContinuousKissPlayerLeanIn(partner);
 
                     // After 1 second: heart effect on both the partner and the farmer.
                     if (!continuousKissHeartTriggered && continuousKissTimer <= totalTicks - MsToTicks(1000))
                     {
-                        spouse.doEmote(20);
+                        partner.doEmote(20);
                         Game1.player.doEmote(20);
                         continuousKissHeartTriggered = true;
                     }
@@ -487,7 +487,7 @@ namespace LotsOfKisses
                     // After 3 seconds: custom blush smoke on the partner.
                     if (!continuousKissSmokeTriggered && continuousKissTimer <= totalTicks - MsToTicks(3000))
                     {
-                        ShowBlushSmoke(spouse, 68);
+                        ShowBlushSmoke(partner, 68);
                         continuousKissSmokeTriggered = true;
                     }
                 }
@@ -503,14 +503,14 @@ namespace LotsOfKisses
             continuousKissCyclesDone++;
 
             // Bystanders react based on current kiss tier.
-            TriggerBystanderReactions(continuousKissTier, spouse);
+            TriggerBystanderReactions(continuousKissTier, partner);
 
-            if (TryTriggerPublicMultiKissDialogue(spouse))
+            if (TryTriggerPublicMultiKissDialogue(partner))
                 return;
 
             // publicMultiKiss did not fire — kiss will restart. Schedule restore so bystanders
             // don't stay frozen if the player moves away before publicMultiKiss ever triggers.
-            ScheduleBystanderRestore(spouse);
+            ScheduleBystanderRestore(partner);
 
             continuousKissPendingRestart = true;
             continuousKissGapTimer = 25;

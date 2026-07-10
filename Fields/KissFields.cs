@@ -18,7 +18,7 @@ namespace LotsOfKisses
         private int kissCycleTimer = 0;
         private int kissRepeatTimer = 0;
         private bool holdingKissPose = false;
-        private bool playerWasTouchingSpouse = false;
+        private bool playerWasTouchingPartner = false;
         private bool approachKissTriggered = false;
         private bool approachKissRearmPending = false;
         internal bool approachKissHoldActive = false;
@@ -58,7 +58,7 @@ namespace LotsOfKisses
         private int continuousKissCyclesDone = 0;
         private int continuousKissTouchHoldTimer = 0;
         private const int ContinuousKissHoldTicks = 60;
-        private bool continuousKissWasTouchingSpouse = false;
+        private bool continuousKissWasTouchingPartner = false;
 
         // =====================================================================
         // EFEITO VISUAL DO TIER 3: FARMER SE APROXIMA EM PIXELS E VOLTA
