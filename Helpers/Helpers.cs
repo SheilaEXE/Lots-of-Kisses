@@ -336,16 +336,11 @@ namespace LotsOfKisses
         }
 
         // Reads the cross-mod flag written by the Outfit Reactions mod (NatrollEXE.OutfitReactions)
-        // into the Farmer's modData. While present, an outfit reaction is in progress (noticing,
-        // generating, or dialogue open) and kisses must hold off so the two mods don't collide.
-        // Using modData means no hard dependency or load-order requirement between the mods.
+        // into the Farmer's modData. Kept here for reference/possible future use, but kiss gating
+        // now uses HasReadableDialogueWaiting instead — it only blocks while a dialogue box is
+        // genuinely on screen, rather than for the whole "noticed, waiting for a click" and
+        // post-dialogue linger window, which should allow kissing normally.
         private const string OutfitReactionsActiveModDataKey = "NatrollEXE.OutfitReactions/ReactionActive";
-
-        private bool IsOutfitReactionActive()
-        {
-            return Game1.player?.modData != null
-                && Game1.player.modData.ContainsKey(OutfitReactionsActiveModDataKey);
-        }
 
     }
 }

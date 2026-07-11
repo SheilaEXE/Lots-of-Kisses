@@ -35,7 +35,11 @@ namespace LotsOfKisses
             UpdateOutsideBumpPause(partner);
             UpdatePendingNpcKissReset(partner);
 
-            if (IsOutfitReactionActive() && !continuousKissActive && !kissSequenceActive && !kissPostSequenceActive)
+            // Only hold off on kiss systems while an Outfit Reactions dialogue is genuinely on
+            // screen (blocking player input anyway). The broader IsOutfitReactionActive() flag also
+            // covers "noticed, waiting for a manual click" and the post-dialogue linger — states
+            // where the partner is just standing there and kissing should work normally.
+            if (HasReadableDialogueWaiting(partner) && !continuousKissActive && !kissSequenceActive && !kissPostSequenceActive)
             {
                 UpdatePostKissSystem(partner);
                 UpdateDailyPartnerSystems(partner);

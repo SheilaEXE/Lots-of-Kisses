@@ -30,11 +30,9 @@ namespace LotsOfKisses
                 continuousKissCyclesDone = 0;
             }
 
-            // Cross-mod block: if the Outfit Reactions mod has an outfit reaction in progress
-            // (noticing, generating, or dialogue still open), hold off on kisses entirely until it
-            // finishes. The flag is written by Outfit Reactions into the Farmer's modData, so this
-            // works regardless of mod load order and without a hard dependency between the mods.
-            if (IsOutfitReactionActive())
+            // Cross-mod hold: only wait when an Outfit Reactions dialogue is genuinely on screen —
+            // "noticed, waiting for a click" and the post-dialogue linger should not block kissing.
+            if (HasReadableDialogueWaiting(npc))
                 return false;
 
             if (GetApproachKissBlockTimer(npc) > 0)
