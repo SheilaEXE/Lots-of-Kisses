@@ -5,7 +5,6 @@ using StardewValley.BellsAndWhistles;
 using StardewValley.GameData.Characters;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace LotsOfKisses
 {
@@ -141,7 +140,7 @@ namespace LotsOfKisses
             pendingPublicMultiKissShyEmoteTimer = 30;
 
             ScheduleBystanderRestore(npc);
-            bystanderRestoreForceStart = true;
+            bystanderRestore.ForceStart = true;
 
             didReactThisTick = true;
             cooldown = 120;

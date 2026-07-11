@@ -76,6 +76,20 @@ NPCs without a content pack still work fully — kisses happen normally, just wi
 
 ---
 
+## Ignoring Specific Vision Tiles
+
+For indoor counters or decorations that should not block NPC reactions, add tile coordinates to `config.json`:
+
+```json
+"VisionIgnoredTiles": {
+  "SeedShop": [ "6,12", "7,12", "8,12" ]
+}
+```
+
+Use the location's map name and tile coordinates in `x,y` format. Tiles in this list are ignored only by the kiss-reaction vision check; normal map collision is unchanged.
+
+---
+
 ## Building from Source
 
 ```bash

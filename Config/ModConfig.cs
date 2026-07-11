@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace LotsOfKisses
 {
     public enum BlushSmokeStyle
@@ -23,5 +25,9 @@ namespace LotsOfKisses
 
         // Which blush smoke animation style to use (row 0 = Style1, row 1 = Style2).
         public BlushSmokeStyle BlushSmokeStyle { get; set; } = BlushSmokeStyle.Style2;
+
+        // Per-location tile coordinates that should not block NPC line of sight for kiss reactions.
+        // Example: { "SeedShop": [ "6,12", "7,12" ] }
+        public Dictionary<string, List<string>> VisionIgnoredTiles { get; set; } = new();
     }
 }

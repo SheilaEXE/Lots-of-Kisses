@@ -5,7 +5,6 @@ using StardewValley.BellsAndWhistles;
 using StardewValley.GameData.Characters;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace LotsOfKisses
 {
@@ -48,7 +47,7 @@ namespace LotsOfKisses
             if (kissPostSequenceActive && kissPostSequenceNpc == npc)
                 return true;
 
-            if (outsideBumpPauseActive && outsideBumpPauseNpc == npc)
+            if (OutsideBumpPause.IsActive && OutsideBumpPause.Npc == npc)
                 return true;
 
             return false;
@@ -135,8 +134,8 @@ namespace LotsOfKisses
                 if (snapshot.CurrentAnimation != null && snapshot.CurrentAnimation.Count > 0)
                 {
                     npc.Sprite.CurrentAnimation = new List<FarmerSprite.AnimationFrame>(snapshot.CurrentAnimation);
-                    TrySetSpritePrivateField(npc.Sprite, "currentAnimationIndex", 0);
-                    TrySetSpritePrivateField(npc.Sprite, "timer", 0);
+                    TrySetPrivateField(npc.Sprite, "currentAnimationIndex", 0);
+                    TrySetPrivateField(npc.Sprite, "timer", 0);
                 }
                 else
                 {

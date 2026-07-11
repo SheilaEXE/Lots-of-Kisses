@@ -5,7 +5,6 @@ using StardewValley.BellsAndWhistles;
 using StardewValley.GameData.Characters;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace LotsOfKisses
 {
@@ -17,10 +16,10 @@ namespace LotsOfKisses
         // ========================================================================================================================================
         private void UpdateOutsideBumpPause(NPC partner)
         {
-            if (!outsideBumpPauseActive || outsideBumpPauseNpc == null)
+            if (!OutsideBumpPause.IsActive || OutsideBumpPause.Npc == null)
                 return;
 
-            if (partner == null || partner != outsideBumpPauseNpc)
+            if (partner == null || partner != OutsideBumpPause.Npc)
             {
                 ResetOutsideBumpPause();
                 return;
@@ -50,7 +49,7 @@ namespace LotsOfKisses
                 return;
             }
 
-            if (outsideBumpPauseTimer <= 0)
+            if (OutsideBumpPause.Timer <= 0)
             {
                 ResetOutsideBumpPause();
                 return;
@@ -61,7 +60,7 @@ namespace LotsOfKisses
             if (distance >= 600f) // Far enough to assume the player moved away or the NPC warped — cancel the pause to avoid locking the NPC unnecessarily.
             {
                 this.Monitor.Log(
-                    $"[OUTSIDE BUMP PAUSE EXIT] npc={partner.Name} dist={distance:F1} timer={outsideBumpPauseTimer} loc={partner.currentLocation?.NameOrUniqueName ?? "null"}",
+                    $"[OUTSIDE BUMP PAUSE EXIT] npc={partner.Name} dist={distance:F1} timer={OutsideBumpPause.Timer} loc={partner.currentLocation?.NameOrUniqueName ?? "null"}",
                     LogLevel.Warn
                 );
 
@@ -79,10 +78,10 @@ namespace LotsOfKisses
         // activates the outdoor pause after a bump kiss to prevent NPC teleport or walk-away before the kiss can escalate
         private void ResetOutsideBumpPause()
         {
-            outsideBumpPauseActive = false;
-            outsideBumpPauseNpc = null;
-            outsideBumpPauseTimer = 0;
-            outsideBumpPauseToken++;
+            OutsideBumpPause.IsActive = false;
+            OutsideBumpPause.Npc = null;
+            OutsideBumpPause.Timer = 0;
+            OutsideBumpPause.Token++;
         }
     }
 }

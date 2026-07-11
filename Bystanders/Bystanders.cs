@@ -3,7 +3,6 @@ using StardewModdingAPI;
 using StardewValley;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace LotsOfKisses
 {
@@ -68,11 +67,17 @@ namespace LotsOfKisses
         /// </summary>
         private readonly Dictionary<string, HashSet<string>> usedCrowdReactionKeysByNpc = new();
 
-        private bool bystanderRestorePending = false;
-        private bool bystanderRestoreCountdownStarted = false;
-        private int bystanderRestoreTimer = 0;
-        private int bystanderRestoreSafetyTimer = 0;
-        private NPC bystanderRestorePartner = null;
+        private sealed class BystanderRestoreState
+        {
+            public bool IsPending;
+            public bool CountdownStarted;
+            public int Timer;
+            public int SafetyTimer;
+            public NPC Partner;
+            public bool ForceStart;
+        }
+
+        private readonly BystanderRestoreState bystanderRestore = new();
 
         // ── Public entry points ───────────────────────────────────────────────
 
@@ -252,18 +257,7 @@ namespace LotsOfKisses
         /// </summary>
         private void SetSpeechBubbleAlpha(NPC npc, float alpha)
         {
-            if (npc == null)
-                return;
-
-            try
-            {
-                FieldInfo field = npc.GetType().GetField("textAboveHeadAlpha", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                field?.SetValue(npc, alpha);
-            }
-            catch
-            {
-                // Internal field name/shape may differ between game versions — skip silently.
-            }
+            TrySetNpcSpeechBubbleAlpha(npc, alpha);
         }
 
         /// <summary>
@@ -300,11 +294,11 @@ namespace LotsOfKisses
             if (activeBystanderSnapshots.Count == 0)
                 return;
 
-            bystanderRestorePending = true;
-            bystanderRestoreCountdownStarted = false;
-            bystanderRestoreTimer = BystanderRestoreDelayTicks;
-            bystanderRestoreSafetyTimer = BystanderRestoreSafetyTicks;
-            bystanderRestorePartner = partner;
+            bystanderRestore.IsPending = true;
+            bystanderRestore.CountdownStarted = false;
+            bystanderRestore.Timer = BystanderRestoreDelayTicks;
+            bystanderRestore.SafetyTimer = BystanderRestoreSafetyTicks;
+            bystanderRestore.Partner = partner;
         }
 
         /// <summary>
@@ -318,16 +312,16 @@ namespace LotsOfKisses
                 return;
 
             // If something added snapshots but forgot to schedule the restore, schedule it anyway.
-            if (!bystanderRestorePending)
+            if (!bystanderRestore.IsPending)
             {
-                bystanderRestorePending = true;
-                bystanderRestoreCountdownStarted = false;
-                bystanderRestoreTimer = BystanderRestoreDelayTicks;
-                bystanderRestoreSafetyTimer = BystanderRestoreSafetyTicks;
+                bystanderRestore.IsPending = true;
+                bystanderRestore.CountdownStarted = false;
+                bystanderRestore.Timer = BystanderRestoreDelayTicks;
+                bystanderRestore.SafetyTimer = BystanderRestoreSafetyTicks;
             }
 
-            if (bystanderRestoreSafetyTimer > 0)
-                bystanderRestoreSafetyTimer--;
+            if (bystanderRestore.SafetyTimer > 0)
+                bystanderRestore.SafetyTimer--;
             else
             {
                 RestoreAllBystanders();
@@ -339,8 +333,8 @@ namespace LotsOfKisses
             // If the kiss is still going, keep bystanders watching and reset the countdown.
             if (continuousKissActive || continuousKissPendingRestart)
             {
-                bystanderRestoreCountdownStarted = false;
-                bystanderRestoreTimer = BystanderRestoreDelayTicks;
+                bystanderRestore.CountdownStarted = false;
+                bystanderRestore.Timer = BystanderRestoreDelayTicks;
                 return;
             }
 
@@ -348,34 +342,34 @@ namespace LotsOfKisses
             // timer starts immediately; it doesn't wait for the partner's shy emote timer.
             if (pendingPublicMultiKissShyEmote && (Game1.activeClickableMenu != null || Game1.dialogueUp))
             {
-                bystanderRestoreCountdownStarted = false;
-                bystanderRestoreTimer = BystanderRestoreDelayTicks;
+                bystanderRestore.CountdownStarted = false;
+                bystanderRestore.Timer = BystanderRestoreDelayTicks;
                 return;
             }
 
-            bool partnerReleased = bystanderRestoreForceStart
-                                || bystanderRestorePartner == null
-                                || bystanderRestorePartner.currentLocation != Game1.currentLocation
-                                || bystanderRestorePartner.isMoving()
-                                || !IsKissSystemHoldingNpc(bystanderRestorePartner);
+            bool partnerReleased = bystanderRestore.ForceStart
+                                || bystanderRestore.Partner == null
+                                || bystanderRestore.Partner.currentLocation != Game1.currentLocation
+                                || bystanderRestore.Partner.isMoving()
+                                || !IsKissSystemHoldingNpc(bystanderRestore.Partner);
 
             if (!partnerReleased)
             {
-                bystanderRestoreCountdownStarted = false;
-                bystanderRestoreTimer = BystanderRestoreDelayTicks;
+                bystanderRestore.CountdownStarted = false;
+                bystanderRestore.Timer = BystanderRestoreDelayTicks;
                 return;
             }
 
-            if (!bystanderRestoreCountdownStarted)
+            if (!bystanderRestore.CountdownStarted)
             {
-                bystanderRestoreCountdownStarted = true;
-                bystanderRestoreTimer = BystanderRestoreDelayTicks;
+                bystanderRestore.CountdownStarted = true;
+                bystanderRestore.Timer = BystanderRestoreDelayTicks;
                 return;
             }
 
-            if (bystanderRestoreTimer > 0)
+            if (bystanderRestore.Timer > 0)
             {
-                bystanderRestoreTimer--;
+                bystanderRestore.Timer--;
                 return;
             }
 
@@ -493,9 +487,9 @@ namespace LotsOfKisses
                         snapshot.SavedTempSpriteHeight = TryGetPrivateField(npc.Sprite, "tempSpriteHeight") as int? ?? -1;
                         snapshot.HasSavedSpriteDimensions = true;
                     }
-                    TrySetSpritePrivateField(npc.Sprite, "ignoreSourceRectUpdates", false);
-                    TrySetSpritePrivateField(npc.Sprite, "spriteWidth", 16);
-                    TrySetSpritePrivateField(npc.Sprite, "tempSpriteHeight", -1);
+                    TrySetPrivateField(npc.Sprite, "ignoreSourceRectUpdates", false);
+                    TrySetPrivateField(npc.Sprite, "spriteWidth", 16);
+                    TrySetPrivateField(npc.Sprite, "tempSpriteHeight", -1);
 
                     // "doingEndOfRouteAnimation" is a NetBool, not a plain bool — setting it via
                     // the plain-field helper silently fails, so vanilla keeps re-triggering the
@@ -510,7 +504,7 @@ namespace LotsOfKisses
                         snapshot.SavedStartedEndOfRouteBehavior = endOfRouteBehaviorName;
                     }
                     TrySetNetBoolField(npc, "doingEndOfRouteAnimation", false);
-                    TrySetSpritePrivateField(npc, "currentlyDoingEndOfRouteAnimation", false);
+                    TrySetPrivateField(npc, "currentlyDoingEndOfRouteAnimation", false);
 
                     // The fishing rod is drawn as a separate layer independent of the main sprite
                     // frame — clearing it here is what actually stops the mismatched second-row
@@ -522,9 +516,9 @@ namespace LotsOfKisses
                         snapshot.SavedDrawOffset = TryGetPrivateField(npc, "drawOffset") as Microsoft.Xna.Framework.Vector2? ?? Microsoft.Xna.Framework.Vector2.Zero;
                         snapshot.HasSavedRodLayerFields = true;
                     }
-                    TrySetSpritePrivateField(npc, "yOffset", 0f);
-                    TrySetSpritePrivateField(npc, "loadedEndOfRouteBehavior", null);
-                    TrySetSpritePrivateField(npc, "drawOffset", Microsoft.Xna.Framework.Vector2.Zero);
+                    TrySetPrivateField(npc, "yOffset", 0f);
+                    TrySetPrivateField(npc, "loadedEndOfRouteBehavior", null);
+                    TrySetPrivateField(npc, "drawOffset", Microsoft.Xna.Framework.Vector2.Zero);
                 }
 
                 // Snap the sprite to the idle frame for whichever direction the NPC ended up
@@ -558,9 +552,9 @@ namespace LotsOfKisses
                         snapshot.SavedTempSpriteHeight = TryGetPrivateField(npc.Sprite, "tempSpriteHeight") as int? ?? -1;
                         snapshot.HasSavedSpriteDimensions = true;
                     }
-                    TrySetSpritePrivateField(npc.Sprite, "ignoreSourceRectUpdates", false);
-                    TrySetSpritePrivateField(npc.Sprite, "spriteWidth", 16);
-                    TrySetSpritePrivateField(npc.Sprite, "tempSpriteHeight", -1); // vanilla's own sentinel for "use normal spriteHeight"
+                    TrySetPrivateField(npc.Sprite, "ignoreSourceRectUpdates", false);
+                    TrySetPrivateField(npc.Sprite, "spriteWidth", 16);
+                    TrySetPrivateField(npc.Sprite, "tempSpriteHeight", -1); // vanilla's own sentinel for "use normal spriteHeight"
 
                     if (snapshot.SavedDoingEndOfRouteAnimation == null)
                     {
@@ -569,7 +563,7 @@ namespace LotsOfKisses
                         snapshot.SavedStartedEndOfRouteBehavior = endOfRouteBehaviorName;
                     }
                     TrySetNetBoolField(npc, "doingEndOfRouteAnimation", false);
-                    TrySetSpritePrivateField(npc, "currentlyDoingEndOfRouteAnimation", false);
+                    TrySetPrivateField(npc, "currentlyDoingEndOfRouteAnimation", false);
 
                     // The fishing rod is drawn as a separate layer independent of the main sprite
                     // frame — clearing it here is what actually stops the mismatched second-row
@@ -581,9 +575,9 @@ namespace LotsOfKisses
                         snapshot.SavedDrawOffset = TryGetPrivateField(npc, "drawOffset") as Microsoft.Xna.Framework.Vector2? ?? Microsoft.Xna.Framework.Vector2.Zero;
                         snapshot.HasSavedRodLayerFields = true;
                     }
-                    TrySetSpritePrivateField(npc, "yOffset", 0f);
-                    TrySetSpritePrivateField(npc, "loadedEndOfRouteBehavior", null);
-                    TrySetSpritePrivateField(npc, "drawOffset", Microsoft.Xna.Framework.Vector2.Zero);
+                    TrySetPrivateField(npc, "yOffset", 0f);
+                    TrySetPrivateField(npc, "loadedEndOfRouteBehavior", null);
+                    TrySetPrivateField(npc, "drawOffset", Microsoft.Xna.Framework.Vector2.Zero);
                 }
 
                 int lookDirection = GetDirectionTowardPlayer(npc);
@@ -645,9 +639,9 @@ namespace LotsOfKisses
                 // re-driven the next time vanilla's own fishing loop logic touches it).
                 if (snapshot.HasSavedSpriteDimensions)
                 {
-                    TrySetSpritePrivateField(npc.Sprite, "spriteWidth", snapshot.SavedSpriteWidth);
-                    TrySetSpritePrivateField(npc.Sprite, "tempSpriteHeight", snapshot.SavedTempSpriteHeight);
-                    TrySetSpritePrivateField(npc.Sprite, "ignoreSourceRectUpdates", snapshot.SavedIgnoreSourceRectUpdates);
+                    TrySetPrivateField(npc.Sprite, "spriteWidth", snapshot.SavedSpriteWidth);
+                    TrySetPrivateField(npc.Sprite, "tempSpriteHeight", snapshot.SavedTempSpriteHeight);
+                    TrySetPrivateField(npc.Sprite, "ignoreSourceRectUpdates", snapshot.SavedIgnoreSourceRectUpdates);
                     snapshot.HasSavedSpriteDimensions = false;
                 }
 
@@ -656,7 +650,7 @@ namespace LotsOfKisses
                 if (snapshot.SavedDoingEndOfRouteAnimation.HasValue)
                 {
                     TrySetNetBoolField(npc, "doingEndOfRouteAnimation", snapshot.SavedDoingEndOfRouteAnimation.Value);
-                    TrySetSpritePrivateField(npc, "currentlyDoingEndOfRouteAnimation", snapshot.SavedCurrentlyDoingEndOfRouteAnimation ?? false);
+                    TrySetPrivateField(npc, "currentlyDoingEndOfRouteAnimation", snapshot.SavedCurrentlyDoingEndOfRouteAnimation ?? false);
                     snapshot.SavedDoingEndOfRouteAnimation = null;
                     snapshot.SavedCurrentlyDoingEndOfRouteAnimation = null;
                 }
@@ -667,9 +661,9 @@ namespace LotsOfKisses
                 // brief stray frame in between with the rod layer still suppressed.
                 if (snapshot.HasSavedRodLayerFields)
                 {
-                    TrySetSpritePrivateField(npc, "yOffset", snapshot.SavedYOffset);
-                    TrySetSpritePrivateField(npc, "loadedEndOfRouteBehavior", snapshot.SavedLoadedEndOfRouteBehavior);
-                    TrySetSpritePrivateField(npc, "drawOffset", snapshot.SavedDrawOffset);
+                    TrySetPrivateField(npc, "yOffset", snapshot.SavedYOffset);
+                    TrySetPrivateField(npc, "loadedEndOfRouteBehavior", snapshot.SavedLoadedEndOfRouteBehavior);
+                    TrySetPrivateField(npc, "drawOffset", snapshot.SavedDrawOffset);
                     snapshot.HasSavedRodLayerFields = false;
                 }
 
@@ -684,18 +678,7 @@ namespace LotsOfKisses
                         if (!IsCurrentDelayedAction(delayedActionToken) || npcForDelay?.currentLocation == null || npcForDelay.Sprite == null)
                             return;
 
-                        try
-                        {
-                            TrySetSpritePrivateField(npcForDelay, "_startedEndOfRouteBehavior", behaviorName);
-
-                            MethodInfo method = npcForDelay.GetType().GetMethod("doMiddleAnimation",
-                                BindingFlags.Instance | BindingFlags.NonPublic);
-                            method?.Invoke(npcForDelay, new object[] { null });
-                        }
-                        catch (Exception ex)
-                        {
-                            this.Monitor.Log($"[BYSTANDER] Failed to re-run doMiddleAnimation for {npcForDelay.Name}: {ex}", LogLevel.Error);
-                        }
+                        TryRestartNpcMiddleAnimation(npcForDelay, behaviorName);
                     }, 150);
                 }
 
@@ -703,8 +686,8 @@ namespace LotsOfKisses
                 {
                     npc.Sprite.CurrentAnimation =
                         new List<FarmerSprite.AnimationFrame>(snapshot.CurrentAnimation);
-                    TrySetSpritePrivateField(npc.Sprite, "currentAnimationIndex", 0);
-                    TrySetSpritePrivateField(npc.Sprite, "timer", 0);
+                    TrySetPrivateField(npc.Sprite, "currentAnimationIndex", 0);
+                    TrySetPrivateField(npc.Sprite, "timer", 0);
                 }
                 else
                 {
@@ -734,12 +717,12 @@ namespace LotsOfKisses
             }
 
             ClearActiveBystanderSnapshots();
-            bystanderRestorePending = false;
-            bystanderRestoreCountdownStarted = false;
-            bystanderRestoreTimer = 0;
-            bystanderRestoreSafetyTimer = 0;
-            bystanderRestorePartner = null;
-            bystanderRestoreForceStart = false;
+            bystanderRestore.IsPending = false;
+            bystanderRestore.CountdownStarted = false;
+            bystanderRestore.Timer = 0;
+            bystanderRestore.SafetyTimer = 0;
+            bystanderRestore.Partner = null;
+            bystanderRestore.ForceStart = false;
         }
 
         private void ReleaseRouteBystanderPauseOnly(BystanderSnapshot snapshot)
@@ -764,9 +747,9 @@ namespace LotsOfKisses
             // frame showing through before that happens.
             if (snapshot.HasSavedSpriteDimensions && npc.Sprite != null)
             {
-                TrySetSpritePrivateField(npc.Sprite, "spriteWidth", snapshot.SavedSpriteWidth);
-                TrySetSpritePrivateField(npc.Sprite, "tempSpriteHeight", snapshot.SavedTempSpriteHeight);
-                TrySetSpritePrivateField(npc.Sprite, "ignoreSourceRectUpdates", snapshot.SavedIgnoreSourceRectUpdates);
+                TrySetPrivateField(npc.Sprite, "spriteWidth", snapshot.SavedSpriteWidth);
+                TrySetPrivateField(npc.Sprite, "tempSpriteHeight", snapshot.SavedTempSpriteHeight);
+                TrySetPrivateField(npc.Sprite, "ignoreSourceRectUpdates", snapshot.SavedIgnoreSourceRectUpdates);
                 snapshot.HasSavedSpriteDimensions = false;
             }
 
@@ -775,7 +758,7 @@ namespace LotsOfKisses
             if (snapshot.SavedDoingEndOfRouteAnimation.HasValue)
             {
                 TrySetNetBoolField(npc, "doingEndOfRouteAnimation", snapshot.SavedDoingEndOfRouteAnimation.Value);
-                TrySetSpritePrivateField(npc, "currentlyDoingEndOfRouteAnimation", snapshot.SavedCurrentlyDoingEndOfRouteAnimation ?? false);
+                TrySetPrivateField(npc, "currentlyDoingEndOfRouteAnimation", snapshot.SavedCurrentlyDoingEndOfRouteAnimation ?? false);
                 snapshot.SavedDoingEndOfRouteAnimation = null;
                 snapshot.SavedCurrentlyDoingEndOfRouteAnimation = null;
             }
@@ -784,9 +767,9 @@ namespace LotsOfKisses
             // HoldBystanderWatching.
             if (snapshot.HasSavedRodLayerFields)
             {
-                TrySetSpritePrivateField(npc, "yOffset", snapshot.SavedYOffset);
-                TrySetSpritePrivateField(npc, "loadedEndOfRouteBehavior", snapshot.SavedLoadedEndOfRouteBehavior);
-                TrySetSpritePrivateField(npc, "drawOffset", snapshot.SavedDrawOffset);
+                TrySetPrivateField(npc, "yOffset", snapshot.SavedYOffset);
+                TrySetPrivateField(npc, "loadedEndOfRouteBehavior", snapshot.SavedLoadedEndOfRouteBehavior);
+                TrySetPrivateField(npc, "drawOffset", snapshot.SavedDrawOffset);
                 snapshot.HasSavedRodLayerFields = false;
             }
 
@@ -809,21 +792,7 @@ namespace LotsOfKisses
                     if (!IsCurrentDelayedAction(delayedActionToken) || npc?.currentLocation == null || npc.Sprite == null)
                         return;
 
-                    try
-                    {
-                        // doMiddleAnimation only re-runs startRouteBehavior (which sets up the
-                        // extended tempSpriteHeight/sourceRect) when "_startedEndOfRouteBehavior"
-                        // already holds the behavior name — set it back first.
-                        TrySetSpritePrivateField(npc, "_startedEndOfRouteBehavior", behaviorName);
-
-                        MethodInfo method = npc.GetType().GetMethod("doMiddleAnimation",
-                            BindingFlags.Instance | BindingFlags.NonPublic);
-                        method?.Invoke(npc, new object[] { null });
-                    }
-                    catch (Exception ex)
-                    {
-                        this.Monitor.Log($"[BYSTANDER] Failed to re-run doMiddleAnimation for {npc.Name}: {ex}", LogLevel.Error);
-                    }
+                    TryRestartNpcMiddleAnimation(npc, behaviorName);
                 }, 150);
             }
         }
@@ -843,35 +812,10 @@ namespace LotsOfKisses
             if (npc == null)
                 return;
 
-            bool foundAnyField = false;
-
-            foreach (string fieldName in new[] { "textAboveHeadTimer", "textAboveHeadPreTimer", "textAboveHead", "textAboveHeadAlpha" })
-            {
-                try
-                {
-                    FieldInfo field = npc.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                    if (field == null)
-                        continue;
-
-                    foundAnyField = true;
-
-                    if (field.FieldType == typeof(int))
-                        field.SetValue(npc, 0);
-                    else if (field.FieldType == typeof(float))
-                        field.SetValue(npc, 0f);
-                    else if (field.FieldType == typeof(string))
-                        field.SetValue(npc, null);
-                }
-                catch
-                {
-                    // Internal field name/shape may differ between game versions — skip silently.
-                }
-            }
-
             // Fallback: if none of the confirmed internal field names exist in this game version
             // (e.g. a future update renames them), at least clear the visible text so it's not
             // stuck showing the same line forever — strictly better than a permanently stuck line.
-            if (!foundAnyField)
+            if (!TryClearNpcSpeechBubble(npc))
                 ShowTextAboveHeadWithPipeSupport(npc, "");
         }
 

@@ -8,37 +8,12 @@ namespace LotsOfKisses
     {
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
-            RestoreBystandersBeforeContextReset();
-            InvalidateDelayedActions();
-            ClearPipeTextQueues();
+            ResetTransientKissContext();
             lastDayChecked = Game1.dayOfMonth;
             talkedToPartnerToday = false;
             didReactThisTick = false;
             wasInNoticeZone = false;
             lastNoticeDistance = -1f;
-            outsideBumpPauseActive = false;
-            outsideBumpPauseNpc = null;
-            outsideBumpPauseTimer = 0;
-            outsideBumpPauseToken++;
-            pendingPublicMultiKissShyEmote = false;
-            pendingPublicMultiKissShyNpc = null;
-            pendingPublicMultiKissShyEmoteTimer = 0;
-            approachKissBlockTimerByNpc.Clear();
-            approachKissDialogueLastTimeOfDay = -1;
-            kissBlockAfterDialogueTimer = 0;
-            wasDialogueOrMenuOpenLastTick = false;
-
-            ClearActiveBystanderSnapshots();
-            bystanderRestorePending = false;
-            bystanderRestoreCountdownStarted = false;
-            bystanderRestoreTimer = 0;
-            bystanderRestoreSafetyTimer = 0;
-            bystanderRestorePartner = null;
-
-            ResetKissState();
-            ResetContinuousKissPlayerLeanEffect(false);
-            ResetContinuousKissState();
-            ResetPostKissState();
 
             contentPackLoader.Load();
             if (Game1.player?.spouse != null)
@@ -97,36 +72,11 @@ namespace LotsOfKisses
         }
         private void OnDayStarted(object sender, DayStartedEventArgs e)
         {
-            RestoreBystandersBeforeContextReset();
-            InvalidateDelayedActions();
-            ClearPipeTextQueues();
+            ResetTransientKissContext();
             lastDayChecked = Game1.dayOfMonth;
             talkedToPartnerToday = false;
 
             lastNoticeDistance = -1f;
-            outsideBumpPauseActive = false;
-            outsideBumpPauseNpc = null;
-            outsideBumpPauseTimer = 0;
-            outsideBumpPauseToken++;
-            pendingPublicMultiKissShyEmote = false;
-            pendingPublicMultiKissShyNpc = null;
-            pendingPublicMultiKissShyEmoteTimer = 0;
-            approachKissBlockTimerByNpc.Clear();
-            approachKissDialogueLastTimeOfDay = -1;
-            kissBlockAfterDialogueTimer = 0;
-            wasDialogueOrMenuOpenLastTick = false;
-
-            ClearActiveBystanderSnapshots();
-            bystanderRestorePending = false;
-            bystanderRestoreCountdownStarted = false;
-            bystanderRestoreTimer = 0;
-            bystanderRestoreSafetyTimer = 0;
-            bystanderRestorePartner = null;
-
-            ResetKissState();
-            ResetContinuousKissState();
-            ResetPostKissState();
-
         }
         private void OnTimeChanged(object sender, TimeChangedEventArgs e)
         {
@@ -147,9 +97,7 @@ namespace LotsOfKisses
         }
         private void OnReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
         {
-            RestoreBystandersBeforeContextReset();
-            InvalidateDelayedActions();
-            ClearPipeTextQueues();
+            ResetTransientKissContext();
             lastDayChecked = -1;
             lastLocation = "";
             cooldown = 0;
@@ -158,33 +106,8 @@ namespace LotsOfKisses
             noticeEmoteCooldown = 0;
             lastNoticeDistance = -1f;
 
-            outsideBumpPauseActive = false;
-            outsideBumpPauseNpc = null;
-            outsideBumpPauseTimer = 0;
-            outsideBumpPauseToken++;
-            pendingPublicMultiKissShyEmote = false;
-            pendingPublicMultiKissShyNpc = null;
-            pendingPublicMultiKissShyEmoteTimer = 0;
-            approachKissBlockTimerByNpc.Clear();
-            approachKissDialogueLastTimeOfDay = -1;
-            kissBlockAfterDialogueTimer = 0;
-            wasDialogueOrMenuOpenLastTick = false;
-
             wasInNoticeZone = false;
             talkedToPartnerToday = false;
-
-            ClearActiveBystanderSnapshots();
-            bystanderRestorePending = false;
-            bystanderRestoreCountdownStarted = false;
-            bystanderRestoreTimer = 0;
-            bystanderRestoreSafetyTimer = 0;
-            bystanderRestorePartner = null;
-
-
-
-            ResetKissState();
-            ResetContinuousKissState();
-            ResetPostKissState();
         }
 
         private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
@@ -202,31 +125,6 @@ namespace LotsOfKisses
             this.Helper.ModRegistry.GetApi<INpcPassingGreetingsApi>("NatrollEXE.NpcPassingGreetings");
 
             contentPackLoader.Load();
-        }
-
-        /// <summary>
-        /// Re-applies the movementPause hold on the partner and any active bystanders right after
-        /// the game window regains focus. The game's own movementPause countdown keeps running
-        /// even while the window is unfocused (it's driven by Game1's internal clock, not by this
-        /// mod's update loop), so a hold that was supposed to last through a multi-kiss cycle may
-        /// have already run out during the time the window was in the background. Without this,
-        /// the NPC can end up "free" while the mod still believes the kiss/hold is active, causing
-        /// the player and NPC to visually desync or lock up when focus returns.
-        /// </summary>
-        private void ReinforceHoldAfterFocusRegained()
-        {
-            if (continuousKissActive && continuousKissNpc != null)
-                continuousKissNpc.movementPause = System.Math.Max(continuousKissNpc.movementPause, 60);
-
-            NPC partner = GetPartner();
-            if (partner != null && (kissSequenceActive || kissPostSequenceActive))
-                partner.movementPause = System.Math.Max(partner.movementPause, 60);
-
-            foreach (var snapshot in activeBystanderSnapshots)
-            {
-                if (snapshot?.Npc != null)
-                    snapshot.Npc.movementPause = System.Math.Max(snapshot.Npc.movementPause, 60);
-            }
         }
 
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
@@ -298,8 +196,8 @@ namespace LotsOfKisses
 
             TickApproachKissBlockTimers();
 
-            if (outsideBumpPauseTimer > 0)
-                outsideBumpPauseTimer--;
+            if (OutsideBumpPause.Timer > 0)
+                OutsideBumpPause.Timer--;
 
             if (continuousKissTouchHoldTimer > 0)
                 continuousKissTouchHoldTimer--;
@@ -339,34 +237,7 @@ namespace LotsOfKisses
 
             didReactThisTick = false;
 
-            UpdateContinuousKissPlayerLeanEffect();
-            UpdateDeferredNpcSpecialActionRestore();
-            UpdateBystanderRestore();
-            UpdatePipeTextQueues();
-
-            NPC partner = GetPartner();
-            if (partner == null)
-                return;
-
-            UpdateOutsideBumpPause(partner);
-            UpdatePendingNpcKissReset(partner);
-
-            // Cross-mod block: while an Outfit Reactions reaction is in progress (noticing, generating,
-            // or dialogue open), do not start or run the automatic kiss systems. Any kiss already
-            // mid-animation is allowed to finish naturally; only NEW automatic kisses are held off.
-            // The flag lives in the Farmer's modData, so this needs no hard dependency or load order.
-            if (IsOutfitReactionActive() && !continuousKissActive && !kissSequenceActive && !kissPostSequenceActive)
-            {
-                UpdatePostKissSystem(partner);
-                UpdateDailyPartnerSystems(partner);
-                return;
-            }
-
-            UpdateKissSystem(partner);
-            UpdateContinuousKissSystem(partner);
-            UpdatePostKissSystem(partner);
-            UpdatePendingPublicMultiKissShyEmote();
-            UpdateDailyPartnerSystems(partner);
+            UpdateKissSystems();
         }
 
         private void OnWarped(object sender, WarpedEventArgs e)
@@ -374,35 +245,13 @@ namespace LotsOfKisses
             if (!Context.IsWorldReady || e == null || !e.IsLocalPlayer)
                 return;
 
-            RestoreBystandersBeforeContextReset();
-            InvalidateDelayedActions();
-            ClearPipeTextQueues();
+            ResetTransientKissContext();
 
             lastLocation = e.NewLocation?.NameOrUniqueName ?? "";
-
-            ResetKissState();
-            ResetContinuousKissPlayerLeanEffect(false);
-            ResetContinuousKissState();
-            ResetPostKissState();
-            ClearNpcPreKissSpecialAction();
 
             wasInNoticeZone = false;
             didReactThisTick = false;
             lastNoticeDistance = -1f;
-
-            ClearActiveBystanderSnapshots();
-            bystanderRestorePending = false;
-            bystanderRestoreCountdownStarted = false;
-            bystanderRestoreTimer = 0;
-            bystanderRestoreSafetyTimer = 0;
-            bystanderRestorePartner = null;
-
-            outsideBumpPauseActive = false;
-            outsideBumpPauseNpc = null;
-            outsideBumpPauseTimer = 0;
-            outsideBumpPauseToken++;
-            approachKissBlockTimerByNpc.Clear();
-            approachKissDialogueLastTimeOfDay = -1;
         }
 
         private bool IsCurrentDelayedAction(int token)
@@ -415,6 +264,36 @@ namespace LotsOfKisses
             delayedActionContextToken++;
         }
 
+        private void ResetTransientKissContext()
+        {
+            RestoreBystandersBeforeContextReset();
+            InvalidateDelayedActions();
+            ClearPipeTextQueues();
+            ResetOutsideBumpPause();
+
+            pendingPublicMultiKissShyEmote = false;
+            pendingPublicMultiKissShyNpc = null;
+            pendingPublicMultiKissShyEmoteTimer = 0;
+            approachKissBlockTimerByNpc.Clear();
+            approachKissDialogueLastTimeOfDay = -1;
+            kissBlockAfterDialogueTimer = 0;
+            wasDialogueOrMenuOpenLastTick = false;
+
+            ClearActiveBystanderSnapshots();
+            bystanderRestore.IsPending = false;
+            bystanderRestore.CountdownStarted = false;
+            bystanderRestore.Timer = 0;
+            bystanderRestore.SafetyTimer = 0;
+            bystanderRestore.Partner = null;
+            bystanderRestore.ForceStart = false;
+
+            TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
+            ResetKissState();
+            ResetContinuousKissState();
+            ResetPostKissState();
+            ClearNpcPreKissSpecialAction();
+        }
+
         private void AbortActiveModState(bool releasePlayer)
         {
             if (releasePlayer && Game1.player != null)
@@ -424,19 +303,11 @@ namespace LotsOfKisses
                 Game1.player.completelyStopAnimatingOrDoingAction();
             }
 
-            NPC heldNpc = continuousKissNpc ?? kissPostSequenceNpc ?? pendingKissNpc ?? outsideBumpPauseNpc;
+            NPC heldNpc = continuousKissNpc ?? kissPostSequenceNpc ?? pendingKissNpc ?? OutsideBumpPause.Npc;
             if (heldNpc != null && heldNpc.currentLocation != null)
                 heldNpc.movementPause = 0;
 
-            TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
-            RestoreBystandersBeforeContextReset();
-            InvalidateDelayedActions();
-            ClearPipeTextQueues();
-            ResetOutsideBumpPause();
-            ResetKissState();
-            ResetContinuousKissState();
-            ResetPostKissState();
-            ClearNpcPreKissSpecialAction();
+            ResetTransientKissContext();
         }
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
         {

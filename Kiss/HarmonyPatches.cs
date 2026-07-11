@@ -301,14 +301,14 @@ namespace LotsOfKisses
             if (__instance == null)
                 return true;
 
-            if (ModEntry.Instance.outsideBumpPauseNpc != __instance)
+            if (ModEntry.Instance.OutsideBumpPause.Npc != __instance)
                 return true;
 
             if (!ModEntry.Instance.IsSupportedRomanticPartner(__instance.Name))
                 return true;
 
             bool shouldBlock =
-                ModEntry.Instance.outsideBumpPauseActive &&
+                ModEntry.Instance.OutsideBumpPause.IsActive &&
                 !ModEntry.Instance.IsHomeOrFarmLocation();
 
             return !shouldBlock;

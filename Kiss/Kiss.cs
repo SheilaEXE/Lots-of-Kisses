@@ -5,7 +5,6 @@ using StardewValley.BellsAndWhistles;
 using StardewValley.GameData.Characters;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace LotsOfKisses
 {
@@ -768,14 +767,14 @@ namespace LotsOfKisses
                     approachKissRearmPending = true;
 
                     NPC pauseNpc = npc;
-                    int pauseToken = ++outsideBumpPauseToken;
+                    int pauseToken = ++OutsideBumpPause.Token;
 
                     DelayedAction.functionAfterDelay(() =>
                     {
                         if (!Context.IsWorldReady)
                             return;
 
-                        if (pauseToken != outsideBumpPauseToken)
+                        if (pauseToken != OutsideBumpPause.Token)
                             return;
 
                         if (pauseNpc == null)
@@ -796,9 +795,9 @@ namespace LotsOfKisses
                         if (DistanceToPlayer(pauseNpc) >= 600f) // Player moved too far away — skip the pause.
                             return;
 
-                        outsideBumpPauseActive = true;
-                        outsideBumpPauseNpc = pauseNpc;
-                        outsideBumpPauseTimer = 360; // 6-second pause
+                        OutsideBumpPause.IsActive = true;
+                        OutsideBumpPause.Npc = pauseNpc;
+                        OutsideBumpPause.Timer = 360; // 6-second pause
                         pauseNpc.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
 
                     }, activeKissVisualDelayMs);

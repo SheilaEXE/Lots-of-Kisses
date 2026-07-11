@@ -5,6 +5,14 @@ namespace LotsOfKisses
 {
     public partial class ModEntry
     {
+        internal sealed class OutsideBumpPauseState
+        {
+            public bool IsActive;
+            public NPC Npc;
+            public int Timer;
+            public int Token;
+        }
+
         // =====================================================================
         // FIELDS
         // =====================================================================
@@ -26,12 +34,8 @@ namespace LotsOfKisses
         private int approachKissHoldToken = 0;
         private System.Collections.Generic.Dictionary<string, int> approachKissBlockTimerByNpc = new();
         private int approachKissDialogueLastTimeOfDay = -1;
-        private bool bystanderRestoreForceStart = false; // set when publicMultiKiss dialogue fires — bypasses kiss-state wait
         private string pendingKissCycleLine = null;
-        internal bool outsideBumpPauseActive = false;
-        internal NPC outsideBumpPauseNpc = null;
-        private int outsideBumpPauseTimer = 0;
-        private int outsideBumpPauseToken = 0;
+        internal readonly OutsideBumpPauseState OutsideBumpPause = new();
 
         // =====================================================================
         // POST-KISS / PROXIMITY
