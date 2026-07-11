@@ -12,10 +12,15 @@ namespace LotsOfKisses
     // Multi-kiss (continuous kiss) system: starting/ending a chain, tiers, public dialogue, and the tier-3 player lean-in visual effect.
     public partial class ModEntry
     {
-        private void StartContinuousKiss(NPC npc, int kissTier, bool isNewSequence = false)
+        // Returns true if the vanilla kiss fired on this attempt (informational only — no longer
+        // gates whether the chain activates, see the revert note near TryCheckActionForAutoKiss...
+        // in Kiss.cs: npc.checkAction()'s raw boolean return isn't a reliable "a kiss specifically
+        // happened" signal, since checkAction is the general click-interaction handler covering
+        // dialogue/gifts/quests/etc too — gating the whole chain on it broke normal kissing).
+        private bool StartContinuousKiss(NPC npc, int kissTier, bool isNewSequence = false)
         {
             if (npc == null || npc.currentLocation != Game1.player.currentLocation)
-                return;
+                return false;
 
             if (isNewSequence)
             {
@@ -31,10 +36,10 @@ namespace LotsOfKisses
             // finishes. The flag is written by Outfit Reactions into the Farmer's modData, so this
             // works regardless of mod load order and without a hard dependency between the mods.
             if (IsOutfitReactionActive())
-                return;
+                return false;
 
             if (GetApproachKissBlockTimer(npc) > 0)
-                return;
+                return false;
 
             CaptureNpcPreKissSpecialAction(npc);
 
@@ -51,7 +56,21 @@ namespace LotsOfKisses
             // The dialogue itself is intentionally left alone here (never cleared) so it stays
             // available for the player to open manually afterward — only the automatic pop-up
             // triggered by this simulated click is suppressed by the Harmony patch.
+            //
+            // BUGFIX (ghost kiss): this used to activate the whole multi-kiss chain (hearts,
+            // dialogue, movementPause hold) unconditionally regardless of whether the real
+            // vanilla kiss actually fired — a "ghost" multi-kiss could run entirely through this
+            // mod's own effects with no real vanilla kiss animation ever happening. Confirmed via
+            // diagnostic logging that TryTriggerRomanticContinuousKiss's return value is reliable
+            // now (it's built on the same CanMove-based confirmation as the bump kiss trigger —
+            // see TryCheckActionForAutoKissWithoutDialogue in Kiss.cs) — abort cleanly if it's
+            // false, restoring the captured pose since nothing else has touched the NPC yet.
             bool vanillaTriggered = TryTriggerRomanticContinuousKiss(npc);
+            if (!vanillaTriggered)
+            {
+                TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
+                return false;
+            }
 
             ResetContinuousKissPlayerLeanEffect(true);
 
@@ -65,7 +84,7 @@ namespace LotsOfKisses
             continuousKissGapTimer = 0;
             continuousKissTouchHoldTimer = 0;
             continuousKissWasTouchingPartner = true;
-            continuousKissVanillaTriggered = vanillaTriggered;
+            return true;
         }
 
         private bool TryTriggerPublicMultiKissDialogue(NPC npc)
@@ -111,9 +130,9 @@ namespace LotsOfKisses
             continuousKissActive = false;
             continuousKissPendingRestart = false;
             continuousKissGapTimer = 0;
-            continuousKissVanillaTriggered = false;
 
-            npc.CurrentDialogue.Clear();
+            // Push our line on top of existing dialogue instead of clearing the stack.
+            // Daily, quest, event, and other-mod dialogue must remain available afterward.
             npc.CurrentDialogue.Push(new Dialogue(npc, "", line));
             Game1.drawDialogue(npc);
 
@@ -256,7 +275,6 @@ namespace LotsOfKisses
             playerWasTouchingPartner = false;
             continuousKissTouchHoldTimer = 0;
             continuousKissWasTouchingPartner = false;
-            continuousKissVanillaTriggered = false;
 
             activeKissVisualDelayMs = bumpKissVisualDelayMs;
         }
@@ -291,9 +309,10 @@ namespace LotsOfKisses
             continuousKissTouchHoldTimer = 0;
             continuousKissWasTouchingPartner = false;
 
+            int delayedActionToken = delayedActionContextToken;
             DelayedAction.functionAfterDelay(() =>
             {
-                if (npc == null)
+                if (!IsCurrentDelayedAction(delayedActionToken) || npc == null)
                     return;
 
                 Game1.player.CanMove = true;
@@ -375,9 +394,10 @@ namespace LotsOfKisses
                     ResetContinuousKissState();
                     activeKissVisualDelayMs = bumpKissVisualDelayMs;
 
+                    int delayedActionToken = delayedActionContextToken;
                     DelayedAction.functionAfterDelay(() =>
                     {
-                        if (postNpc == null || postNpc.currentLocation != Game1.player.currentLocation)
+                        if (!IsCurrentDelayedAction(delayedActionToken) || postNpc == null || postNpc.currentLocation != Game1.player.currentLocation)
                             return;
 
                         if (DistanceToPlayer(postNpc) >= 72f && Game1.activeClickableMenu == null)
@@ -399,7 +419,13 @@ namespace LotsOfKisses
                 }
 
                 continuousKissPendingRestart = false;
-                StartContinuousKiss(continuousKissNpc, continuousKissTier, false);
+
+                // If the vanilla kiss doesn't fire for this next cycle, don't leave the chain in
+                // a stale "still active but nothing progressing" state — cleanly end it, same as
+                // any other abort path (releasing the NPC's pose/movementPause properly).
+                if (!StartContinuousKiss(continuousKissNpc, continuousKissTier, false))
+                    ForceEndContinuousKiss(continuousKissNpc);
+
                 return;
             }
 
@@ -424,9 +450,10 @@ namespace LotsOfKisses
                 ResetContinuousKissState();
                 activeKissVisualDelayMs = bumpKissVisualDelayMs;
 
+                int delayedActionToken = delayedActionContextToken;
                 DelayedAction.functionAfterDelay(() =>
                 {
-                    if (postNpc == null || postNpc.currentLocation != Game1.player.currentLocation)
+                    if (!IsCurrentDelayedAction(delayedActionToken) || postNpc == null || postNpc.currentLocation != Game1.player.currentLocation)
                         return;
 
                     if (DistanceToPlayer(postNpc) >= 72f && Game1.activeClickableMenu == null)
@@ -447,11 +474,8 @@ namespace LotsOfKisses
                 return;
             }
 
-            if (!continuousKissVanillaTriggered && distance <= 72f)
-            {
-                bool vanillaTriggered = TryTriggerRomanticContinuousKiss(partner);
-                continuousKissVanillaTriggered = vanillaTriggered;
-            }
+            // StartContinuousKiss only marks the sequence active after the vanilla kiss fires,
+            // so no retry is needed while the sequence is already active.
 
             if (continuousKissTimer > 0)
             {
@@ -499,7 +523,6 @@ namespace LotsOfKisses
                 StartContinuousKissPlayerLeanOut();
 
             continuousKissActive = false;
-            continuousKissVanillaTriggered = false;
             continuousKissCyclesDone++;
 
             // Bystanders react based on current kiss tier.

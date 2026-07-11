@@ -54,7 +54,6 @@ namespace LotsOfKisses
         private int continuousKissTier = 0;
         private int continuousKissGapTimer = 0;
         internal bool continuousKissPendingRestart = false;
-        private bool continuousKissVanillaTriggered = false;
         private int continuousKissCyclesDone = 0;
         private int continuousKissTouchHoldTimer = 0;
         private const int ContinuousKissHoldTicks = 60;

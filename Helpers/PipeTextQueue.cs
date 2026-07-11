@@ -14,6 +14,12 @@ namespace LotsOfKisses
         private readonly Dictionary<string, Queue<string>> pendingPipeTextQueueByNpc = new Dictionary<string, Queue<string>>();
         private readonly Dictionary<string, int> pipeTextDelayTimerByNpc = new Dictionary<string, int>();
 
+        private void ClearPipeTextQueues()
+        {
+            pendingPipeTextQueueByNpc.Clear();
+            pipeTextDelayTimerByNpc.Clear();
+        }
+
         // Drop-in replacement for npc.showTextAboveHead(text). If the text contains "|", it's
         // split into separate speech bubbles shown one after another (not a line break inside a
         // single bubble) — e.g. "Oi!|Que bom te ver!" shows "Oi!" first, then a bit later "Que

@@ -8,6 +8,9 @@ namespace LotsOfKisses
     {
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
+            RestoreBystandersBeforeContextReset();
+            InvalidateDelayedActions();
+            ClearPipeTextQueues();
             lastDayChecked = Game1.dayOfMonth;
             talkedToPartnerToday = false;
             didReactThisTick = false;
@@ -94,6 +97,9 @@ namespace LotsOfKisses
         }
         private void OnDayStarted(object sender, DayStartedEventArgs e)
         {
+            RestoreBystandersBeforeContextReset();
+            InvalidateDelayedActions();
+            ClearPipeTextQueues();
             lastDayChecked = Game1.dayOfMonth;
             talkedToPartnerToday = false;
 
@@ -141,6 +147,9 @@ namespace LotsOfKisses
         }
         private void OnReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
         {
+            RestoreBystandersBeforeContextReset();
+            InvalidateDelayedActions();
+            ClearPipeTextQueues();
             lastDayChecked = -1;
             lastLocation = "";
             cooldown = 0;
@@ -222,8 +231,14 @@ namespace LotsOfKisses
 
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
-            if (!Context.IsWorldReady || !e.IsMultipleOf(1))
+            if (!Context.IsWorldReady)
                 return;
+
+            if (Config?.ModEnabled != true || Game1.eventUp)
+            {
+                AbortActiveModState(releasePlayer: !Game1.eventUp);
+                return;
+            }
 
             // Freeze the entire mod while the game window isn't focused (player alt-tabbed,
             // switched to another app/browser, etc). Timers, kiss cycles, and NPC holds all
@@ -259,7 +274,7 @@ namespace LotsOfKisses
             // world moving without touching anything else the game or another mod might freeze
             // controls for (menus, events, cutscenes, etc. are untouched since this only fires
             // during our own kiss sequence).
-            if (continuousKissActive || continuousKissPendingRestart)
+            if (!Game1.eventUp && (continuousKissActive || continuousKissPendingRestart))
                 Game1.freezeControls = false;
 
             // The bystander speech bubbles run on their own real-tick timer (TickCrowdReactionCooldowns),
@@ -359,6 +374,10 @@ namespace LotsOfKisses
             if (!Context.IsWorldReady || e == null || !e.IsLocalPlayer)
                 return;
 
+            RestoreBystandersBeforeContextReset();
+            InvalidateDelayedActions();
+            ClearPipeTextQueues();
+
             lastLocation = e.NewLocation?.NameOrUniqueName ?? "";
 
             ResetKissState();
@@ -384,6 +403,40 @@ namespace LotsOfKisses
             outsideBumpPauseToken++;
             approachKissBlockTimerByNpc.Clear();
             approachKissDialogueLastTimeOfDay = -1;
+        }
+
+        private bool IsCurrentDelayedAction(int token)
+        {
+            return token == delayedActionContextToken && Context.IsWorldReady && Game1.player != null;
+        }
+
+        private void InvalidateDelayedActions()
+        {
+            delayedActionContextToken++;
+        }
+
+        private void AbortActiveModState(bool releasePlayer)
+        {
+            if (releasePlayer && Game1.player != null)
+            {
+                Game1.freezeControls = false;
+                Game1.player.CanMove = true;
+                Game1.player.completelyStopAnimatingOrDoingAction();
+            }
+
+            NPC heldNpc = continuousKissNpc ?? kissPostSequenceNpc ?? pendingKissNpc ?? outsideBumpPauseNpc;
+            if (heldNpc != null && heldNpc.currentLocation != null)
+                heldNpc.movementPause = 0;
+
+            TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
+            RestoreBystandersBeforeContextReset();
+            InvalidateDelayedActions();
+            ClearPipeTextQueues();
+            ResetOutsideBumpPause();
+            ResetKissState();
+            ResetContinuousKissState();
+            ResetPostKissState();
+            ClearNpcPreKissSpecialAction();
         }
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
         {

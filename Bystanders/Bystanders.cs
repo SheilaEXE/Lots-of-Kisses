@@ -286,6 +286,12 @@ namespace LotsOfKisses
             activeCrowdReactionSpeakerCount = 0;
         }
 
+        private void RestoreBystandersBeforeContextReset()
+        {
+            if (activeBystanderSnapshots.Count > 0)
+                RestoreAllBystanders();
+        }
+
         /// <summary>
         /// Schedules bystander restoration after the kiss/dialogue state clears, then waits two seconds.
         /// </summary>
@@ -599,6 +605,7 @@ namespace LotsOfKisses
         private void RestoreAllBystanders()
         {
             var routeSnapshots = new List<BystanderSnapshot>();
+            int delayedActionToken = delayedActionContextToken;
 
             foreach (var snapshot in activeBystanderSnapshots)
             {
@@ -674,7 +681,7 @@ namespace LotsOfKisses
 
                     DelayedAction.functionAfterDelay(() =>
                     {
-                        if (npcForDelay?.currentLocation == null || npcForDelay.Sprite == null)
+                        if (!IsCurrentDelayedAction(delayedActionToken) || npcForDelay?.currentLocation == null || npcForDelay.Sprite == null)
                             return;
 
                         try
@@ -718,6 +725,9 @@ namespace LotsOfKisses
             {
                 DelayedAction.functionAfterDelay(() =>
                 {
+                    if (!IsCurrentDelayedAction(delayedActionToken))
+                        return;
+
                     foreach (var snapshot in routeSnapshots)
                         ReleaseRouteBystanderPauseOnly(snapshot);
                 }, 250);
@@ -792,10 +802,11 @@ namespace LotsOfKisses
             {
                 string behaviorName = snapshot.SavedStartedEndOfRouteBehavior;
                 snapshot.SavedStartedEndOfRouteBehavior = null;
+                int delayedActionToken = delayedActionContextToken;
 
                 DelayedAction.functionAfterDelay(() =>
                 {
-                    if (npc?.currentLocation == null || npc.Sprite == null)
+                    if (!IsCurrentDelayedAction(delayedActionToken) || npc?.currentLocation == null || npc.Sprite == null)
                         return;
 
                     try

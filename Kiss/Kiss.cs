@@ -79,6 +79,23 @@ namespace LotsOfKisses
                     return false;
                 }
 
+                // BUGFIX (ghost kiss): checkAction's raw boolean is NOT a reliable "a real kiss
+                // just happened" signal on its own — it's the general click-interaction handler,
+                // and can return true just because SOME dialogue got queued and immediately
+                // suppressed by our own patch above, with no actual kiss animation ever playing.
+                // Confirmed via diagnostic logging: across every genuinely successful kiss
+                // (multiple NPCs, bump kiss and multi-kiss, many attempts), Game1.player.CanMove
+                // was reliably false immediately after checkAction returned — vanilla's own kiss
+                // animation freezes the player's movement as a side effect, same as any other
+                // scripted animation. A plain dialogue-open-and-suppress does not. The one
+                // reproduced "ghost kiss" (result=true, no visible animation) was the single case
+                // where CanMove was still true right after checkAction — i.e. nothing had frozen
+                // the player, meaning no real kiss animation had actually started. Use that as the
+                // authoritative confirmation, on top of checkAction's own result.
+                bool playerWasFrozenByRealKiss = !Game1.player.CanMove;
+                if (result && !playerWasFrozenByRealKiss)
+                    return false;
+
                 return result;
             }
             finally
@@ -244,11 +261,13 @@ namespace LotsOfKisses
             if (partner == null)
                 return;
 
+            int delayedActionToken = delayedActionContextToken;
+
             WakeNpcAfterMultiKiss(partner, true);
 
             DelayedAction.functionAfterDelay(() =>
             {
-                if (partner == null || partner.currentLocation == null)
+                if (!IsCurrentDelayedAction(delayedActionToken) || partner == null || partner.currentLocation == null)
                     return;
 
                 // If a snapshot is still saved for this NPC, don't overwrite the idle frame —
@@ -272,7 +291,7 @@ namespace LotsOfKisses
 
             DelayedAction.functionAfterDelay(() =>
             {
-                if (partner == null || partner.currentLocation != Game1.player.currentLocation)
+                if (!IsCurrentDelayedAction(delayedActionToken) || partner == null || partner.currentLocation != Game1.player.currentLocation)
                     return;
 
                 partner.Halt();
@@ -300,7 +319,7 @@ namespace LotsOfKisses
 
             DelayedAction.functionAfterDelay(() =>
             {
-                if (partner == null)
+                if (!IsCurrentDelayedAction(delayedActionToken) || partner == null)
                     return;
 
                 RestorePartnerScheduleAfterMultiKiss(partner);
@@ -614,7 +633,19 @@ namespace LotsOfKisses
 
                 activeKissVisualDelayMs = bumpKissVisualDelayMs;
 
-                TryTriggerRomanticBumpKiss(npc);
+                bool vanillaTriggered = TryTriggerRomanticBumpKiss(npc);
+                if (!vanillaTriggered)
+                {
+                    // No real vanilla kiss happened (ghost kiss caught) — cleanly undo what was
+                    // already applied above (pose capture, halt, pause, player freeze) instead of
+                    // running the rest of this mod's own bump-kiss effects (sound, emote,
+                    // dialogue) over nothing.
+                    TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
+                    npc.movementPause = 0;
+                    Game1.player.CanMove = true;
+                    playerWasTouchingPartner = touching;
+                    return;
+                }
 
                 Game1.playSound("dwop");
                 npc.doEmote(20);
@@ -680,8 +711,12 @@ namespace LotsOfKisses
                         }
                     }
 
+                    int delayedActionToken = delayedActionContextToken;
                     DelayedAction.functionAfterDelay(() =>
                     {
+                        if (!IsCurrentDelayedAction(delayedActionToken) || npc == null || npc.currentLocation != Game1.player.currentLocation)
+                            return;
+
                         if (giftDrop)
                         {
                             if (!string.IsNullOrEmpty(fullBagLine))

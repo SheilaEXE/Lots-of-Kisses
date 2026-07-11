@@ -45,6 +45,8 @@ namespace LotsOfKisses
         private Point passiveLookRestoreTile = Point.Zero;
         private string passiveLookRestoreLocationName = "";
         private bool wasGameWindowActiveLastTick = true;
+        // Invalidates callbacks scheduled by this mod when the save/context changes.
+        private int delayedActionContextToken = 0;
 
         // =====================================================================
         // DAILY ROUTINE / DIALOGUES
