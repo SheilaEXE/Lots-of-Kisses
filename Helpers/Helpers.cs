@@ -342,5 +342,11 @@ namespace LotsOfKisses
         // post-dialogue linger window, which should allow kissing normally.
         private const string OutfitReactionsActiveModDataKey = "NatrollEXE.OutfitReactions/ReactionActive";
 
+        // Written into the Farmer's modData for the duration of a simulated checkAction click used
+        // to trigger the vanilla kiss animation (see TryCheckActionForAutoKissWithoutDialogue).
+        // Outfit Reactions' own NPC.checkAction Harmony prefix checks for this key and steps aside
+        // instead of hijacking the click into its outfit dialogue.
+        internal const string AutoKissClickActiveModDataKey = "NatrollEXE.LotsOfKisses/AutoKissClickActive";
+
     }
 }

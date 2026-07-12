@@ -27,6 +27,17 @@ namespace LotsOfKisses
             suppressedDialogueDuringAutoKissClick = false;
             LotsOfKissesKissPatchActive = true;
 
+            // Cross-mod signal (mirrors the modData handshake Outfit Reactions already uses):
+            // while this simulated click is in flight, tell Outfit Reactions' own NPC.checkAction
+            // Harmony prefix (which runs at Priority.First and checks its own pending-reaction
+            // state, not npc.CurrentDialogue) to step aside instead of hijacking the click into
+            // opening the outfit dialogue. Our own dialogue-stash above only satisfies vanilla's
+            // checkAction body and other mods reading CurrentDialogue — it can't reach a patch
+            // that ignores CurrentDialogue entirely. Only write/remove it at the outermost call
+            // (previousKissPatchFlag was false) so nested calls don't clear it early.
+            if (!previousKissPatchFlag && Game1.player?.modData != null)
+                Game1.player.modData[AutoKissClickActiveModDataKey] = "1";
+
             // Some NPCs have a fixed "location override" line tied to their current pose/location
             // (e.g. Sebastian playing video games, Abigail sitting on the couch) that never clears
             // on its own — unlike a regular queued dialogue, it's recalculated fresh every time
@@ -105,6 +116,10 @@ namespace LotsOfKisses
                 LotsOfKissesKissPatchActive = previousKissPatchFlag;
                 suppressLocationOverrideDialogueDuringAutoKissClick = previousSuppressLocationOverride;
 
+                if (!previousKissPatchFlag && Game1.player?.modData != null)
+                    Game1.player.modData.Remove(AutoKissClickActiveModDataKey);
+
+
                 // Restore the original pending dialogue, unless checkAction pushed a brand new
                 // one of its own (rare, but don't stomp on it if it did).
                 if (stashedDialogue != null && npc.CurrentDialogue != null && npc.CurrentDialogue.Count == 0)
@@ -146,7 +161,7 @@ namespace LotsOfKisses
         private int preKissSpecialActionRestoreDelayTicks = 0;
         private const float NpcSpecialActionRestoreDistance = 300f;
 
-        /// <summary>Ticks left before this specific NPC can trigger a new bump-kiss cooldown line/gift. Per-NPC, so kissing one partner doesn't block trying with another right after.</summary>
+        /// <summary>Ticks left before this specific NPC can trigger a new bump-kiss cooldown line. Per-NPC, so kissing one partner doesn't block trying with another right after.</summary>
         private int GetApproachKissBlockTimer(NPC npc)
         {
             if (npc == null)
@@ -670,17 +685,12 @@ namespace LotsOfKisses
                     this.passingGreetingsApi?.ShouldSuppressBumpKissDialogue(npc.Name) == true;
 
                 // O beijo sempre pode acontecer.
-                // Only the approachKiss dialogue and gift are restricted to outdoors.
+                // Only the approachKiss dialogue is restricted to outdoors.
                 // If Npc Passing Greetings just triggered a balloon, the kiss still fires,
                 // but the bump kiss dialogue is silenced for a few seconds.
                 if (locName != "FarmHouse" && locName != "Farm" && !approachKissTriggered && !suppressBumpKissDialogue)
                 {
-                    bool giftDrop = IsCurrentSpouse(npc.Name) &&
-                                    random.NextDouble() < 0.05;
                     string surpriseLine = null;
-                    List<Item> giftItems = null;
-                    string fullBagLine = null;
-                    string presentLine = null;
 
                     // Capture time at the moment of the kiss for the cooldown check.
                     int kissTimeOfDay = Game1.timeOfDay;
@@ -688,62 +698,20 @@ namespace LotsOfKisses
                         || kissTimeOfDay < approachKissDialogueLastTimeOfDay // new day rollover
                         || (kissTimeOfDay - approachKissDialogueLastTimeOfDay) >= 100;
 
-                    if (giftDrop)
-                    {
-                        if (Game1.player.isInventoryFull())
-                        {
-                            fullBagLine = GetDialogueLine("fullBag", 1, 2, npc);
-                        }
-                        else
-                        {
-                            // Gift lines live in i18n as e.g. "giftAlex.1": "Here! {201}"
-                            // Fallback to generic "surpriseGift" key for unknown NPCs.
-                            string dialogueKey = $"gift{npc.Name}";
-                            presentLine = GetDialogueLine(dialogueKey, 1, 3, npc);
-
-                            if (string.IsNullOrEmpty(presentLine))
-                                presentLine = GetDialogueLine("surpriseGift", 1, 3, npc);
-
-                            if (!string.IsNullOrEmpty(presentLine))
-                                giftItems = ExtractItemTokens(ref presentLine);
-                        }
-                    }
-
                     int delayedActionToken = delayedActionContextToken;
                     DelayedAction.functionAfterDelay(() =>
                     {
                         if (!IsCurrentDelayedAction(delayedActionToken) || npc == null || npc.currentLocation != Game1.player.currentLocation)
                             return;
 
-                        if (giftDrop)
+                        if (approachDialogueCooledDown)
                         {
-                            if (!string.IsNullOrEmpty(fullBagLine))
+                            surpriseLine = GetDialogueLine("approachKiss", 1, 30, npc);
+                            if (!string.IsNullOrEmpty(surpriseLine))
                             {
-                                ShowTextAboveHeadWithPipeSupport(npc, fullBagLine);
-                            }
-                            else if (giftItems != null && giftItems.Count > 0)
-                            {
-                                foreach (Item gift in giftItems)
-                                {
-                                    Game1.player.addItemToInventoryBool(gift);
-                                    Game1.player.holdUpItemThenMessage(gift);
-                                }
-
-                                if (!string.IsNullOrEmpty(presentLine))
-                                    ShowTextAboveHeadWithPipeSupport(npc, presentLine);
-                            }
-                        }
-                        else
-                        {
-                            if (approachDialogueCooledDown)
-                            {
-                                surpriseLine = GetDialogueLine("approachKiss", 1, 30, npc);
-                                if (!string.IsNullOrEmpty(surpriseLine))
-                                {
-                                    ShowTextAboveHeadWithPipeSupport(npc, surpriseLine);
-                                    SetApproachKissBlockTimer(npc, 300);
-                                    approachKissDialogueLastTimeOfDay = kissTimeOfDay;
-                                }
+                                ShowTextAboveHeadWithPipeSupport(npc, surpriseLine);
+                                SetApproachKissBlockTimer(npc, 300);
+                                approachKissDialogueLastTimeOfDay = kissTimeOfDay;
                             }
                         }
                     }, 1200);

@@ -12,14 +12,17 @@
 
   "gmcm.option.enable-polyamory-support.name": "Ativar Vários Parceiros",
   "gmcm.option.enable-polyamory-support.tooltip": "Permite que o sistema de beijos deste mod funcione com mais de um parceiro romântico ao mesmo tempo (pra saves que usam um mod de poliamoria), em vez de só o seu cônjuge oficial.",
-  "gmcm.option.enable-boyfriend-kisses.name": "Ativar Beijos com Namorados",
-  "gmcm.option.enable-boyfriend-kisses.tooltip": "Permite que o sistema de beijos deste mod também funcione com um namorado(a), não só com um cônjuge. Desative pra permitir beijos só com o seu cônjuge.",
-
+  
   "gmcm.option.multi-kisses.name": "Multi-Beijos!",
   "gmcm.option.multi-kisses.tooltip": "Permite sequências românticas com vários beijos enquanto vocês estão próximos.",
 
   "gmcm.option.bump-kiss.name": "Beijo ao Esbarrar",
   "gmcm.option.bump-kiss.tooltip": "Vocês trocam um beijo rápido quando você corre na direção de seu parceiro, com uma pequena chance de fazê-lo derrubar algum item.",
+  
+  "gmcm.option.blush-smoke-style.name": "Estilo da fumaça de blush",
+  "gmcm.option.blush-smoke-style.tooltip": "Escolha qual animação de fumaça de blush aparece durante as sequências de beijo.",
+  "gmcm.option.blush-smoke-style.style1": "Estilo 1",
+  "gmcm.option.blush-smoke-style.style2": "Estilo 2",
 
 //===============================================================================================================================================================//
 
@@ -1049,66 +1052,5 @@
   "approachKiss.Penny.17": "Acho que esqueci o que eu ia dizer.",
   "approachKiss.Penny.18": "Oh! Que surpresa adorável.",
   "approachKiss.Penny.19": "Ah... |meu rosto me entregou.",
-  "approachKiss.Penny.20": "Acho que meu rosto ficou vermelho.",
-
-  //SURPRISE GIFT  
-
-  //MALE
-
-  "giftAlex.1": "Fiz esse lanche pra você, vai precisar. {201}",
-  "giftAlex.2": "Você precisa de energia, pega aí! {349}",
-  "giftAlex.3": "Proteína pura pra minha pessoa favorita. {195}",
-
-  "giftElliott.1": "Encontrei essa Romã e logo me lembrei de você. {63}",
-  "giftElliott.2": "Um pequeno presente para inspirar o seu dia. {444}",
-  "giftElliott.3": "Para a estrela mais brilhante do vale. {268}",
-
-  "giftHarvey.1": "Um bom café para te dar energia para o resto do dia. {395}",
-  "giftHarvey.2": "Cuidado para não trabalhar demais. {237}",
-  "giftHarvey.3": "Isso vai te ajudar a ter energia hoje. {253}",
-
-  "giftSam.1": "Que tal uma pizza pra gente dividir? {206}",
-  "giftSam.2": "Você deve estar com sede. Pega aí! {167}",
-  "giftSam.3": "Leva isso pra você comer, vai precisar. {224}",
-
-  "giftSebastian.1": "Achei isso na mina hoje, e guardei pra você. {84}",
-  "giftSebastian.2": "Hum... eu tentei cozinhar... {240}",
-  "giftSebastian.3": "Bebe enquanto ainda está quente. {253}",
-
-  "giftShane.1": "Eu estava guardando isso pra você. Toma aí. {215}",
-  "giftShane.2": "Eu comprei essa pizza no Saloon pra gente dividir. {206}",
-  "giftShane.3": "Pega aí, você vai precisar de energia. {346}",
-
-  //FEMALE
-
-  "giftAbigail.1": "Achei essa pedra nas minas e achei a sua cara! {66}",
-  "giftAbigail.2": "Estava explorando hoje mais cedo e guardei isso pra você. {68}",
-  "giftAbigail.3": "Um presentinho ${pro cara mais corajoso^pra garota mais corajosa}$ que eu conheço. {287:3}",
-
-  "giftHaley.1": "Eu fiz isso hoje pra você! {221}",
-  "giftHaley.2": "Comprei isso pra você, espero que goste. {421}",
-  "giftHaley.3": "Para ${o fazendeiro mais esforçado^a fazendeira mais esforçada}$ do vale. {18}",
-
-  "giftLeah.1": "Preparei isso pra você, espero que esteja gostoso! {200}",
-  "giftLeah.2": "A natureza me lembrou de você hoje. {20}",
-  "giftLeah.3": "Come enquanto ainda está fresca. {610}",
-
-  "giftMaru.1": "Fiz uma pausa nas minhas invenções para te fazer isso. {222}",
-  "giftMaru.2": "Calculei que você fosse precisar disso hoje. {395}",
-  "giftMaru.3": "Eu achei isso enquanto eu caminhava perto das minas. {80}",
-
-  "giftPenny.1": "Encontrei isso pelo caminho, então guardei pra você. {22}",
-  "giftPenny.2": "Fiz com muito carinho, espero que goste. {230}",
-  "giftPenny.3": "Para te dar um pouco de conforto no trabalho da fazenda. {614}",
-
-  "giftEmily.1": "As energias do universo me disseram que você precisaria disso. {62}",
-  "giftEmily.2": "Fiz isso pra você, coloquei muitas vibrações positivas! {204}",
-  "giftEmily.3": "Um mimo cheio de boas energias pra você. {64}",
-  
-  "fullBag.1": "Eu ia te dar uma coisa, mas sua mochila está cheia.",
-
-  "gmcm.option.blush-smoke-style.name": "Estilo da fumaça de blush",
-  "gmcm.option.blush-smoke-style.tooltip": "Escolha qual animação de fumaça de blush aparece durante as sequências de beijo.",
-  "gmcm.option.blush-smoke-style.style1": "Estilo 1",
-  "gmcm.option.blush-smoke-style.style2": "Estilo 2"
+  "approachKiss.Penny.20": "Acho que meu rosto ficou vermelho."
 }
