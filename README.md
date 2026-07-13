@@ -76,15 +76,49 @@ NPCs without a content pack still work fully — kisses happen normally, just wi
 
 ## Ignoring Specific Vision Tiles
 
-For indoor counters or decorations that should not block NPC reactions, add tile coordinates to `config.json`:
+Some counters, fences, decorations, and custom-map tiles are marked as impassable by the game even though an NPC should still be able to see a kiss across them. You can make only the kiss-reaction line-of-sight check ignore those tiles through `VisionIgnoredTiles`.
+
+### Where to configure it
+
+1. Launch the game with Lots of Kisses installed at least once so SMAPI creates `config.json`.
+2. Close the game.
+3. Open `Mods/Lots of Kisses/config.json` in a text editor.
+4. Find `VisionIgnoredTiles` and add the map name and tile coordinates you want to ignore.
+
+These are **map tile coordinates**, not screen or pixel coordinates. You can read them with a map editor or any Stardew debugging/modding tool that displays the tile under the cursor.
+
+### Accepted coordinate formats
+
+Each entry uses the format `x,y`. Both axes accept either one coordinate or an inclusive range:
+
+- `"6,12"` ignores only tile X 6, Y 12.
+- `"6-8,12"` ignores tiles X 6 through 8 on row Y 12.
+- `"6,12-15"` ignores tiles Y 12 through 15 in column X 6.
+- `"1-8,15-18"` ignores the entire rectangle from X 1-8 and Y 15-18.
+
+For example, if Pierre's counter occupies X 6 through 8 on row Y 12:
 
 ```json
 "VisionIgnoredTiles": {
-  "SeedShop": [ "6,12", "7,12", "8,12" ]
+  "SeedShop": [ "6-8,12" ]
 }
 ```
 
-Use the location's map name and tile coordinates in `x,y` format. Tiles in this list are ignored only by the kiss-reaction vision check; normal map collision is unchanged.
+### Multiple areas
+
+You can list multiple groups of tiles in the same location and configure indoor, outdoor, vanilla, or custom locations separately:
+
+```json
+"VisionIgnoredTiles": {
+  "SeedShop": [ "6-8,12", "10,4-6" ],
+  "Town": [ "20-24,55", "31,40-43" ],
+  "CustomLocationName": [ "4-7,9-11" ]
+}
+```
+
+Use the location's internal map name, such as `SeedShop` or `Town`. Custom maps must use their own internal location name. If a location has a unique instance name, the mod checks that first and then falls back to the base location name.
+
+Entries apply only to the NPC vision raycast used for public kiss reactions. They do **not** change collision, movement, pathfinding, placement rules, or the map itself. Only add tiles that visually make sense to see across; ignoring walls or large solid objects can make NPCs react through them.
 
 ---
 
