@@ -76,7 +76,7 @@ NPCs without a content pack still work fully — kisses happen normally, just wi
 
 ## Ignoring Specific Vision Tiles
 
-Some counters, fences, decorations, and custom-map tiles are marked as impassable by the game even though an NPC should still be able to see a kiss across them. You can make only the kiss-reaction line-of-sight check ignore those tiles through `VisionIgnoredTiles`.
+Some counters, fences, decorations, and custom-map tiles are marked as impassable by the game even though an NPC should still be able to see a kiss across them. You can make the Lots of Kisses line-of-sight checks ignore those tiles through `VisionIgnoredTiles`.
 
 ### Where to configure it
 
@@ -84,6 +84,7 @@ Some counters, fences, decorations, and custom-map tiles are marked as impassabl
 2. Close the game.
 3. Open `Mods/Lots of Kisses/config.json` in a text editor.
 4. Find `VisionIgnoredTiles` and add the map name and tile coordinates you want to ignore.
+5. Save the file and restart the game so the configuration is loaded.
 
 These are **map tile coordinates**, not screen or pixel coordinates. You can read them with a map editor or any Stardew debugging/modding tool that displays the tile under the cursor.
 
@@ -96,17 +97,19 @@ Each entry uses the format `x,y`. Both axes accept either one coordinate or an i
 - `"6,12-15"` ignores tiles Y 12 through 15 in column X 6.
 - `"1-8,15-18"` ignores the entire rectangle from X 1-8 and Y 15-18.
 
-For example, if Pierre's counter occupies X 6 through 8 on row Y 12:
+Ranges are inclusive, may be written in reverse (for example, `"8-1,18-15"`), and may contain spaces. Invalid entries are ignored.
+
+Pierre's full counter area in the Seed Shop occupies the rectangle from X 1-8 and Y 15-18:
 
 ```json
 "VisionIgnoredTiles": {
-  "SeedShop": [ "6-8,12" ]
+  "SeedShop": [ "1-8,15-18" ]
 }
 ```
 
 ### Multiple areas
 
-You can list multiple groups of tiles in the same location and configure indoor, outdoor, vanilla, or custom locations separately:
+You can list multiple groups of tiles in the same location and configure vanilla or custom indoor locations separately:
 
 ```json
 "VisionIgnoredTiles": {
@@ -118,7 +121,9 @@ You can list multiple groups of tiles in the same location and configure indoor,
 
 Use the location's internal map name, such as `SeedShop` or `Town`. Custom maps must use their own internal location name. If a location has a unique instance name, the mod checks that first and then falls back to the base location name.
 
-Entries apply only to the NPC vision raycast used for public kiss reactions. They do **not** change collision, movement, pathfinding, placement rules, or the map itself. Only add tiles that visually make sense to see across; ignoring walls or large solid objects can make NPCs react through them.
+Outdoor locations already use open sightlines and don't consult `VisionIgnoredTiles`. In indoor locations, these entries affect the Lots of Kisses visibility checks used for public bystander reactions and for deciding whether a kiss moment is private or public.
+
+They do **not** change collision, movement, pathfinding, placement rules, or the map itself. Only add tiles that visually make sense to see across; ignoring walls or large solid objects can make NPCs react through them.
 
 ---
 
