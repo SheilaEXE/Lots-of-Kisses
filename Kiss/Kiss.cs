@@ -627,8 +627,7 @@ namespace LotsOfKisses
                 !kissPostSequenceActive &&
                 !kissSequenceActive &&
                 pendingKissNpc == null &&
-                !continuousKissActive &&
-                talkedToPartnerToday)
+                !continuousKissActive)
             {
                 CaptureNpcPreKissSpecialAction(npc);
 
