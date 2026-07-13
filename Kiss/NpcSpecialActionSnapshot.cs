@@ -65,7 +65,10 @@ namespace LotsOfKisses
             if (npc.Sprite.CurrentAnimation != null && npc.Sprite.CurrentAnimation.Count > 0)
                 animation = new List<FarmerSprite.AnimationFrame>(npc.Sprite.CurrentAnimation);
 
-            bool isWalking = npc.isMoving();
+            // A schedule controller remains attached while another mod temporarily pauses the NPC.
+            // Treat that as walking too, otherwise the paused partner is misclassified as plain idle
+            // and the deferred restore teleports them back to the position where the kiss started.
+            bool isWalking = npc.isMoving() || npc.controller != null;
             bool hasSpecialAnimation = animation != null && animation.Count > 0;
             bool hasSpecialStaticFrame = npc.Sprite.CurrentFrame >= 16;
             bool isPlainIdle = !isWalking && !hasSpecialAnimation && !hasSpecialStaticFrame;
