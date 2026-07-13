@@ -105,6 +105,12 @@ namespace LotsOfKisses
                 if (npc == null)
                     continue;
 
+                // GameLocation.characters can also contain decorative animals and other
+                // environmental creatures implemented as NPC subclasses. Only social
+                // villagers (vanilla or properly configured custom NPCs) should react.
+                if (!npc.IsVillager)
+                    continue;
+
                 // Skip the romantic partner and any NPC already reacting.
                 if (IsCurrentSpouse(npc.Name) || IsDatingPartner(npc.Name))
                     continue;
