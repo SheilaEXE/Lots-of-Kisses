@@ -290,37 +290,14 @@ namespace LotsOfKisses
                 if (HasNpcPreKissSpecialAction(partner))
                     return;
 
-                partner.Halt();
-                partner.controller = null;
-                partner.movementPause = 0;
-                partner.addedSpeed = 0;
-
-                partner.Sprite.StopAnimation();
-                partner.Sprite.ClearAnimation();
-                partner.Sprite.CurrentAnimation = null;
-                partner.flip = false;
-                partner.faceDirection(partner.FacingDirection);
-                partner.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(partner.FacingDirection);
-                partner.Sprite.UpdateSourceRect();
+                // Visual release already happened synchronously. Don't touch the NPC here:
+                // another mod or vanilla may have started a new route/animation meanwhile.
             }, 80);
 
             DelayedAction.functionAfterDelay(() =>
             {
                 if (!IsCurrentDelayedAction(delayedActionToken) || partner == null || partner.currentLocation != Game1.player.currentLocation)
                     return;
-
-                partner.Halt();
-                partner.controller = null;
-                partner.movementPause = 0;
-                partner.addedSpeed = 0;
-
-                partner.Sprite.StopAnimation();
-                partner.Sprite.ClearAnimation();
-                partner.Sprite.CurrentAnimation = null;
-                partner.flip = false;
-                partner.faceDirection(partner.FacingDirection);
-                partner.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(partner.FacingDirection);
-                partner.Sprite.UpdateSourceRect();
 
                 didReactThisTick = false;
                 kissProximityTimer = 0;
@@ -347,24 +324,43 @@ namespace LotsOfKisses
             if (partner == null || partner.currentLocation == null)
                 return;
 
-            partner.Halt();
-            partner.controller = null;
-            partner.movementPause = 0;
-            partner.addedSpeed = 0;
-            partner.queuedSchedulePaths.Clear();
-
-            partner.Sprite.StopAnimation();
-            partner.Sprite.ClearAnimation();
-            partner.Sprite.CurrentAnimation = null;
-            partner.flip = false;
-            partner.faceDirection(partner.FacingDirection);
-            partner.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(partner.FacingDirection);
-            partner.Sprite.UpdateSourceRect();
-
             // Do NOT clear CurrentDialogue here.
             // Another mod may have queued dialogue on the NPC.
 
-            ForceScheduleCheckNow(partner);
+            // Ask vanilla to re-evaluate the schedule only if nothing resumed naturally.
+            // Never clear an existing controller or queued schedule paths.
+            bool hasActiveAnimation = partner.Sprite?.CurrentAnimation != null;
+            bool hasSpecialStaticFrame = partner.Sprite?.CurrentFrame >= 16;
+            if (partner.controller == null &&
+                !partner.isMoving() &&
+                !hasActiveAnimation &&
+                !hasSpecialStaticFrame)
+                ForceScheduleCheckNow(partner);
+        }
+
+        private bool IsNpcShowingKissVisual(NPC npc)
+        {
+            if (npc?.Sprite == null)
+                return false;
+
+            CharacterData data = npc.GetData();
+            if (data == null)
+                return false;
+
+            int kissFrame = data.KissSpriteIndex;
+            if (npc.Sprite.CurrentFrame == kissFrame)
+                return true;
+
+            if (npc.Sprite.CurrentAnimation != null)
+            {
+                foreach (FarmerSprite.AnimationFrame frame in npc.Sprite.CurrentAnimation)
+                {
+                    if (frame.frame == kissFrame)
+                        return true;
+                }
+            }
+
+            return false;
         }
         // =========================================================================================================================================
         // NPC position reset after a kiss (prevents stuck animations or unexpected teleports)

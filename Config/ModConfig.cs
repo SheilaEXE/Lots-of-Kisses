@@ -20,7 +20,7 @@ namespace LotsOfKisses
         public bool BumpKissEnabled { get; set; } = true;
 
         // Treat all romantic NPCs as valid kiss partners, including those from other mods.
-        // Always true — not exposed in GMCM, but kept configurable for advanced users via config.json.
+        // Exposed in GMCM and also configurable directly through config.json.
         public bool PolyamorySupport { get; set; } = true;
 
         // Which blush smoke animation style to use (row 0 = Style1, row 1 = Style2).

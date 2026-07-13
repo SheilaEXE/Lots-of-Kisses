@@ -80,8 +80,8 @@ namespace LotsOfKisses
             if (ModEntry.Instance?.Config?.ModEnabled != true)
                 return true;
 
-            // MUITO IMPORTANTE:
-            // Without this flag, this patch interferes with Attentive Lovers and the vanilla kiss.
+            // Only alter kisses initiated by this mod. Vanilla kisses and interactions started
+            // by other mods must keep their original animation behavior.
             if (ModEntry.Instance.LotsOfKissesKissPatchActive != true)
                 return true;
 

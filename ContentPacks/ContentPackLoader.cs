@@ -1,7 +1,6 @@
 using StardewModdingAPI;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
 
 namespace LotsOfKisses
@@ -91,7 +90,7 @@ namespace LotsOfKisses
         private void LoadSinglePack(IContentPack pack, string currentLocale)
         {
             // Resolve the best available dialogue file for the current locale.
-            // Priority: current locale → "en" → first .json file with the prefix.
+            // Priority: current locale → base language → "en".
             string filePath = ResolveDialogueFile(pack, currentLocale);
 
             if (filePath is null)
@@ -172,21 +171,6 @@ namespace LotsOfKisses
             string enFile = $"{FallbackLocale}.json";
             if (pack.HasFile(enFile))
                 return enFile;
-
-            // 4. Any *.json file as last resort.
-            string packDir = pack.DirectoryPath;
-            if (Directory.Exists(packDir))
-            {
-                foreach (string fullPath in Directory.GetFiles(packDir, "*.json"))
-                {
-                    string fileName = Path.GetFileName(fullPath);
-                    if (fileName == "manifest.json")
-                        continue;
-
-                    if (pack.HasFile(fileName))
-                        return fileName;
-                }
-            }
 
             return null;
         }

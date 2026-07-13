@@ -117,14 +117,14 @@ namespace LotsOfKisses
                 var gmcm = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
                 ModConfigMenu.Register(this, gmcm);
             }
-            catch
+            catch (System.Exception ex)
             {
+                this.Monitor.Log($"[GMCM] Could not register the configuration menu: {ex}", LogLevel.Warn);
             }
 
             this.passingGreetingsApi =
             this.Helper.ModRegistry.GetApi<INpcPassingGreetingsApi>("NatrollEXE.NpcPassingGreetings");
 
-            contentPackLoader.Load();
         }
 
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)

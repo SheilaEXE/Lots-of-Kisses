@@ -15,7 +15,7 @@ namespace LotsOfKisses
 
         /// <summary>
         /// All dialogue keys loaded from this pack, merged from the best available
-        /// language file (current locale → "en" → first file found).
+        /// language file (current locale → base language → "en").
         /// Keys follow the same format as the mod's i18n: e.g. "publicMultiKiss.Shane.1".
         /// </summary>
         public Dictionary<string, string> Entries { get; set; } = new();

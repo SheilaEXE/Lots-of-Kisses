@@ -266,10 +266,66 @@ namespace LotsOfKisses
             continuousKissPlayerLeanDuration = 0;
         }
 
-        // Forces the continuous kiss to end even when normal end conditions are not met (e.g. NPC teleported, player moved too far). Used to ensure the NPC never gets stuck in an animation or with a locked controller if something goes wrong.
+        // Forces the continuous kiss to end when normal end conditions aren't available.
+        // This emergency path deliberately never touches the NPC's controller or schedule.
         private void ForceEndContinuousKiss(NPC npc)
         {
-            ScheduleBystanderRestore(npc);
+            // Keep the original participant before ResetContinuousKissState clears the field.
+            // This matters when GetPartner() has already changed to a different romantic NPC.
+            NPC activeNpc = continuousKissNpc ?? npc;
+
+            ScheduleBystanderRestore(activeNpc);
+
+            if (Game1.player != null)
+            {
+                Game1.freezeControls = false;
+                Game1.player.CanMove = true;
+                Game1.player.completelyStopAnimatingOrDoingAction();
+            }
+
+            if (activeNpc?.Sprite != null)
+            {
+                bool hasSnapshot = HasNpcPreKissSpecialAction(activeNpc);
+                bool snapshotMatchesCurrentLocation =
+                    hasSnapshot &&
+                    activeNpc.currentLocation == preKissSpecialActionSnapshot.Location;
+                bool restoreSpecialActionNow =
+                    snapshotMatchesCurrentLocation &&
+                    preKissSpecialActionSnapshot.RestorePositionWhenPlayerLeaves == false &&
+                    activeNpc.currentLocation != null;
+
+                if (restoreSpecialActionNow)
+                {
+                    // Special/scripted poses can be restored immediately. Plain idle snapshots
+                    // stay queued so their saved position is restored only after the player leaves.
+                    TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
+                }
+                else
+                {
+                    activeNpc.movementPause = 0;
+                    activeNpc.Sprite.StopAnimation();
+                    activeNpc.Sprite.ClearAnimation();
+                    activeNpc.Sprite.CurrentAnimation = null;
+
+                    if (snapshotMatchesCurrentLocation)
+                    {
+                        activeNpc.FacingDirection = preKissSpecialActionSnapshot.FacingDirection;
+                        activeNpc.flip = preKissSpecialActionSnapshot.Flip;
+                        activeNpc.Sprite.CurrentFrame = preKissSpecialActionSnapshot.CurrentFrame;
+                    }
+                    else
+                    {
+                        activeNpc.flip = false;
+                        activeNpc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(activeNpc.FacingDirection);
+
+                        if (hasSnapshot)
+                            ClearNpcPreKissSpecialAction(activeNpc);
+                    }
+
+                    activeNpc.Sprite.UpdateSourceRect();
+                }
+            }
+
             ResetContinuousKissState();
             ResetPostKissState();
 
@@ -281,29 +337,31 @@ namespace LotsOfKisses
             activeKissVisualDelayMs = bumpKissVisualDelayMs;
         }
 
-        // Hard-reset helper: ensures the NPC returns to a clean state (no controller, no stuck animation) after a continuous kiss, especially a bump kiss, even if something goes wrong mid-sequence. Called on both natural kiss end and emergency cleanup.
+        // Releases only the visual/movement state owned by the kiss. The NPC's controller,
+        // queued schedule paths, and unrelated animations belong to vanilla or other mods.
         private void WakeNpcAfterMultiKiss(NPC npc, bool reviveBrain = false)
         {
             if (npc == null)
                 return;
 
-            Game1.player.CanMove = true;
-            Game1.player.completelyStopAnimatingOrDoingAction();
-
-            npc.controller = null;
-            npc.Halt();
-            npc.Sprite.StopAnimation();
-            npc.Sprite.ClearAnimation();
-            npc.Sprite.CurrentAnimation = null;
-
-            // Hard reset — fully clears controller and animation state.
-            npc.flip = false;
-            npc.faceDirection(npc.FacingDirection);
-            npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(npc.FacingDirection);
+            if (Game1.player != null)
+            {
+                Game1.freezeControls = false;
+                Game1.player.CanMove = true;
+                Game1.player.completelyStopAnimatingOrDoingAction();
+            }
 
             npc.movementPause = 0;
-            npc.addedSpeed = 0;
-            npc.Sprite.UpdateSourceRect();
+
+            if (IsNpcShowingKissVisual(npc))
+            {
+                npc.Sprite.StopAnimation();
+                npc.Sprite.ClearAnimation();
+                npc.Sprite.CurrentAnimation = null;
+                npc.flip = false;
+                npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(npc.FacingDirection);
+                npc.Sprite.UpdateSourceRect();
+            }
 
             playerWasTouchingPartner = false;
             kissProximityTimer = 0;
@@ -311,39 +369,10 @@ namespace LotsOfKisses
             continuousKissTouchHoldTimer = 0;
             continuousKissWasTouchingPartner = false;
 
-            int delayedActionToken = delayedActionContextToken;
-            DelayedAction.functionAfterDelay(() =>
-            {
-                if (!IsCurrentDelayedAction(delayedActionToken) || npc == null)
-                    return;
-
-                Game1.player.CanMove = true;
-                Game1.player.completelyStopAnimatingOrDoingAction();
-
-                npc.controller = null;
-                npc.Halt();
-                npc.Sprite.StopAnimation();
-                npc.Sprite.ClearAnimation();
-                npc.Sprite.CurrentAnimation = null;
-
-                npc.flip = false; // Garantia dupla!
-                npc.faceDirection(npc.FacingDirection);
-                npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(npc.FacingDirection);
-
-                npc.movementPause = 0;
-                npc.addedSpeed = 0;
-                npc.Sprite.UpdateSourceRect();
-
-                this.Monitor.Log(
-                    $"[MULTIKISS HARD CLEAR] npc={npc.Name} pause={npc.movementPause} controller={(npc.controller != null)} moving={npc.isMoving()}",
-                    LogLevel.Trace
-                );
-            }, 150);
-
             if (reviveBrain)
             {
                 this.Monitor.Log(
-                    $"[MULTIKISS REVIVE BRAIN IGNORADO] npc={npc?.Name ?? "null"}",
+                    $"[MULTIKISS RELEASE] npc={npc.Name} pause={npc.movementPause} moving={npc.isMoving()}",
                     LogLevel.Trace
                 );
             }
