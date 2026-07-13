@@ -34,6 +34,7 @@ namespace LotsOfKisses
 
             UpdateOutsideBumpPause(partner);
             UpdatePendingNpcKissReset(partner);
+            UpdatePendingPublicMultiKissShyEmote();
 
             // Only hold off on kiss systems while an Outfit Reactions dialogue is genuinely on
             // screen (blocking player input anyway). The broader IsOutfitReactionActive() flag also
@@ -49,7 +50,6 @@ namespace LotsOfKisses
             UpdateKissSystem(partner);
             UpdateContinuousKissSystem(partner);
             UpdatePostKissSystem(partner);
-            UpdatePendingPublicMultiKissShyEmote();
             UpdateDailyPartnerSystems(partner);
         }
     }
