@@ -238,17 +238,38 @@ namespace LotsOfKisses
         }
     }
 
-    // ── Suppresses NPC.doMiddleAnimation (the private method vanilla's own
-    // reallyDoAnimationAtEndOfScheduleRoute schedules itself into via a self-rescheduling Game1
-    // DelayedAction chain — completely separate from NPC.update, so our own per-tick pose-forcing
-    // code in HoldBystanderWatching can "win" most ticks but still loses on whichever tick this
-    // callback independently fires) for a bystander currently held watching a kiss. Without this,
-    // vanilla can re-run the fishing pose's extended sourceRect setup on top of our own forced
-    // idle frame mid-hold, showing the wrong tilesheet row. Scoped as narrowly as possible: only
-    // suppressed for NPCs IsHeldAsFishingBystander returns true for (a bystander currently in an
-    // active kiss-watching snapshot AND genuinely holding a captured fishing/special-pose
-    // behavior name) — never touches the romantic partner, walking NPCs, or anything outside this
-    // specific hold window.
+    // Prevents checkAction from rebuilding a queued daily/marriage dialogue after
+    // TryCheckActionForAutoKissWithoutDialogue temporarily stashes CurrentDialogue.
+    // This guard is active only for the target NPC during the simulated kiss click;
+    // a real player click still loads the pending dialogue normally.
+    [HarmonyPatch(typeof(NPC), nameof(NPC.checkForNewCurrentDialogue))]
+    public static class NPC_CheckForNewCurrentDialogue_SuppressDuringAutoKiss_Patch
+    {
+        static bool Prefix(NPC __instance, ref bool __result)
+        {
+            try
+            {
+                if (!ModEntry.suppressDialogueFromAutoKissClick)
+                    return true;
+
+                NPC targetNpc = ModEntry.suppressDialogueAutoKissNpc;
+                if (__instance == null || (targetNpc != null && __instance.Name != targetNpc.Name))
+                    return true;
+
+                __result = false;
+                return false;
+            }
+            catch (Exception ex)
+            {
+                ModEntry.Instance?.Monitor.Log($"[AUTO KISS CLICK] Error suppressing daily dialogue reload: {ex}", LogLevel.Error);
+                return true;
+            }
+        }
+    }
+
+    // Suppresses NPC.doMiddleAnimation for a fishing/special-pose bystander while
+    // that NPC is temporarily held watching a kiss. This prevents vanilla's delayed
+    // route animation from overwriting the idle frame with the wrong spritesheet row.
     [HarmonyPatch(typeof(NPC), "doMiddleAnimation")]
     public static class NPC_DoMiddleAnimation_SuppressForHeldFishingBystander_Patch
     {
