@@ -136,6 +136,8 @@ namespace LotsOfKisses
             pendingPublicMultiKissShyEmote = true;
             pendingPublicMultiKissShyNpc = npc;
             pendingPublicMultiKissShyEmoteTimer = 30;
+            pendingPublicMultiKissShyEmoteStarted = false;
+            npc.modData[PublicMultiKissInterruptionModDataKey] = "1";
 
             ScheduleBystanderRestore(npc);
             bystanderRestore.ForceStart = true;

@@ -278,9 +278,7 @@ namespace LotsOfKisses
             ClearPipeTextQueues();
             ResetOutsideBumpPause();
 
-            pendingPublicMultiKissShyEmote = false;
-            pendingPublicMultiKissShyNpc = null;
-            pendingPublicMultiKissShyEmoteTimer = 0;
+            ClearPendingPublicMultiKissShyEmote(releaseNpc: true);
             approachKissBlockTimerByNpc.Clear();
             approachKissDialogueLastTimeOfDay = -1;
             kissBlockAfterDialogueTimer = 0;

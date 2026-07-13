@@ -338,6 +338,7 @@ namespace LotsOfKisses
         // Outfit Reactions' own NPC.checkAction Harmony prefix checks for this key and steps aside
         // instead of hijacking the click into its outfit dialogue.
         internal const string AutoKissClickActiveModDataKey = "NatrollEXE.LotsOfKisses/AutoKissClickActive";
+        internal const string PublicMultiKissInterruptionModDataKey = "NatrollEXE.LotsOfKisses/PublicMultiKissInterruption";
 
     }
 }

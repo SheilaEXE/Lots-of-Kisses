@@ -404,33 +404,56 @@ namespace LotsOfKisses
 
             if (pendingPublicMultiKissShyNpc == null)
             {
-                pendingPublicMultiKissShyEmote = false;
-                pendingPublicMultiKissShyEmoteTimer = 0;
+                ClearPendingPublicMultiKissShyEmote(releaseNpc: false);
                 return;
             }
 
             if (pendingPublicMultiKissShyNpc.currentLocation != Game1.currentLocation)
             {
-                pendingPublicMultiKissShyEmote = false;
-                pendingPublicMultiKissShyNpc = null;
-                pendingPublicMultiKissShyEmoteTimer = 0;
+                ClearPendingPublicMultiKissShyEmote(releaseNpc: true);
                 return;
             }
+
+            // Lots of Kisses owns this short hold from the interruption dialogue through
+            // the end of the blush. The controller is never touched and resumes naturally.
+            if (pendingPublicMultiKissShyNpc.movementPause < 6)
+                pendingPublicMultiKissShyNpc.movementPause = 6;
 
             if (Game1.activeClickableMenu != null || Game1.dialogueUp)
                 return;
 
-            if (pendingPublicMultiKissShyEmoteTimer > 0)
+            if (!pendingPublicMultiKissShyEmoteStarted)
             {
-                pendingPublicMultiKissShyEmoteTimer--;
+                if (pendingPublicMultiKissShyEmoteTimer > 0)
+                {
+                    pendingPublicMultiKissShyEmoteTimer--;
+                    return;
+                }
+
+                pendingPublicMultiKissShyNpc.doEmote(60);
+                pendingPublicMultiKissShyEmoteStarted = true;
                 return;
             }
 
-            pendingPublicMultiKissShyNpc.doEmote(60);
+            if (pendingPublicMultiKissShyNpc.IsEmoting)
+                return;
+
+            ClearPendingPublicMultiKissShyEmote(releaseNpc: true);
+        }
+
+        private void ClearPendingPublicMultiKissShyEmote(bool releaseNpc)
+        {
+            NPC npc = pendingPublicMultiKissShyNpc;
+            if (npc?.modData != null)
+                npc.modData.Remove(PublicMultiKissInterruptionModDataKey);
+
+            if (releaseNpc && npc != null)
+                npc.movementPause = 0;
 
             pendingPublicMultiKissShyEmote = false;
             pendingPublicMultiKissShyNpc = null;
             pendingPublicMultiKissShyEmoteTimer = 0;
+            pendingPublicMultiKissShyEmoteStarted = false;
         }
         // =====================================================================
         // MAIN SYSTEMS / UPDATE LOOPS

@@ -84,6 +84,7 @@ namespace LotsOfKisses
         private bool pendingPublicMultiKissShyEmote = false;
         private NPC pendingPublicMultiKissShyNpc = null;
         private int pendingPublicMultiKissShyEmoteTimer = 0;
+        private bool pendingPublicMultiKissShyEmoteStarted = false;
 
         // =====================================================================
         // NPC VISUAL RESET AFTER KISS
