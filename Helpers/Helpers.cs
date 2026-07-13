@@ -202,7 +202,56 @@ namespace LotsOfKisses
             if (!Config.VisionIgnoredTiles.TryGetValue(location.NameOrUniqueName, out List<string> ignoredTiles))
                 Config.VisionIgnoredTiles.TryGetValue(location.Name, out ignoredTiles);
 
-            return ignoredTiles?.Contains($"{tileX},{tileY}") == true;
+            if (ignoredTiles == null)
+                return false;
+
+            foreach (string entry in ignoredTiles)
+            {
+                if (IsTileInsideConfiguredVisionRange(entry, tileX, tileY))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsTileInsideConfiguredVisionRange(string entry, int tileX, int tileY)
+        {
+            if (string.IsNullOrWhiteSpace(entry))
+                return false;
+
+            string[] axes = entry.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            if (axes.Length != 2)
+                return false;
+
+            if (!TryParseInclusiveTileRange(axes[0], out int minX, out int maxX)
+                || !TryParseInclusiveTileRange(axes[1], out int minY, out int maxY))
+                return false;
+
+            return tileX >= minX && tileX <= maxX
+                && tileY >= minY && tileY <= maxY;
+        }
+
+        private static bool TryParseInclusiveTileRange(string value, out int min, out int max)
+        {
+            min = 0;
+            max = 0;
+
+            string[] bounds = value.Split('-', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            if (bounds.Length == 1 && int.TryParse(bounds[0], out int coordinate))
+            {
+                min = coordinate;
+                max = coordinate;
+                return true;
+            }
+
+            if (bounds.Length != 2
+                || !int.TryParse(bounds[0], out int first)
+                || !int.TryParse(bounds[1], out int second))
+                return false;
+
+            min = Math.Min(first, second);
+            max = Math.Max(first, second);
+            return true;
         }
 
         private NPC GetPartner()

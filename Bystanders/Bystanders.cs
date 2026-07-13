@@ -111,6 +111,13 @@ namespace LotsOfKisses
                 if (!npc.IsVillager)
                     continue;
 
+                // Custom Companions implements decorative wildlife as NPC subclasses and may
+                // report them as villagers. They aren't social characters, so never turn, hold,
+                // emote, or give them crowd-reaction dialogue during a public kiss.
+                string npcAssemblyName = npc.GetType().Assembly.GetName().Name;
+                if (string.Equals(npcAssemblyName, "CustomCompanions", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 // Skip the romantic partner and any NPC already reacting.
                 if (IsCurrentSpouse(npc.Name) || IsDatingPartner(npc.Name))
                     continue;

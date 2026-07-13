@@ -27,7 +27,8 @@ namespace LotsOfKisses
         public BlushSmokeStyle BlushSmokeStyle { get; set; } = BlushSmokeStyle.Style2;
 
         // Per-location tile coordinates that should not block NPC line of sight for kiss reactions.
-        // Example: { "SeedShop": [ "6,12", "7,12" ] }
+        // Each axis accepts one coordinate or an inclusive range.
+        // Example: { "SeedShop": [ "6,12", "1-8,15-18" ] }
         public Dictionary<string, List<string>> VisionIgnoredTiles { get; set; } = new();
     }
 }
