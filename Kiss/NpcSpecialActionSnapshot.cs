@@ -68,20 +68,19 @@ namespace LotsOfKisses
             bool isWalking = npc.isMoving();
             bool hasSpecialAnimation = animation != null && animation.Count > 0;
             bool hasSpecialStaticFrame = npc.Sprite.CurrentFrame >= 16;
+            bool isPlainIdle = !isWalking && !hasSpecialAnimation && !hasSpecialStaticFrame;
 
             // If the NPC is walking with no special animation or frame, skip capture —
             // unless it's late night (22h+) where walking means going home and we still want the kiss to work.
             if (isWalking && !hasSpecialAnimation && !hasSpecialStaticFrame && Game1.timeOfDay < 2200)
                 return;
 
-            // If truly idle with no special state at all, nothing to capture.
-            if (!isWalking && !hasSpecialAnimation && !hasSpecialStaticFrame)
-                return;
-
             preKissSpecialActionSnapshot = new NpcPreKissSpecialActionSnapshot
             {
                 Npc = npc,
                 Location = npc.currentLocation,
+                Position = npc.Position,
+                RestorePositionWhenPlayerLeaves = isPlainIdle,
                 FacingDirection = npc.FacingDirection,
                 CurrentFrame = npc.Sprite.CurrentFrame,
                 Flip = npc.flip,
@@ -126,6 +125,13 @@ namespace LotsOfKisses
 
             try
             {
+                // A plain idle NPC has no schedule/special action capable of returning it to
+                // the exact pre-kiss spot. Restore that position only through this deferred
+                // path, after the player has moved away. Walking and special-action NPCs keep
+                // their existing restoration behavior and are never repositioned here.
+                if (snapshot.RestorePositionWhenPlayerLeaves)
+                    npc.Position = snapshot.Position;
+
                 npc.FacingDirection = snapshot.FacingDirection;
                 npc.flip = snapshot.Flip;
                 npc.movementPause = snapshot.MovementPause;

@@ -149,6 +149,8 @@ namespace LotsOfKisses
         {
             public NPC Npc;
             public GameLocation Location;
+            public Vector2 Position;
+            public bool RestorePositionWhenPlayerLeaves;
             public int FacingDirection;
             public int CurrentFrame;
             public bool Flip;
