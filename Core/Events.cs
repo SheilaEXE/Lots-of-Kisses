@@ -125,6 +125,21 @@ namespace LotsOfKisses
             this.passingGreetingsApi =
             this.Helper.ModRegistry.GetApi<INpcPassingGreetingsApi>("NatrollEXE.NpcPassingGreetings");
 
+            try
+            {
+                tileMarkerApi = Helper.ModRegistry.GetApi<ITileMarkerApi>(TileMarkerModId);
+                tileMarkerApi?.RegisterCategory(
+                    ModManifest.UniqueID,
+                    TileMarkerVisionCategory,
+                    Helper.Translation.Get("tile-marker.vision-ignored.name").ToString()
+                );
+            }
+            catch (System.Exception ex)
+            {
+                tileMarkerApi = null;
+                Monitor.Log($"[Tile Marker] Could not register the vision-ignored tile category: {ex}", LogLevel.Warn);
+            }
+
         }
 
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)

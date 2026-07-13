@@ -4,6 +4,8 @@
 
   "gmcm.section.features": "Mod Features",
 
+  "tile-marker.vision-ignored.name": "Kiss reaction vision exceptions",
+
   "gmcm.option.enable-mod.name": "Enable Mod",
   "gmcm.option.enable-mod.tooltip": "Turns all mod features on or off.",
 

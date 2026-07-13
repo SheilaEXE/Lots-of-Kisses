@@ -18,6 +18,7 @@ namespace LotsOfKisses
         public ModConfig Config;
         private Random random = new Random();
         private INpcPassingGreetingsApi? passingGreetingsApi;
+        private ITileMarkerApi? tileMarkerApi;
         private ContentPackLoader contentPackLoader;
         // =====================================================================
         // ENTRY

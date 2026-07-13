@@ -6,5 +6,11 @@
   "UniqueID": "NatrollEXE.LotsOfKisses",
   "EntryDll": "LotsOfKisses.dll",
   "MinimumApiVersion": "4.0.0",
+  "Dependencies": [
+    {
+      "UniqueID": "NatrollEXE.TileMarker",
+      "IsRequired": false
+    }
+  ],
   "UpdateKeys": []
 }

@@ -76,9 +76,22 @@ NPCs without a content pack still work fully — kisses happen normally, just wi
 
 ## Ignoring Specific Vision Tiles
 
-Some counters, fences, decorations, and custom-map tiles are marked as impassable by the game even though an NPC should still be able to see a kiss across them. You can make the Lots of Kisses line-of-sight checks ignore those tiles through `VisionIgnoredTiles`.
+Some counters, fences, decorations, and custom-map tiles are marked as impassable by the game even though an NPC should still be able to see a kiss across them. You can make the Lots of Kisses line-of-sight checks ignore those tiles with the optional **Tile Marker** framework or through `VisionIgnoredTiles` in `config.json`.
 
-### Where to configure it
+### Using Tile Marker (recommended)
+
+1. Install both Lots of Kisses and Tile Marker.
+2. Load your save and go to the location containing the tiles you want to change.
+3. Press Tile Marker's configured editor key (`\` / `|` by default).
+4. Choose **Kiss reaction vision exceptions**. If this is the only registered category, the editor opens directly.
+5. Click one tile to mark or unmark it. Click and drag to add or remove a rectangle.
+6. Press `Esc` while not dragging, or press the editor key again, to close and save.
+
+Blue tiles are already marked, green is an add preview, and red is a remove preview. Tile Marker stores selections separately for each save, and Lots of Kisses reads the new selection as soon as the editor saves it.
+
+Tile Marker is optional. If it isn't installed, Lots of Kisses continues working normally with the manual configuration below.
+
+### Manual config.json setup
 
 1. Launch the game with Lots of Kisses installed at least once so SMAPI creates `config.json`.
 2. Close the game.
@@ -124,6 +137,8 @@ Use the location's internal map name, such as `SeedShop` or `Town`. Custom maps 
 Outdoor locations already use open sightlines and don't consult `VisionIgnoredTiles`. In indoor locations, these entries affect the Lots of Kisses visibility checks used for public bystander reactions and for deciding whether a kiss moment is private or public.
 
 They do **not** change collision, movement, pathfinding, placement rules, or the map itself. Only add tiles that visually make sense to see across; ignoring walls or large solid objects can make NPCs react through them.
+
+Tile Marker selections and manual `VisionIgnoredTiles` entries are additive: a tile is ignored if either source contains it. Removing a tile in Tile Marker does not remove the same tile from `config.json`; manually configured entries must still be removed from that file by hand.
 
 ---
 

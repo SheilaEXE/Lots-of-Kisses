@@ -4,6 +4,8 @@
 
   "gmcm.section.features": "Funcionalidades do Mod",
 
+  "tile-marker.vision-ignored.name": "Exceções de visão das reações de beijo",
+
   "gmcm.option.enable-mod.name": "Ativar Mod",
   "gmcm.option.enable-mod.tooltip": "Liga ou desliga todas as funções do mod.",
 

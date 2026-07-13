@@ -196,16 +196,67 @@ namespace LotsOfKisses
 
         private bool IsVisionIgnoredTile(GameLocation location, int tileX, int tileY)
         {
-            if (location == null || Config?.VisionIgnoredTiles == null)
+            if (location == null)
                 return false;
 
-            if (!Config.VisionIgnoredTiles.TryGetValue(location.NameOrUniqueName, out List<string> ignoredTiles))
-                Config.VisionIgnoredTiles.TryGetValue(location.Name, out ignoredTiles);
+            if (Config?.VisionIgnoredTiles != null)
+            {
+                if (!Config.VisionIgnoredTiles.TryGetValue(location.NameOrUniqueName, out List<string> ignoredTiles))
+                    Config.VisionIgnoredTiles.TryGetValue(location.Name, out ignoredTiles);
 
-            if (ignoredTiles == null)
+                if (IsTileInsideAnyConfiguredVisionRange(ignoredTiles, tileX, tileY))
+                    return true;
+            }
+
+            if (tileMarkerApi == null)
                 return false;
 
-            foreach (string entry in ignoredTiles)
+            try
+            {
+                IReadOnlyList<string> markedRanges = tileMarkerApi.GetMarkedTileRanges(
+                    ModManifest.UniqueID,
+                    TileMarkerVisionCategory,
+                    location.NameOrUniqueName
+                );
+
+                if (IsTileInsideAnyConfiguredVisionRange(markedRanges, tileX, tileY))
+                    return true;
+
+                // Tile Marker saves the unique name used by the active map instance. The base-name
+                // fallback also supports older/shared entries intended for every instance.
+                if (!string.Equals(location.NameOrUniqueName, location.Name, StringComparison.Ordinal))
+                {
+                    markedRanges = tileMarkerApi.GetMarkedTileRanges(
+                        ModManifest.UniqueID,
+                        TileMarkerVisionCategory,
+                        location.Name
+                    );
+
+                    if (IsTileInsideAnyConfiguredVisionRange(markedRanges, tileX, tileY))
+                        return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Disable only the optional integration after an API failure. Manually configured
+                // VisionIgnoredTiles continue to work and the raycast remains safe.
+                tileMarkerApi = null;
+                Monitor.Log($"[Tile Marker] Vision tile lookup failed; falling back to config.json: {ex}", LogLevel.Warn);
+            }
+
+            return false;
+        }
+
+        private static bool IsTileInsideAnyConfiguredVisionRange(
+            IEnumerable<string> entries,
+            int tileX,
+            int tileY
+        )
+        {
+            if (entries == null)
+                return false;
+
+            foreach (string entry in entries)
             {
                 if (IsTileInsideConfiguredVisionRange(entry, tileX, tileY))
                     return true;
@@ -388,6 +439,8 @@ namespace LotsOfKisses
         // instead of hijacking the click into its outfit dialogue.
         internal const string AutoKissClickActiveModDataKey = "NatrollEXE.LotsOfKisses/AutoKissClickActive";
         internal const string PublicMultiKissInterruptionModDataKey = "NatrollEXE.LotsOfKisses/PublicMultiKissInterruption";
+        private const string TileMarkerModId = "NatrollEXE.TileMarker";
+        private const string TileMarkerVisionCategory = "VisionIgnored";
 
     }
 }
