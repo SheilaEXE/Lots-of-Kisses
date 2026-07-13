@@ -10,9 +10,7 @@ A mod for Stardew Valley that expands romantic kiss interactions with your spous
 - **Multi-Kiss Sequences** — hold your position near your partner for continuous kiss cycles
 - **Public Reactions** — nearby NPCs with line of sight will notice and react with embarrassed emotes and dialogue
 - **Partner Dialogue** — your partner embarrassed comments during kiss sequences you're in public
-- **Blush Smoke Styles** — choose between two blush smoke animation styles in the config menu
 - **Polyamory Support** — compatible with polyamory mods; all romantic partners are recognized
-- **Content Pack Support** — add dialogue for a NPC custom ones from other mods
 
 ---
 
