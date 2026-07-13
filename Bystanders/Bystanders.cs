@@ -862,7 +862,10 @@ namespace LotsOfKisses
 
             if (!string.IsNullOrEmpty(line))
             {
-                ShowTextAboveHeadWithPipeSupport(npc, line);
+                // Crowd lines always have a fixed three-second lifetime. When a line is split
+                // with '|', show the first bubble for one second; the queued second bubble then
+                // remains for the final two seconds before the shared close timer expires.
+                ShowTextAboveHeadWithPipeSupport(npc, line, firstPartDurationTicks: 60);
 
                 // Keep this bystander quiet for a few cycles after speaking, giving the bubble
                 // time to fully close before they're eligible to speak again.

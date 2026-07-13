@@ -24,7 +24,7 @@ namespace LotsOfKisses
         // split into separate speech bubbles shown one after another (not a line break inside a
         // single bubble) — e.g. "Oi!|Que bom te ver!" shows "Oi!" first, then a bit later "Que
         // bom te ver!". Text with no "|" behaves exactly like calling showTextAboveHead directly.
-        private void ShowTextAboveHeadWithPipeSupport(NPC npc, string text)
+        private void ShowTextAboveHeadWithPipeSupport(NPC npc, string text, int firstPartDurationTicks = PipeTextPartDelayTicks)
         {
             if (npc == null)
                 return;
@@ -52,7 +52,7 @@ namespace LotsOfKisses
                 queue.Enqueue(parts[i].Trim());
 
             pendingPipeTextQueueByNpc[npc.Name] = queue;
-            pipeTextDelayTimerByNpc[npc.Name] = PipeTextPartDelayTicks;
+            pipeTextDelayTimerByNpc[npc.Name] = firstPartDurationTicks;
         }
 
         // Called every tick from Events.cs. Counts down each waiting NPC's timer and shows the
