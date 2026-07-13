@@ -218,6 +218,11 @@ namespace LotsOfKisses
             if (!continuousKissPlayerLeanAnimationActive || Game1.player == null)
                 return;
 
+            // Keep the visual offset exactly where it is while inventory, map, GMCM, or
+            // another clickable menu is open. The animation resumes from the same tick.
+            if (Game1.activeClickableMenu != null)
+                return;
+
             continuousKissPlayerLeanTimer++;
 
             float progress = Math.Min(1f, continuousKissPlayerLeanTimer / (float)continuousKissPlayerLeanDuration);

@@ -172,7 +172,9 @@ namespace LotsOfKisses
             // world moving without touching anything else the game or another mod might freeze
             // controls for (menus, events, cutscenes, etc. are untouched since this only fires
             // during our own kiss sequence).
-            if (!Game1.eventUp && (continuousKissActive || continuousKissPendingRestart))
+            if (!Game1.eventUp &&
+                Game1.activeClickableMenu == null &&
+                (continuousKissActive || continuousKissPendingRestart))
                 Game1.freezeControls = false;
 
             // The bystander speech bubbles run on their own real-tick timer (TickCrowdReactionCooldowns),
@@ -226,11 +228,16 @@ namespace LotsOfKisses
             if (kissProximityTimer > 0)
                 kissProximityTimer--;
 
-            if (continuousKissTimer > 0)
-                continuousKissTimer--;
+            // A menu pauses the multi-kiss in place. UpdateContinuousKissSystem also returns
+            // while a menu is open, so these timers must not run ahead of that paused logic.
+            if (Game1.activeClickableMenu == null)
+            {
+                if (continuousKissTimer > 0)
+                    continuousKissTimer--;
 
-            if (continuousKissGapTimer > 0)
-                continuousKissGapTimer--;
+                if (continuousKissGapTimer > 0)
+                    continuousKissGapTimer--;
+            }
 
             if (pendingNpcKissResetTimer > 0)
                 pendingNpcKissResetTimer--;
