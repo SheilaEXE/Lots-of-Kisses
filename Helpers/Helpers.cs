@@ -318,26 +318,17 @@ namespace LotsOfKisses
 
         // Moved here from Fields/GeneralFields.cs — these are logic helpers, not field
         // declarations, so they belong with the rest of the mod's helper methods.
-        private bool HasReadableDialogueWaiting(NPC npc)
+        private bool IsAutoKissBlockedByOpenDialogueOrMenu()
         {
-            if (npc == null || Game1.player == null)
-                return false;
-
             if (kissBlockAfterDialogueTimer > 0)
                 return true;
 
-            if (Game1.dialogueUp || Game1.activeClickableMenu != null)
-                return true;
-
-            if (npc.CurrentDialogue != null && npc.CurrentDialogue.Count > 0)
-                return true;
-
-            return false;
+            return Game1.dialogueUp || Game1.activeClickableMenu != null;
         }
 
         // Reads the cross-mod flag written by the Outfit Reactions mod (NatrollEXE.OutfitReactions)
         // into the Farmer's modData. Kept here for reference/possible future use, but kiss gating
-        // now uses HasReadableDialogueWaiting instead — it only blocks while a dialogue box is
+        // now uses IsAutoKissBlockedByOpenDialogueOrMenu instead — it only blocks while a dialogue box is
         // genuinely on screen, rather than for the whole "noticed, waiting for a click" and
         // post-dialogue linger window, which should allow kissing normally.
         private const string OutfitReactionsActiveModDataKey = "NatrollEXE.OutfitReactions/ReactionActive";

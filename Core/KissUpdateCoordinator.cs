@@ -39,7 +39,7 @@ namespace LotsOfKisses
             // screen (blocking player input anyway). The broader IsOutfitReactionActive() flag also
             // covers "noticed, waiting for a manual click" and the post-dialogue linger — states
             // where the partner is just standing there and kissing should work normally.
-            if (HasReadableDialogueWaiting(partner) && !continuousKissActive && !kissSequenceActive && !kissPostSequenceActive)
+            if (IsAutoKissBlockedByOpenDialogueOrMenu() && !continuousKissActive && !kissSequenceActive && !kissPostSequenceActive)
             {
                 UpdatePostKissSystem(partner);
                 UpdateDailyPartnerSystems(partner);

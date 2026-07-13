@@ -215,9 +215,9 @@ namespace LotsOfKisses
             if (!IsSupportedRomanticPartner(npc.Name))
                 return false;
 
-            // Cross-mod hold: only wait when an Outfit Reactions dialogue is genuinely on screen —
-            // "noticed, waiting for a click" and the post-dialogue linger should not block kissing.
-            if (HasReadableDialogueWaiting(npc))
+            // A queued NPC dialogue is temporarily preserved inside TryCheckActionForAutoKissWithoutDialogue.
+            // Only an actually open dialogue/menu should stop the automatic kiss before that point.
+            if (IsAutoKissBlockedByOpenDialogueOrMenu())
                 return false;
 
             if (GetApproachKissBlockTimer(npc) > 0)

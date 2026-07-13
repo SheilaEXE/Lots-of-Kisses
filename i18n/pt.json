@@ -7,9 +7,6 @@
   "gmcm.option.enable-mod.name": "Ativar Mod",
   "gmcm.option.enable-mod.tooltip": "Liga ou desliga todas as funções do mod.",
 
-  "gmcm.option.enable-dating-partners.name": "Ativar Namorados",
-  "gmcm.option.enable-dating-partners.tooltip": "Permite interações de beijo com NPCs que você está namorando, não apenas com o cônjuge.",
-
   "gmcm.option.enable-polyamory-support.name": "Ativar Vários Parceiros",
   "gmcm.option.enable-polyamory-support.tooltip": "Permite que o sistema de beijos deste mod funcione com mais de um parceiro romântico ao mesmo tempo (pra saves que usam um mod de poliamoria), em vez de só o seu cônjuge oficial.",
   

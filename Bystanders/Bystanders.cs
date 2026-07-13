@@ -464,19 +464,13 @@ namespace LotsOfKisses
                     npc.FacingDirection = GetDirectionTowardPlayer(npc);
                 }
 
-                // FISHING FIX, SCOPED: everything below (sprite dimension reset, NetBool
-                // suppression, and the later doMiddleAnimation re-invocation) is now gated behind
-                // confirming this NPC's end-of-route behavior is genuinely "fish". Originally this
-                // ran for any NPC with a controller (HadController), which turned out to include
-                // NPCs just standing/socializing (e.g. Robin and Demetrius chatting in the
-                // Saloon) — re-invoking doMiddleAnimation on those reconstructs whatever behavior
-                // they're actually SCHEDULED for that day (sleep, writing in a journal, etc.),
-                // completely unrelated to the momentary "looking at each other" pose they were
-                // interrupted from. Scoping to "fish" specifically keeps every other bystander on
-                // the exact same restore path this mod already used successfully before.
+                // A walking NPC may have "fish" as its future end-of-route behavior, but is not
+                // yet in the fishing pose. Touching the fishing sprite fields here makes their
+                // walking frames use the two-row fishing source rectangle when the route resumes.
+                // Route NPCs therefore use only the gentle movementPause hold and never the
+                // fishing-pose override below.
                 string endOfRouteBehaviorName = TryGetNetStringField(npc, "endOfRouteBehaviorName");
-                bool isFishingBehavior = !string.IsNullOrEmpty(endOfRouteBehaviorName)
-                    && endOfRouteBehaviorName.IndexOf("fish", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool isFishingBehavior = false;
 
                 if (isFishingBehavior)
                 {
