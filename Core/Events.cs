@@ -147,9 +147,23 @@ namespace LotsOfKisses
             if (!Context.IsWorldReady)
                 return;
 
-            if (Config?.ModEnabled != true || Game1.eventUp)
+            if (Config?.ModEnabled != true)
             {
-                AbortActiveModState(releasePlayer: !Game1.eventUp);
+                if (!modDisabledCleanupApplied)
+                {
+                    AbortActiveModState(releasePlayer: !Game1.eventUp);
+                    modDisabledCleanupApplied = true;
+                }
+
+                return;
+            }
+
+            // Rearm the one-time shutdown cleanup after the mod is enabled again.
+            modDisabledCleanupApplied = false;
+
+            if (Game1.eventUp)
+            {
+                AbortActiveModState(releasePlayer: false);
                 return;
             }
 
@@ -307,6 +321,7 @@ namespace LotsOfKisses
             bystanderRestore.Partner = null;
             bystanderRestore.ForceStart = false;
 
+            ClearDirectRomanticKissVisual(directAutoKissVisualNpc, holdForNextCycle: false);
             TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
             ResetKissState();
             ResetContinuousKissState();

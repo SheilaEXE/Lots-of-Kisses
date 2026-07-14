@@ -35,6 +35,13 @@ namespace LotsOfKisses
         internal static bool suppressLocationOverrideDialogueDuringAutoKissClick = false;
         private bool lastAutoKissClickWasBlockedDialogue = false;
         internal bool LotsOfKissesKissPatchActive = false;
+        // Set only when our scoped Farmer.PerformKiss patch actually starts the player's kiss
+        // animation. This is more reliable than inferring success from CanMove, whose timing can
+        // differ between the desktop game loop and launchers such as Cinderbox.
+        internal bool autoKissPlayerAnimationStarted = false;
+        // Tracks only the NPC pose created by our direct visual fallback. Vanilla/other-mod
+        // animations must never be cleared through this path.
+        private NPC directAutoKissVisualNpc = null;
         private bool passiveLookRestoreActive = false;
         private string passiveLookRestoreNpcName = "";
         private int passiveLookRestoreFacing = -1;
@@ -45,6 +52,9 @@ namespace LotsOfKisses
         private Point passiveLookRestoreTile = Point.Zero;
         private string passiveLookRestoreLocationName = "";
         private bool wasGameWindowActiveLastTick = true;
+        // Disabling the mod needs one cleanup pass, not a cleanup on every update tick. Repeating
+        // completelyStopAnimatingOrDoingAction each tick freezes the player's walking sprite.
+        private bool modDisabledCleanupApplied = false;
         // Invalidates callbacks scheduled by this mod when the save/context changes.
         private int delayedActionContextToken = 0;
 
