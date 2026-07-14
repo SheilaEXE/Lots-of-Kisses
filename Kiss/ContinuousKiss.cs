@@ -92,7 +92,9 @@ namespace LotsOfKisses
             if (publicMultiKissDialogueTriggered)
                 return false;
 
-            if (IsPrivateKissMoment(npc))
+            // The partner only becomes embarrassed enough to interrupt when somebody actually
+            // noticed this multi-kiss, turned to watch, and is still visible to the player.
+            if (!HasActiveBystanderWatchingOnScreen())
                 return false;
 
             string locName = npc.currentLocation?.Name ?? "";

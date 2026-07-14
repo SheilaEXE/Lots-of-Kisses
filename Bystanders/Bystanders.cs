@@ -13,8 +13,11 @@ namespace LotsOfKisses
         /// <summary>Chance (0–1) per bystander of noticing the kiss, per tier.</summary>
         private static readonly double[] BystanderNoticeChance = { 0.30, 0.60, 0.90 };
 
-        /// <summary>Chance (0–1) that a noticing bystander plays an embarrassed emote.</summary>
+        /// <summary>Chance (0–1) that a noticing bystander plays a reaction emote.</summary>
         private const double BystanderEmoteChance = 0.15;
+
+        private static readonly int[] AdultBystanderEmotes = { 28, 60, 20 };
+        private static readonly int[] ChildBystanderEmotes = { 28, 16 };
 
         /// <summary>Chance (0–1) that a noticing bystander says a crowd reaction line above their head.</summary>
         private const double CrowdReactionLineChance = 0.10;
@@ -195,8 +198,8 @@ namespace LotsOfKisses
                 // UpdateBystanderRestore's tick loop fire it once the NPC has actually turned.
                 if (random.NextDouble() < BystanderEmoteChance)
                 {
-                    int emote = random.Next(2) == 0 ? 28 : 60;
-                    snapshot.PendingEmote = emote;
+                    int[] emotes = IsChildNpc(npc) ? ChildBystanderEmotes : AdultBystanderEmotes;
+                    snapshot.PendingEmote = emotes[random.Next(emotes.Length)];
                     snapshot.PendingEmoteDelayTicks = BystanderEmoteTurnDelayTicks;
                 }
 
@@ -1004,6 +1007,25 @@ namespace LotsOfKisses
                     continue;
 
                 if (IsCurrentSpouse(npc.Name) || IsDatingPartner(npc.Name))
+                    continue;
+
+                if (IsNpcOnScreen(npc) && HasLineOfSightToPlayer(npc))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// True when at least one NPC who actually noticed the current multi-kiss is still
+        /// watching from inside the player's viewport with an unobstructed line of sight.
+        /// </summary>
+        internal bool HasActiveBystanderWatchingOnScreen()
+        {
+            foreach (BystanderSnapshot snapshot in activeBystanderSnapshots)
+            {
+                NPC npc = snapshot?.Npc;
+                if (npc == null || npc.currentLocation != Game1.currentLocation)
                     continue;
 
                 if (IsNpcOnScreen(npc) && HasLineOfSightToPlayer(npc))
