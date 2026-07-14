@@ -105,11 +105,6 @@ namespace LotsOfKisses
             npc.flip = false;
             npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(npc.FacingDirection);
             npc.Sprite.UpdateSourceRect();
-
-            this.Monitor.Log(
-                $"[SPECIAL ACTION SAVED BEFORE KISS] npc={npc.Name} frame={preKissSpecialActionSnapshot.CurrentFrame} anim={(animation != null ? animation.Count : 0)} walking={isWalking}",
-                LogLevel.Trace
-            );
         }
 
         private bool TryRestoreNpcPreKissSpecialAction(bool clearAfterRestore)
@@ -155,11 +150,6 @@ namespace LotsOfKisses
 
                 npc.Sprite.CurrentFrame = snapshot.CurrentFrame;
                 npc.Sprite.UpdateSourceRect();
-
-                this.Monitor.Log(
-                    $"[SPECIAL ACTION RESTORED AFTER KISS] npc={npc.Name} frame={snapshot.CurrentFrame} anim={(snapshot.CurrentAnimation != null ? snapshot.CurrentAnimation.Count : 0)}",
-                    LogLevel.Trace
-                );
 
                 if (clearAfterRestore)
                     ClearNpcPreKissSpecialAction(npc);

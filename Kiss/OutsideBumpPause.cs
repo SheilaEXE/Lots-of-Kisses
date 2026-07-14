@@ -59,11 +59,6 @@ namespace LotsOfKisses
 
             if (distance >= 600f) // Far enough to assume the player moved away or the NPC warped — cancel the pause to avoid locking the NPC unnecessarily.
             {
-                this.Monitor.Log(
-                    $"[OUTSIDE BUMP PAUSE EXIT] npc={partner.Name} dist={distance:F1} timer={OutsideBumpPause.Timer} loc={partner.currentLocation?.NameOrUniqueName ?? "null"}",
-                    LogLevel.Warn
-                );
-
                 ResetOutsideBumpPause();
                 return;
             }

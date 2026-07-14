@@ -70,9 +70,7 @@ namespace LotsOfKisses
                 }
             }
 
-            if (LoadedPackCount == 0)
-                _monitor.Log("[CONTENT PACK] No dialogue content packs found.", LogLevel.Trace);
-            else
+            if (LoadedPackCount > 0)
                 _monitor.Log($"[CONTENT PACK] {LoadedPackCount} dialogue pack(s) loaded. {_merged.Count} total key(s) available.", LogLevel.Info);
         }
 
@@ -143,7 +141,7 @@ namespace LotsOfKisses
             _monitor.Log(
                 $"[CONTENT PACK] Loaded \"{pack.Manifest.Name}\" ({pack.Manifest.UniqueID}) " +
                 $"from \"{filePath}\" — {added} new key(s), {overwritten} overwrite(s).",
-                LogLevel.Info);
+                LogLevel.Trace);
         }
 
         /// <summary>

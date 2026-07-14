@@ -375,7 +375,7 @@ namespace LotsOfKisses
 
             int delayedActionToken = delayedActionContextToken;
 
-            WakeNpcAfterMultiKiss(partner, true);
+            WakeNpcAfterMultiKiss(partner);
 
             DelayedAction.functionAfterDelay(() =>
             {

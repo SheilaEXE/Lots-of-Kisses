@@ -306,14 +306,6 @@ namespace LotsOfKisses
         {
             if (ModEntry.allowForcedScheduleCheck)
             {
-                if (ModEntry.Instance != null && __instance != null)
-                {
-                    ModEntry.Instance.Monitor.Log(
-                        $"[CHECKSCHEDULE PREFIX] ALLOWED BY FORCE | npc={__instance.Name} currentLoc={__instance.currentLocation?.NameOrUniqueName ?? "null"}",
-                        LogLevel.Trace
-                    );
-                }
-
                 return true;
             }
 

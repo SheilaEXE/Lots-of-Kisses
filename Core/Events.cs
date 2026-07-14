@@ -16,59 +16,6 @@ namespace LotsOfKisses
             lastNoticeDistance = -1f;
 
             contentPackLoader.Load();
-            if (Game1.player?.spouse != null)
-            {
-                if (IsOfficialSpouse(Game1.player.spouse))
-                    this.Monitor.Log($"[PARTNER DETECTION] Official partner detected: {Game1.player.spouse}. Compatible with mod.", LogLevel.Info);
-                else
-                    this.Monitor.Log($"[PARTNER DETECTION] Official partner detected: {Game1.player.spouse}. Not compatible with mod at this time.", LogLevel.Warn);
-            }
-            else
-            {
-                this.Monitor.Log("[PARTNER DETECTION] No official partner found.", LogLevel.Trace);
-            }
-
-            // Polyamory spouses
-            if (this.Config?.PolyamorySupport == true)
-            {
-                this.Monitor.Log("[PARTNER DETECTION] Polyamory compatibility enabled. Scanning friendship data for extra married NPCs...", LogLevel.Info);
-
-                if (Game1.player?.friendshipData != null)
-                {
-                    var polySpouses = new System.Collections.Generic.List<string>();
-                    foreach (string npcName in Game1.player.friendshipData.Keys)
-                    {
-                        if (IsPolyamorySpouse(npcName))
-                            polySpouses.Add(npcName);
-                    }
-
-                    if (polySpouses.Count > 0)
-                        this.Monitor.Log($"[PARTNER DETECTION] Polyamory spouses found: {string.Join(", ", polySpouses)}.", LogLevel.Info);
-                    else
-                        this.Monitor.Log("[PARTNER DETECTION] No polyamory spouses found in friendship data.", LogLevel.Info);
-                }
-            }
-
-            // Dating partners
-            if (this.Config?.PolyamorySupport == true)
-            {
-                this.Monitor.Log("[PARTNER DETECTION] Dating support enabled. Scanning friendship data for dating/engaged NPCs...", LogLevel.Info);
-
-                if (Game1.player?.friendshipData != null)
-                {
-                    var datingPartners = new System.Collections.Generic.List<string>();
-                    foreach (string npcName in Game1.player.friendshipData.Keys)
-                    {
-                        if (IsDatingPartner(npcName))
-                            datingPartners.Add(npcName);
-                    }
-
-                    if (datingPartners.Count > 0)
-                        this.Monitor.Log($"[PARTNER DETECTION] Dating partners found: {string.Join(", ", datingPartners)}.", LogLevel.Info);
-                    else
-                        this.Monitor.Log("[PARTNER DETECTION] No dating or engaged partners found in friendship data.", LogLevel.Info);
-                }
-            }
         }
         private void OnDayStarted(object sender, DayStartedEventArgs e)
         {
