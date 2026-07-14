@@ -200,9 +200,6 @@ namespace LotsOfKisses
                     snapshot.PendingEmoteDelayTicks = BystanderEmoteTurnDelayTicks;
                 }
 
-                this.Monitor.Log(
-                    $"[BYSTANDER] {npc.Name} noticed (tier {kissTier}, forced={forceReact}, moving={wasMoving}, controller={hadController}, dist={distance:F0})",
-                    LogLevel.Trace);
             }
 
             // Every bystander already watching — whether they just noticed above or noticed on a
@@ -630,7 +627,6 @@ namespace LotsOfKisses
                 {
                     ReleaseRouteBystanderPauseOnly(snapshot);
                     routeSnapshots.Add(snapshot);
-                    this.Monitor.Log($"[BYSTANDER] {npc.Name} route released gently (wasMoving={snapshot.WasMoving}, wasWalkingToward={snapshot.WasWalkingTowardPlayer}, controller={snapshot.HadController}).", LogLevel.Trace);
                     continue;
                 }
 
@@ -705,8 +701,6 @@ namespace LotsOfKisses
 
                 npc.Sprite.CurrentFrame = snapshot.CurrentFrame;
                 npc.Sprite.UpdateSourceRect();
-
-                this.Monitor.Log($"[BYSTANDER] {npc.Name} state restored (idle/static).", LogLevel.Trace);
             }
 
             // Tiny safety pass: only removes any refreshed pause that might remain from an emote/animation tick.

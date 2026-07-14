@@ -23,8 +23,6 @@ namespace LotsOfKisses
 
                 using FileStream stream = File.OpenRead(path);
                 hugSound = SoundEffect.FromStream(stream);
-
-                Monitor.Log("Sound hug.wav loaded successfully.", LogLevel.Trace);
             }
             catch (Exception ex)
             {

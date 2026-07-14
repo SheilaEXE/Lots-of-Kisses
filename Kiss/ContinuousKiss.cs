@@ -146,11 +146,6 @@ namespace LotsOfKisses
             cooldown = 120;
             dialogueCooldown = 90;
 
-            this.Monitor.Log(
-                $"[PUBLIC MULTIKISS] npc={npc.Name} cycles={continuousKissCyclesDone} chance={chance} loc={locName}",
-                LogLevel.Trace
-            );
-
             return true;
         }
 
@@ -341,7 +336,7 @@ namespace LotsOfKisses
 
         // Releases only the visual/movement state owned by the kiss. The NPC's controller,
         // queued schedule paths, and unrelated animations belong to vanilla or other mods.
-        private void WakeNpcAfterMultiKiss(NPC npc, bool reviveBrain = false)
+        private void WakeNpcAfterMultiKiss(NPC npc)
         {
             if (npc == null)
                 return;
@@ -370,14 +365,6 @@ namespace LotsOfKisses
             activeKissVisualDelayMs = bumpKissVisualDelayMs;
             continuousKissTouchHoldTimer = 0;
             continuousKissWasTouchingPartner = false;
-
-            if (reviveBrain)
-            {
-                this.Monitor.Log(
-                    $"[MULTIKISS RELEASE] npc={npc.Name} pause={npc.movementPause} moving={npc.isMoving()}",
-                    LogLevel.Trace
-                );
-            }
         }
 
         // =====================================================================
