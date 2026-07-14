@@ -75,8 +75,6 @@ Use the NPC's exact internal name in NPC-specific keys. The main supported patte
 - `CrowdReaction.<number>` for generic adult reactions
 - `CrowdReaction.Child.<number>` for child reactions
 
-Partner dialogue may also be gender-specific by adding `.male` or `.female` before the number, for example `OutdoorKisses.MyNPC.female.1`. Locale files work like translations: Lots of Kisses loads the current language when available and falls back to `en.json`.
-
 ### Note
 
 NPCs without a content pack still work fully — kisses happen normally, just without custom dialogue.
