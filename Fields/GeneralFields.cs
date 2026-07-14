@@ -35,6 +35,10 @@ namespace LotsOfKisses
         internal static bool suppressLocationOverrideDialogueDuringAutoKissClick = false;
         private bool lastAutoKissClickWasBlockedDialogue = false;
         internal bool LotsOfKissesKissPatchActive = false;
+        // Set only when our scoped Farmer.PerformKiss patch actually starts the player's kiss
+        // animation. This is more reliable than inferring success from CanMove, whose timing can
+        // differ between the desktop game loop and launchers such as Cinderbox.
+        internal bool autoKissPlayerAnimationStarted = false;
         private bool passiveLookRestoreActive = false;
         private string passiveLookRestoreNpcName = "";
         private int passiveLookRestoreFacing = -1;

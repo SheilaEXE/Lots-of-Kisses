@@ -21,11 +21,13 @@ namespace LotsOfKisses
             NPC previousNpc = suppressDialogueAutoKissNpc;
             bool previousSuppressed = suppressedDialogueDuringAutoKissClick;
             bool previousKissPatchFlag = LotsOfKissesKissPatchActive;
+            bool previousPlayerAnimationStarted = autoKissPlayerAnimationStarted;
 
             suppressDialogueFromAutoKissClick = true;
             suppressDialogueAutoKissNpc = npc;
             suppressedDialogueDuringAutoKissClick = false;
             LotsOfKissesKissPatchActive = true;
+            autoKissPlayerAnimationStarted = false;
 
             // Cross-mod signal (mirrors the modData handshake Outfit Reactions already uses):
             // while this simulated click is in flight, tell Outfit Reactions' own NPC.checkAction
@@ -71,6 +73,8 @@ namespace LotsOfKisses
             {
                 bool result = npc.checkAction(Game1.player, npc.currentLocation);
                 bool dialogueWasBlocked = suppressedDialogueDuringAutoKissClick;
+                bool playerAnimationStarted = autoKissPlayerAnimationStarted;
+                bool npcKissVisualStarted = IsNpcShowingKissVisual(npc);
 
                 lastAutoKissClickWasBlockedDialogue = dialogueWasBlocked;
 
@@ -89,24 +93,16 @@ namespace LotsOfKisses
                     return false;
                 }
 
-                // BUGFIX (ghost kiss): checkAction's raw boolean is NOT a reliable "a real kiss
-                // just happened" signal on its own — it's the general click-interaction handler,
-                // and can return true just because SOME dialogue got queued and immediately
-                // suppressed by our own patch above, with no actual kiss animation ever playing.
-                // Confirmed via diagnostic logging: across every genuinely successful kiss
-                // (multiple NPCs, bump kiss and multi-kiss, many attempts), Game1.player.CanMove
-                // was reliably false immediately after checkAction returned — vanilla's own kiss
-                // animation freezes the player's movement as a side effect, same as any other
-                // scripted animation. A plain dialogue-open-and-suppress does not. The one
-                // reproduced "ghost kiss" (result=true, no visible animation) was the single case
-                // where CanMove was still true right after checkAction — i.e. nothing had frozen
-                // the player, meaning no real kiss animation had actually started. Use that as the
-                // authoritative confirmation, on top of checkAction's own result.
+                // checkAction is a general interaction handler, so its return value alone doesn't
+                // prove a kiss occurred. Prefer explicit visual evidence: our scoped PerformKiss
+                // patch records when it starts the player animation, and the NPC frame is checked
+                // independently. Keep CanMove only as a compatibility signal for another mod that
+                // may start its own kiss without going through our patch.
                 bool playerWasFrozenByRealKiss = !Game1.player.CanMove;
-                if (result && !playerWasFrozenByRealKiss)
+                if (result && !playerAnimationStarted && !npcKissVisualStarted && !playerWasFrozenByRealKiss)
                     return false;
 
-                return result;
+                return result || (playerAnimationStarted && npcKissVisualStarted);
             }
             finally
             {
@@ -114,6 +110,7 @@ namespace LotsOfKisses
                 suppressDialogueAutoKissNpc = previousNpc;
                 suppressedDialogueDuringAutoKissClick = previousSuppressed;
                 LotsOfKissesKissPatchActive = previousKissPatchFlag;
+                autoKissPlayerAnimationStarted = previousPlayerAnimationStarted;
                 suppressLocationOverrideDialogueDuringAutoKissClick = previousSuppressLocationOverride;
 
                 if (!previousKissPatchFlag && Game1.player?.modData != null)
@@ -129,6 +126,69 @@ namespace LotsOfKisses
                     for (int i = stashedDialogue.Count - 1; i >= 0; i--)
                         npc.CurrentDialogue.Push(stashedDialogue[i]);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Starts only the two kiss visuals when the normal NPC.checkAction path didn't reach a
+        /// kiss. This keeps the desktop/other-mod interaction path as the first choice while making
+        /// the animation independent from another mod supplying its own checkAction prefix.
+        /// </summary>
+        private bool TryStartDirectRomanticKissVisuals(NPC npc)
+        {
+            if (npc?.Sprite == null || Game1.player == null
+                || npc.currentLocation != Game1.player.currentLocation
+                || Game1.activeClickableMenu != null || Game1.dialogueUp)
+                return false;
+
+            CharacterData data = npc.GetData();
+            if (data == null)
+                return false;
+
+            bool previousKissPatchFlag = LotsOfKissesKissPatchActive;
+            bool previousPlayerAnimationStarted = autoKissPlayerAnimationStarted;
+
+            try
+            {
+                LotsOfKissesKissPatchActive = true;
+                autoKissPlayerAnimationStarted = false;
+
+                Game1.player.PerformKiss(Game1.player.FacingDirection);
+                if (!autoKissPlayerAnimationStarted)
+                    return false;
+
+                bool shouldFlipNpc =
+                    (data.KissSpriteFacingRight && npc.FacingDirection == 3)
+                    || (!data.KissSpriteFacingRight && npc.FacingDirection == 1);
+
+                int visualDuration = Math.Max(1, activeKissVisualDelayMs);
+                npc.movementPause = Math.Max(npc.movementPause, visualDuration);
+                npc.Sprite.ClearAnimation();
+                npc.Sprite.AddFrame(new FarmerSprite.AnimationFrame(
+                    data.KissSpriteIndex,
+                    visualDuration,
+                    false,
+                    shouldFlipNpc,
+                    npc.haltMe,
+                    true
+                ));
+                npc.Sprite.UpdateSourceRect();
+
+                Monitor.Log(
+                    $"[AUTO KISS] Normal checkAction didn't start a kiss; used the direct visual fallback for {npc.Name}.",
+                    LogLevel.Trace
+                );
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Monitor.Log($"[AUTO KISS] Direct visual fallback failed for {npc.Name}: {ex}", LogLevel.Error);
+                return false;
+            }
+            finally
+            {
+                LotsOfKissesKissPatchActive = previousKissPatchFlag;
+                autoKissPlayerAnimationStarted = previousPlayerAnimationStarted;
             }
         }
         // =========================================================================================================================================
@@ -238,6 +298,9 @@ namespace LotsOfKisses
 
             bool triggered = TryCheckActionForAutoKissWithoutDialogue(npc);
 
+            if (!triggered && !lastAutoKissClickWasBlockedDialogue)
+                triggered = TryStartDirectRomanticKissVisuals(npc);
+
             if (triggered && playSound)
                 Game1.playSound("dwop");
 
@@ -263,6 +326,9 @@ namespace LotsOfKisses
             FaceEachOther(npc);
 
             bool triggered = TryCheckActionForAutoKissWithoutDialogue(npc);
+
+            if (!triggered && !lastAutoKissClickWasBlockedDialogue)
+                triggered = TryStartDirectRomanticKissVisuals(npc);
 
             if (triggered)
                 Game1.playSound("dwop");

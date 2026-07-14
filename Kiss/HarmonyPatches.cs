@@ -112,6 +112,7 @@ namespace LotsOfKisses
                 if (!isPartOfContinuousMultiKiss)
                     __instance.CanMove = false;
 
+                ModEntry.Instance.autoKissPlayerAnimationStarted = true;
                 __instance.FarmerSprite.PauseForSingleAnimation = false;
                 __instance.faceDirection(facingDirection);
 
