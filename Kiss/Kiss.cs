@@ -826,7 +826,7 @@ namespace LotsOfKisses
 
                         if (approachDialogueCooledDown)
                         {
-                            surpriseLine = GetDialogueLine("approachKiss", 1, 30, npc);
+                            surpriseLine = GetDialogueLine("approachKiss", npc);
                             if (!string.IsNullOrEmpty(surpriseLine))
                             {
                                 ShowTextAboveHeadWithPipeSupport(npc, surpriseLine);

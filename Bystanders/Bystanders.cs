@@ -3,6 +3,7 @@ using StardewModdingAPI;
 using StardewValley;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LotsOfKisses
 {
@@ -13,8 +14,11 @@ namespace LotsOfKisses
         /// <summary>Chance (0–1) per bystander of noticing the kiss, per tier.</summary>
         private static readonly double[] BystanderNoticeChance = { 0.30, 0.60, 0.90 };
 
-        /// <summary>Chance (0–1) that a noticing bystander plays an embarrassed emote.</summary>
+        /// <summary>Chance (0–1) that a noticing bystander plays a reaction emote.</summary>
         private const double BystanderEmoteChance = 0.15;
+
+        private static readonly int[] AdultBystanderEmotes = { 28, 60, 20 };
+        private static readonly int[] ChildBystanderEmotes = { 28, 16 };
 
         /// <summary>Chance (0–1) that a noticing bystander says a crowd reaction line above their head.</summary>
         private const double CrowdReactionLineChance = 0.10;
@@ -195,8 +199,8 @@ namespace LotsOfKisses
                 // UpdateBystanderRestore's tick loop fire it once the NPC has actually turned.
                 if (random.NextDouble() < BystanderEmoteChance)
                 {
-                    int emote = random.Next(2) == 0 ? 28 : 60;
-                    snapshot.PendingEmote = emote;
+                    int[] emotes = IsChildNpc(npc) ? ChildBystanderEmotes : AdultBystanderEmotes;
+                    snapshot.PendingEmote = emotes[random.Next(emotes.Length)];
                     snapshot.PendingEmoteDelayTicks = BystanderEmoteTurnDelayTicks;
                 }
 
@@ -849,16 +853,16 @@ namespace LotsOfKisses
 
             if (IsChildNpc(npc))
             {
-                line = GetSimpleDialogueLineNoRepeat(npc, "CrowdReaction.Child", 1, 10);
+                line = GetSimpleDialogueLineNoRepeat(npc, "CrowdReaction.Child");
             }
             else
             {
                 // "Reaction<Name>" has no separator between the prefix and the NPC name
                 // (e.g. "ReactionAbigail.1"), unlike the mod's usual "{prefix}.{name}.{n}" pattern.
-                line = GetSimpleDialogueLineNoRepeat(npc, $"Reaction{npc.Name}", 1, 10);
+                line = GetSimpleDialogueLineNoRepeat(npc, $"Reaction{npc.Name}");
 
                 if (string.IsNullOrEmpty(line))
-                    line = GetSimpleDialogueLineNoRepeat(npc, "CrowdReaction", 1, 30);
+                    line = GetSimpleDialogueLineNoRepeat(npc, "CrowdReaction");
             }
 
             if (!string.IsNullOrEmpty(line))
@@ -885,13 +889,12 @@ namespace LotsOfKisses
         }
 
         /// <summary>
-        /// Looks up "{prefix}.{n}" translation keys directly (content pack first, then i18n),
-        /// picking a random number in [min, max] — but never repeats a specific "{prefix}.{n}"
-        /// key already shown for this NPC this session. Once every key in this prefix's pool has
-        /// been used for this NPC, the pool cycles back around (forgetting what was used) instead
-        /// of going silent forever.
+        /// Looks up every available "{prefix}.{n}" key directly (content pack first, then i18n),
+        /// with no fixed numeric limit, but never repeats a specific key already shown for this
+        /// NPC this session. Once every key in this prefix's pool has been used for this NPC, the
+        /// pool cycles back around instead of going silent forever.
         /// </summary>
-        private string GetSimpleDialogueLineNoRepeat(NPC npc, string prefix, int min, int max)
+        private string GetSimpleDialogueLineNoRepeat(NPC npc, string prefix)
         {
             if (npc == null || string.IsNullOrEmpty(prefix))
                 return null;
@@ -902,48 +905,27 @@ namespace LotsOfKisses
                 usedCrowdReactionKeysByNpc[npc.Name] = usedKeys;
             }
 
-            string result = TryPickUnusedDialogueLine(prefix, min, max, usedKeys);
-            if (!string.IsNullOrEmpty(result))
-                return result;
+            List<int> availableNumbers = GetAvailableDialogueNumbers(prefix);
+            if (availableNumbers.Count == 0)
+                return null;
 
-            // Every key in this prefix's pool has already been used (or none exist) — forget what
-            // was used for this specific prefix and try once more fresh, so the NPC cycles back
-            // through their lines instead of falling silent for the rest of the session. Only the
-            // keys belonging to THIS prefix are dropped, so progress on other prefixes/pools for
-            // this NPC (e.g. a personalized pool vs. the generic fallback) isn't reset together.
-            usedKeys.RemoveWhere(key => key.StartsWith(prefix + ".", StringComparison.Ordinal));
-            return TryPickUnusedDialogueLine(prefix, min, max, usedKeys);
-        }
+            List<int> unusedNumbers = availableNumbers
+                .Where(number => !usedKeys.Contains($"{prefix}.{number}"))
+                .ToList();
 
-        private string TryPickUnusedDialogueLine(string prefix, int min, int max, HashSet<string> usedKeys)
-        {
-            // Try a handful of random picks first (cheap, and avoids always favoring low numbers
-            // when the pool is mostly unused).
-            for (int i = 0; i < 10; i++)
+            if (unusedNumbers.Count == 0)
             {
-                int number = random.Next(min, max + 1);
-                string key = $"{prefix}.{number}";
-
-                if (usedKeys.Contains(key))
-                    continue;
-
-                string value = GetSimpleDialogueKey(prefix, number);
-                if (!string.IsNullOrEmpty(value))
-                {
-                    usedKeys.Add(key);
-                    return value;
-                }
+                // Reset only this prefix, preserving progress in the NPC's other dialogue pools.
+                usedKeys.RemoveWhere(key => key.StartsWith(prefix + ".", StringComparison.Ordinal));
+                unusedNumbers = availableNumbers;
             }
 
-            // Fall back to scanning the whole range in order, in case random picks kept landing
-            // on already-used or non-existent keys.
-            for (int number = min; number <= max; number++)
+            while (unusedNumbers.Count > 0)
             {
+                int index = random.Next(unusedNumbers.Count);
+                int number = unusedNumbers[index];
+                unusedNumbers.RemoveAt(index);
                 string key = $"{prefix}.{number}";
-
-                if (usedKeys.Contains(key))
-                    continue;
-
                 string value = GetSimpleDialogueKey(prefix, number);
                 if (!string.IsNullOrEmpty(value))
                 {
@@ -1004,6 +986,25 @@ namespace LotsOfKisses
                     continue;
 
                 if (IsCurrentSpouse(npc.Name) || IsDatingPartner(npc.Name))
+                    continue;
+
+                if (IsNpcOnScreen(npc) && HasLineOfSightToPlayer(npc))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// True when at least one NPC who actually noticed the current multi-kiss is still
+        /// watching from inside the player's viewport with an unobstructed line of sight.
+        /// </summary>
+        internal bool HasActiveBystanderWatchingOnScreen()
+        {
+            foreach (BystanderSnapshot snapshot in activeBystanderSnapshots)
+            {
+                NPC npc = snapshot?.Npc;
+                if (npc == null || npc.currentLocation != Game1.currentLocation)
                     continue;
 
                 if (IsNpcOnScreen(npc) && HasLineOfSightToPlayer(npc))

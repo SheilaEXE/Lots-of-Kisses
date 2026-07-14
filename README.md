@@ -60,6 +60,23 @@ Lots of Kisses supports content packs for adding kiss dialogue for any NPC.
 }
 ```
 
+### Dialogue keys
+
+Every dialogue key ends with a positive number. There is no fixed maximum, and the numbers do not need to be consecutive, so a pack may use keys such as `.1`, `.25`, and `.250` without filling the gaps.
+
+Use the NPC's exact internal name in NPC-specific keys. The main supported patterns are:
+
+- `approachKiss.<InternalName>.<number>`
+- `OutdoorKisses.<InternalName>.<number>`
+- `IndoorKisses.<InternalName>.<number>`
+- `kissReaction.<InternalName>.<number>`
+- `PublicKissReaction.<InternalName>.<number>`
+- `Reaction<InternalName>.<number>` for a bystander's personalized reaction
+- `CrowdReaction.<number>` for generic adult reactions
+- `CrowdReaction.Child.<number>` for child reactions
+
+Partner dialogue may also be gender-specific by adding `.male` or `.female` before the number, for example `OutdoorKisses.MyNPC.female.1`. Locale files work like translations: Lots of Kisses loads the current language when available and falls back to `en.json`.
+
 ### Note
 
 NPCs without a content pack still work fully — kisses happen normally, just without custom dialogue.
