@@ -83,6 +83,12 @@ namespace LotsOfKisses
             return _merged.TryGetValue(key, out value);
         }
 
+        /// <summary>Returns all dialogue keys currently loaded from content packs.</summary>
+        public IEnumerable<string> GetKeys()
+        {
+            return _merged.Keys;
+        }
+
         // ── Internal helpers ─────────────────────────────────────────────────
 
         private void LoadSinglePack(IContentPack pack, string currentLocale)

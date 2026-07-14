@@ -120,7 +120,7 @@ namespace LotsOfKisses
             bool isOutdoors = npc.currentLocation?.IsOutdoors ?? true;
             string dialoguePrefix = isOutdoors ? "OutdoorKisses" : "IndoorKisses";
 
-            string line = GetDialogueLine(dialoguePrefix, 1, 13, npc);
+            string line = GetDialogueLine(dialoguePrefix, npc);
             if (string.IsNullOrEmpty(line))
                 return false;
 
@@ -410,8 +410,8 @@ namespace LotsOfKisses
                 if (restartDistance > 72f)
                 {
                     NPC postNpc = continuousKissNpc;
-                    string postLine = GetDialogueLine("kissReaction", 1, 10, postNpc);
-                    string publicLine = GetDialogueLine("PublicKissReaction", 1, 2, postNpc);
+                    string postLine = GetDialogueLine("kissReaction", postNpc);
+                    string publicLine = GetDialogueLine("PublicKissReaction", postNpc);
 
                     ResetContinuousKissState();
                     activeKissVisualDelayMs = bumpKissVisualDelayMs;
@@ -465,8 +465,8 @@ namespace LotsOfKisses
             if (distance > 90f)
             {
                 NPC postNpc = partner;
-                string postLine = GetDialogueLine("kissReaction", 1, 10, postNpc);
-                string publicLine = GetDialogueLine("PublicKissReaction", 1, 2, postNpc);
+                string postLine = GetDialogueLine("kissReaction", postNpc);
+                string publicLine = GetDialogueLine("PublicKissReaction", postNpc);
 
                 ScheduleBystanderRestore(partner);
                 ResetContinuousKissState();
