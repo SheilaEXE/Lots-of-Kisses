@@ -52,6 +52,9 @@ namespace LotsOfKisses
         private Point passiveLookRestoreTile = Point.Zero;
         private string passiveLookRestoreLocationName = "";
         private bool wasGameWindowActiveLastTick = true;
+        // Disabling the mod needs one cleanup pass, not a cleanup on every update tick. Repeating
+        // completelyStopAnimatingOrDoingAction each tick freezes the player's walking sprite.
+        private bool modDisabledCleanupApplied = false;
         // Invalidates callbacks scheduled by this mod when the save/context changes.
         private int delayedActionContextToken = 0;
 
