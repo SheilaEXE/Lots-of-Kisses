@@ -558,6 +558,11 @@ namespace LotsOfKisses
             continuousKissActive = false;
             continuousKissCyclesDone++;
 
+            // The Cinderbox fallback owns a full-duration static kiss frame. Remove that frame
+            // before the inter-cycle gap so each new kiss visibly starts again, while keeping the
+            // original NPC snapshot queued for the final move-away restoration.
+            ClearDirectRomanticKissVisual(partner, holdForNextCycle: true);
+
             // Bystanders react based on current kiss tier.
             TriggerBystanderReactions(continuousKissTier, partner);
 

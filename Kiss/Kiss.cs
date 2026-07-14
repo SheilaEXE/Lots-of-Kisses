@@ -173,6 +173,7 @@ namespace LotsOfKisses
                     true
                 ));
                 npc.Sprite.UpdateSourceRect();
+                directAutoKissVisualNpc = npc;
 
                 Monitor.Log(
                     $"[AUTO KISS] Normal checkAction didn't start a kiss; used the direct visual fallback for {npc.Name}.",
@@ -190,6 +191,36 @@ namespace LotsOfKisses
                 LotsOfKissesKissPatchActive = previousKissPatchFlag;
                 autoKissPlayerAnimationStarted = previousPlayerAnimationStarted;
             }
+        }
+
+        /// <summary>
+        /// Clears only a kiss pose created by <see cref="TryStartDirectRomanticKissVisuals"/>.
+        /// The saved pre-kiss snapshot remains untouched, so the NPC's original position/action
+        /// can still be restored by the existing deferred path when the player moves away.
+        /// </summary>
+        private bool ClearDirectRomanticKissVisual(NPC npc, bool holdForNextCycle)
+        {
+            if (npc == null || directAutoKissVisualNpc != npc)
+                return false;
+
+            directAutoKissVisualNpc = null;
+
+            if (npc.Sprite == null || !IsNpcShowingKissVisual(npc))
+                return false;
+
+            npc.Sprite.StopAnimation();
+            npc.Sprite.ClearAnimation();
+            npc.Sprite.CurrentAnimation = null;
+            npc.flip = false;
+            npc.Sprite.CurrentFrame = GetNpcIdleFrameForDirection(npc.FacingDirection);
+            npc.Sprite.UpdateSourceRect();
+
+            // The gap is 25 ticks (roughly 417 ms). Keep movement paused just long enough for
+            // the next cycle without touching the controller or queued schedule paths.
+            if (holdForNextCycle)
+                npc.movementPause = Math.Max(npc.movementPause, 450);
+
+            return true;
         }
         // =========================================================================================================================================
         // CONTINUOUS KISS LOGIC — START, MAINTENANCE AND END (including bump kiss, which can escalate outside the farm)
@@ -760,8 +791,11 @@ namespace LotsOfKisses
                     if (npc != null && npc.currentLocation == Game1.player.currentLocation)
                     {
                         npc.Halt();
-                        npc.Sprite.StopAnimation();
-                        npc.Sprite.UpdateSourceRect();
+                        if (!ClearDirectRomanticKissVisual(npc, holdForNextCycle: false))
+                        {
+                            npc.Sprite.StopAnimation();
+                            npc.Sprite.UpdateSourceRect();
+                        }
                     }
                 }, activeKissVisualDelayMs);
 

@@ -307,6 +307,7 @@ namespace LotsOfKisses
             bystanderRestore.Partner = null;
             bystanderRestore.ForceStart = false;
 
+            ClearDirectRomanticKissVisual(directAutoKissVisualNpc, holdForNextCycle: false);
             TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
             ResetKissState();
             ResetContinuousKissState();

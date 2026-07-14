@@ -39,6 +39,9 @@ namespace LotsOfKisses
         // animation. This is more reliable than inferring success from CanMove, whose timing can
         // differ between the desktop game loop and launchers such as Cinderbox.
         internal bool autoKissPlayerAnimationStarted = false;
+        // Tracks only the NPC pose created by our direct visual fallback. Vanilla/other-mod
+        // animations must never be cleared through this path.
+        private NPC directAutoKissVisualNpc = null;
         private bool passiveLookRestoreActive = false;
         private string passiveLookRestoreNpcName = "";
         private int passiveLookRestoreFacing = -1;

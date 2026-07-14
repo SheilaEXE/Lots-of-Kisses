@@ -17,6 +17,7 @@ namespace LotsOfKisses
 
         private void ResetContinuousKissState()
         {
+            ClearDirectRomanticKissVisual(continuousKissNpc, holdForNextCycle: false);
             ResetContinuousKissPlayerLeanEffect(true);
 
             continuousKissActive = false;
