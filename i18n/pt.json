@@ -16,7 +16,7 @@
   "gmcm.option.multi-kisses.tooltip": "Permite sequências românticas com vários beijos enquanto vocês estão próximos.",
 
   "gmcm.option.bump-kiss.name": "Beijo ao Esbarrar",
-  "gmcm.option.bump-kiss.tooltip": "Vocês trocam um beijo rápido quando você corre na direção de seu parceiro, com uma pequena chance de fazê-lo derrubar algum item.",
+  "gmcm.option.bump-kiss.tooltip": "Vocês trocam um beijo rápido quando você corre na direção de seu parceiro.",
   
   "gmcm.option.blush-smoke-style.name": "Estilo da fumaça de blush",
   "gmcm.option.blush-smoke-style.tooltip": "Escolha qual animação de fumaça de blush aparece durante as sequências de beijo.",
