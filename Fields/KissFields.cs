@@ -62,6 +62,8 @@ namespace LotsOfKisses
         private int continuousKissTouchHoldTimer = 0;
         private const int ContinuousKissHoldTicks = 60;
         private bool continuousKissWasTouchingPartner = false;
+        private bool continuousKissSingleCycle = false;
+        private bool continuousKissSingleCycleFinishing = false;
 
         // =====================================================================
         // EFEITO VISUAL DO TIER 3: FARMER SE APROXIMA EM PIXELS E VOLTA

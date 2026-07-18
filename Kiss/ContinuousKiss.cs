@@ -11,12 +11,23 @@ namespace LotsOfKisses
     // Multi-kiss (continuous kiss) system: starting/ending a chain, tiers, public dialogue, and the tier-3 player lean-in visual effect.
     public partial class ModEntry
     {
+        internal static int GetContinuousKissTierDurationMs(int kissTier)
+        {
+            return kissTier switch
+            {
+                1 => 700,
+                2 => 2000,
+                3 => 4000,
+                _ => bumpKissVisualDelayMs
+            };
+        }
+
         // Returns true if the vanilla kiss fired on this attempt (informational only — no longer
         // gates whether the chain activates, see the revert note near TryCheckActionForAutoKiss...
         // in Kiss.cs: npc.checkAction()'s raw boolean return isn't a reliable "a kiss specifically
         // happened" signal, since checkAction is the general click-interaction handler covering
         // dialogue/gifts/quests/etc too — gating the whole chain on it broke normal kissing).
-        private bool StartContinuousKiss(NPC npc, int kissTier, bool isNewSequence = false)
+        private bool StartContinuousKiss(NPC npc, int kissTier, bool isNewSequence = false, bool manualRightClick = false)
         {
             if (npc == null || npc.currentLocation != Game1.player.currentLocation)
                 return false;
@@ -35,18 +46,12 @@ namespace LotsOfKisses
             if (IsAutoKissBlockedByOpenDialogueOrMenu())
                 return false;
 
-            if (GetApproachKissBlockTimer(npc) > 0)
+            if (!manualRightClick && GetApproachKissBlockTimer(npc) > 0)
                 return false;
 
             CaptureNpcPreKissSpecialAction(npc);
 
-            int durationMs = kissTier switch
-            {
-                1 => 700,
-                2 => 2000,
-                3 => 4000,
-                _ => bumpKissVisualDelayMs
-            };
+            int durationMs = GetContinuousKissTierDurationMs(kissTier);
 
             activeKissVisualDelayMs = durationMs;
 
@@ -62,7 +67,7 @@ namespace LotsOfKisses
             // now (it's built on the same CanMove-based confirmation as the bump kiss trigger —
             // see TryCheckActionForAutoKissWithoutDialogue in Kiss.cs) — abort cleanly if it's
             // false, restoring the captured pose since nothing else has touched the NPC yet.
-            bool vanillaTriggered = TryTriggerRomanticContinuousKiss(npc);
+            bool vanillaTriggered = TryTriggerRomanticContinuousKiss(npc, ignoreApproachBlock: manualRightClick);
             if (!vanillaTriggered)
             {
                 TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
@@ -81,6 +86,8 @@ namespace LotsOfKisses
             continuousKissGapTimer = 0;
             continuousKissTouchHoldTimer = 0;
             continuousKissWasTouchingPartner = true;
+            continuousKissSingleCycle = false;
+            continuousKissSingleCycleFinishing = false;
             return true;
         }
 
@@ -267,6 +274,23 @@ namespace LotsOfKisses
 
         // Forces the continuous kiss to end when normal end conditions aren't available.
         // This emergency path deliberately never touches the NPC's controller or schedule.
+        private void ReleasePlayerAfterKissWithoutOverridingCurrentPose()
+        {
+            if (Game1.player == null)
+                return;
+
+            Game1.freezeControls = false;
+
+            // Sitting owns its own movement and sprite state. Forcing CanMove or calling
+            // completelyStopAnimatingOrDoingAction here replaces the seated frame with the
+            // farmer's carrying/arms-up pose, and repeated cleanup calls keep it stuck there.
+            if (Game1.player.IsSitting())
+                return;
+
+            Game1.player.CanMove = true;
+            Game1.player.completelyStopAnimatingOrDoingAction();
+        }
+
         private void ForceEndContinuousKiss(NPC npc)
         {
             // Keep the original participant before ResetContinuousKissState clears the field.
@@ -275,12 +299,7 @@ namespace LotsOfKisses
 
             ScheduleBystanderRestore(activeNpc);
 
-            if (Game1.player != null)
-            {
-                Game1.freezeControls = false;
-                Game1.player.CanMove = true;
-                Game1.player.completelyStopAnimatingOrDoingAction();
-            }
+            ReleasePlayerAfterKissWithoutOverridingCurrentPose();
 
             if (activeNpc?.Sprite != null)
             {
@@ -343,12 +362,7 @@ namespace LotsOfKisses
             if (npc == null)
                 return;
 
-            if (Game1.player != null)
-            {
-                Game1.freezeControls = false;
-                Game1.player.CanMove = true;
-                Game1.player.completelyStopAnimatingOrDoingAction();
-            }
+            ReleasePlayerAfterKissWithoutOverridingCurrentPose();
 
             npc.movementPause = 0;
 
@@ -377,6 +391,12 @@ namespace LotsOfKisses
             if (partner == null)
                 return;
 
+            // This update runs whenever a romantic partner is present, even when no multi-kiss
+            // exists. Check ownership before reacting to the farmer's pose; otherwise merely
+            // sitting near a partner calls ForceEndContinuousKiss every tick.
+            if (!continuousKissActive && !continuousKissPendingRestart)
+                return;
+
             // If the player sits down mid-chain (e.g. in a chair the NPC walked them next to),
             // cleanly end the sequence instead of leaving it running with a seated player —
             // ForceEndContinuousKiss releases the NPC properly, same as when they leave the
@@ -394,6 +414,19 @@ namespace LotsOfKisses
             // picks back up exactly where it left off once the menu closes.
             if (Game1.activeClickableMenu != null)
                 return;
+
+            if (continuousKissSingleCycleFinishing)
+            {
+                // Tier 3 gets to finish its smooth lean-out before the normal release path
+                // restores movement and the saved NPC pose. Tiers 1 and 2 finish next tick.
+                if (continuousKissPlayerLeanAnimationActive)
+                    return;
+
+                NPC completedNpc = continuousKissNpc;
+                ReleaseNpcAfterMultiKiss(completedNpc);
+                ResetContinuousKissState();
+                return;
+            }
 
             if (continuousKissPendingRestart)
             {
@@ -543,6 +576,14 @@ namespace LotsOfKisses
 
             if (continuousKissTier == 3 && !continuousKissPlayerLeanOutTriggered)
                 StartContinuousKissPlayerLeanOut();
+
+            if (continuousKissSingleCycle)
+            {
+                // This is a standalone manual tier, not a public multi-kiss. End without
+                // rolling another cycle, triggering bystanders, or opening an interruption.
+                continuousKissSingleCycleFinishing = true;
+                return;
+            }
 
             continuousKissActive = false;
             continuousKissCyclesDone++;

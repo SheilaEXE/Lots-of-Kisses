@@ -52,6 +52,46 @@ namespace LotsOfKisses
 
             configMenu.AddBoolOption(
                 mod: mod.ModManifest,
+                name: () => T(mod, "gmcm.option.manual-kiss-starts-multi-kiss.name", "Manual kiss starts Multi-Kisses"),
+                tooltip: () => T(mod, "gmcm.option.manual-kiss-starts-multi-kiss.tooltip", "When Multi-Kisses is enabled, clicking your partner with the preferred kiss button immediately starts the full sequence and replaces the usual proximity start."),
+                getValue: () => mod.Config.ManualKissStartsMultiKiss,
+                setValue: value =>
+                {
+                    mod.Config.ManualKissStartsMultiKiss = value;
+                    if (value)
+                        mod.Config.RandomManualKissTier = false;
+                }
+            );
+
+            configMenu.AddBoolOption(
+                mod: mod.ModManifest,
+                name: () => T(mod, "gmcm.option.random-manual-kiss-tier.name", "Random tier for manual kisses"),
+                tooltip: () => T(mod, "gmcm.option.random-manual-kiss-tier.tooltip", "When Multi-Kisses is disabled, clicking your partner with the preferred kiss button starts one random tier. Keep Multi-Kisses disabled while using this option."),
+                getValue: () => mod.Config.RandomManualKissTier,
+                setValue: value =>
+                {
+                    mod.Config.RandomManualKissTier = value;
+                    if (value)
+                        mod.Config.ManualKissStartsMultiKiss = false;
+                }
+            );
+
+            configMenu.AddTextOption(
+                mod: mod.ModManifest,
+                name: () => T(mod, "gmcm.option.manual-kiss-button.name", "Kiss click preference"),
+                tooltip: () => T(mod, "gmcm.option.manual-kiss-button.tooltip", "Choose which mouse button triggers the optional manual kiss features, leaving the other button available for normal dialogue."),
+                getValue: () => mod.Config.ManualKissButtonPreference.ToString(),
+                setValue: value =>
+                {
+                    if (System.Enum.TryParse<KissClickPreference>(value, out var parsed))
+                        mod.Config.ManualKissButtonPreference = parsed;
+                },
+                allowedValues: new[] { "Right", "Left" },
+                formatAllowedValue: value => T(mod, $"gmcm.option.manual-kiss-button.{value.ToLower()}", value)
+            );
+
+            configMenu.AddBoolOption(
+                mod: mod.ModManifest,
                 name: () => mod.Helper.Translation.Get("gmcm.option.bump-kiss.name"),
                 tooltip: () => mod.Helper.Translation.Get("gmcm.option.bump-kiss.tooltip"),
                 getValue: () => mod.Config.BumpKissEnabled,
@@ -74,4 +114,3 @@ namespace LotsOfKisses
         }
     }
 }
-

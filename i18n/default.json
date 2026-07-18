@@ -20,6 +20,17 @@
   "gmcm.option.multi-kisses.name": "Multi-Kisses!",
   "gmcm.option.multi-kisses.tooltip": "Enables romantic sequences with multiple kisses while you stay close to your partner.",
 
+  "gmcm.option.random-manual-kiss-tier.name": "Random Tier for Manual Kisses",
+  "gmcm.option.random-manual-kiss-tier.tooltip": "When Multi-Kisses is disabled, clicking your partner with the preferred kiss button starts one random tier. Keep Multi-Kisses disabled while using this option to avoid conflicts.",
+
+  "gmcm.option.manual-kiss-starts-multi-kiss.name": "Manual Kiss Starts Multi-Kisses",
+  "gmcm.option.manual-kiss-starts-multi-kiss.tooltip": "When Multi-Kisses is enabled, clicking your partner with the preferred kiss button immediately starts the full sequence and replaces the usual proximity start. Leave this disabled to keep the normal automatic behavior.",
+
+  "gmcm.option.manual-kiss-button.name": "Kiss Click Preference",
+  "gmcm.option.manual-kiss-button.tooltip": "Choose which mouse button triggers the optional manual kiss features, leaving the other button available for normal dialogue.",
+  "gmcm.option.manual-kiss-button.right": "Right Mouse Button",
+  "gmcm.option.manual-kiss-button.left": "Left Mouse Button",
+
   "gmcm.option.bump-kiss.name": "Bump Kiss",
   "gmcm.option.bump-kiss.tooltip": "You share a quick kiss when you run toward your boyfriend/girlfriend or spouse.",
 

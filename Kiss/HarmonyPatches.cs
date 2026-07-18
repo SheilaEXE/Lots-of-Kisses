@@ -27,7 +27,7 @@ namespace LotsOfKisses
                 if (ModEntry.Instance.LotsOfKissesKissPatchActive != true)
                     return;
 
-                if (ModEntry.Instance?.IsSupportedRomanticPartner(__instance.Name) != true)
+                if (ModEntry.Instance.IsSupportedRomanticPartner(__instance.Name) != true)
                     return;
 
                 if (Game1.dialogueUp || Game1.activeClickableMenu != null)
@@ -58,9 +58,8 @@ namespace LotsOfKisses
                 if (!vanillaStartedKiss)
                     return;
 
-                int newSinglePlayerKissDelay = ModEntry.Instance?.activeKissVisualDelayMs ?? 1000;
+                int newSinglePlayerKissDelay = ModEntry.Instance.activeKissVisualDelayMs;
                 __instance.movementPause = newSinglePlayerKissDelay;
-
             }
             catch (Exception ex)
             {

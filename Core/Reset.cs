@@ -29,6 +29,8 @@ namespace LotsOfKisses
             continuousKissGapTimer = 0;
             continuousKissPendingRestart = false;
             continuousKissCyclesDone = 0;
+            continuousKissSingleCycle = false;
+            continuousKissSingleCycleFinishing = false;
             publicMultiKissDialogueTriggered = false;
         }
 

@@ -8,6 +8,12 @@ namespace LotsOfKisses
         Style2 = 1
     }
 
+    public enum KissClickPreference
+    {
+        Right = 0,
+        Left = 1
+    }
+
     public class ModConfig
     {
         // Master toggle for the mod.
@@ -15,6 +21,17 @@ namespace LotsOfKisses
 
         // Enable or disable multi-kiss sequences.
         public bool MultiKissEnabled { get; set; } = true;
+
+        // When multi-kisses are disabled, replace a manually initiated vanilla kiss
+        // with one equally weighted random tier, without starting a kiss chain.
+        public bool RandomManualKissTier { get; set; } = false;
+
+        // When multi-kisses are enabled, let a successful manual vanilla kiss start
+        // the full chain immediately instead of waiting for the proximity hold.
+        public bool ManualKissStartsMultiKiss { get; set; } = false;
+
+        // Mouse button used by the two optional manual-kiss features.
+        public KissClickPreference ManualKissButtonPreference { get; set; } = KissClickPreference.Right;
 
         // Enable or disable the bump kiss when running toward a partner.
         public bool BumpKissEnabled { get; set; } = true;

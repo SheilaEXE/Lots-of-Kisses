@@ -284,9 +284,9 @@ namespace LotsOfKisses
             }
         }
 
-        private bool TryTriggerRomanticContinuousKiss(NPC npc)
+        private bool TryTriggerRomanticContinuousKiss(NPC npc, bool ignoreApproachBlock = false)
         {
-            return TryTriggerVanillaRomanticKiss(npc, playSound: true);
+            return TryTriggerVanillaRomanticKiss(npc, playSound: true, ignoreApproachBlock: ignoreApproachBlock);
         }
 
         private bool TryTriggerRomanticBumpKiss(NPC npc)
@@ -298,7 +298,7 @@ namespace LotsOfKisses
         // First tries the normal checkAction, since polyamory mods may unlock the kiss via their own patch.
         // The legacy fallback that temporarily swaps Game1.player.spouse is OFF by default,
         // because some polyamory mods react to the Married/spouse state and may try to load their own maps.
-        private bool TryTriggerVanillaRomanticKiss(NPC npc, bool playSound)
+        private bool TryTriggerVanillaRomanticKiss(NPC npc, bool playSound, bool ignoreApproachBlock = false)
         {
             lastAutoKissClickWasBlockedDialogue = false;
 
@@ -313,7 +313,7 @@ namespace LotsOfKisses
             if (IsAutoKissBlockedByOpenDialogueOrMenu())
                 return false;
 
-            if (GetApproachKissBlockTimer(npc) > 0)
+            if (!ignoreApproachBlock && GetApproachKissBlockTimer(npc) > 0)
                 return false;
 
             if (Game1.activeClickableMenu != null)
@@ -700,7 +700,11 @@ namespace LotsOfKisses
             if (Game1.activeClickableMenu != null)
                 return;
 
-            bool touching = distance <= 64f;
+            // Kiss sprites face sideways, so a bump only counts once both characters occupy
+            // the same horizontal tile row. Including alignment in the touch state also lets
+            // the kiss trigger when the player moves from a nearby row into the correct one.
+            bool horizontallyAligned = Game1.player.TilePoint.Y == npc.TilePoint.Y;
+            bool touching = distance <= 64f && horizontallyAligned;
             bool useOutsideApproachKissHold = !IsHomeOrFarmLocation();
             bool justStartedTouchingPartner = touching && !playerWasTouchingPartner;
 
@@ -785,8 +789,7 @@ namespace LotsOfKisses
                     if (!Context.IsWorldReady)
                         return;
 
-                    Game1.player.CanMove = true;
-                    Game1.player.completelyStopAnimatingOrDoingAction();
+                    ReleasePlayerAfterKissWithoutOverridingCurrentPose();
 
                     if (npc != null && npc.currentLocation == Game1.player.currentLocation)
                     {
