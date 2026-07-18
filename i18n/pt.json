@@ -15,6 +15,17 @@
   "gmcm.option.multi-kisses.name": "Multi-Beijos!",
   "gmcm.option.multi-kisses.tooltip": "Permite sequências românticas com vários beijos enquanto vocês estão próximos.",
 
+  "gmcm.option.random-manual-kiss-tier.name": "Tier Aleatório no Beijo Manual",
+  "gmcm.option.random-manual-kiss-tier.tooltip": "Quando os Multi-Beijos estiverem desativados, clicar no parceiro com o botão de beijo escolhido iniciará um dos três tiers. Mantenha os Multi-Beijos desativados ao usar esta opção para evitar conflitos.",
+
+  "gmcm.option.manual-kiss-starts-multi-kiss.name": "Beijo Manual Inicia Multi-Beijos",
+  "gmcm.option.manual-kiss-starts-multi-kiss.tooltip": "Quando os Multi-Beijos estiverem ativados, clicar no parceiro com o botão de beijo escolhido iniciará a sequência completa e substituirá o início normal por proximidade. Deixe desmarcado para manter o comportamento automático.",
+
+  "gmcm.option.manual-kiss-button.name": "Preferência do Clique de Beijo",
+  "gmcm.option.manual-kiss-button.tooltip": "Escolha qual botão do mouse ativa as opções de beijo manual, deixando o outro botão livre para abrir diálogos normalmente.",
+  "gmcm.option.manual-kiss-button.right": "Botão Direito do Mouse",
+  "gmcm.option.manual-kiss-button.left": "Botão Esquerdo do Mouse",
+
   "gmcm.option.bump-kiss.name": "Beijo ao Esbarrar",
   "gmcm.option.bump-kiss.tooltip": "Vocês trocam um beijo rápido quando você corre na direção de seu parceiro.",
   

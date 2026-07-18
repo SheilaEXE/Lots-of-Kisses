@@ -1,3 +1,4 @@
+using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -295,6 +296,12 @@ namespace LotsOfKisses
             if (this.Config != null && !this.Config.ModEnabled)
                 return;
 
+            SButton manualKissButton = Config.ManualKissButtonPreference == KissClickPreference.Left
+                ? SButton.MouseLeft
+                : SButton.MouseRight;
+            if (e.Button == manualKissButton && TryHandleManualKissClick(e))
+                return;
+
             if (!e.Button.IsActionButton())
                 return;
 
@@ -310,6 +317,126 @@ namespace LotsOfKisses
                 return;
 
             talkedToPartnerToday = true;
+        }
+
+        private bool TryHandleManualKissClick(ButtonPressedEventArgs e)
+        {
+            bool startFullMultiKiss = Config.MultiKissEnabled && Config.ManualKissStartsMultiKiss;
+            bool useOneRandomTier = !Config.MultiKissEnabled && Config.RandomManualKissTier;
+            if (!startFullMultiKiss && !useOneRandomTier)
+                return false;
+
+            if (Game1.player == null || Game1.currentLocation == null || Game1.eventUp
+                || Game1.dialogueUp || Game1.activeClickableMenu != null
+                || !Game1.player.canMove || Game1.player.IsSitting()
+                || Game1.player.ActiveObject != null)
+            {
+                return false;
+            }
+
+            Vector2 cursorPixels = e.Cursor.AbsolutePixels;
+            NPC clickedPartner = null;
+            float nearestDistance = float.MaxValue;
+
+            foreach (NPC npc in Game1.currentLocation.characters)
+            {
+                if (npc == null || !IsSupportedRomanticPartner(npc.Name))
+                    continue;
+
+                float distance = DistanceToPlayer(npc);
+                if (distance > 120f || distance >= nearestDistance)
+                    continue;
+
+                Rectangle clickArea = npc.GetBoundingBox();
+                clickArea.Inflate(24, 40);
+                if (!clickArea.Contains((int)cursorPixels.X, (int)cursorPixels.Y))
+                    continue;
+
+                clickedPartner = npc;
+                nearestDistance = distance;
+            }
+
+            // Match vanilla interaction behavior when the cursor isn't directly over the NPC:
+            // use the tile immediately in front of the player as the intended action target.
+            if (clickedPartner == null)
+            {
+                Point interactionTile = Game1.player.TilePoint;
+                switch (Game1.player.FacingDirection)
+                {
+                    case 0:
+                        interactionTile.Y--;
+                        break;
+                    case 1:
+                        interactionTile.X++;
+                        break;
+                    case 2:
+                        interactionTile.Y++;
+                        break;
+                    case 3:
+                        interactionTile.X--;
+                        break;
+                }
+
+                Rectangle interactionArea = new Rectangle(
+                    interactionTile.X * Game1.tileSize,
+                    interactionTile.Y * Game1.tileSize,
+                    Game1.tileSize,
+                    Game1.tileSize
+                );
+                interactionArea.Inflate(16, 16);
+
+                foreach (NPC npc in Game1.currentLocation.characters)
+                {
+                    if (npc == null || !IsSupportedRomanticPartner(npc.Name))
+                        continue;
+
+                    float distance = DistanceToPlayer(npc);
+                    if (distance > 120f || distance >= nearestDistance || !npc.GetBoundingBox().Intersects(interactionArea))
+                        continue;
+
+                    clickedPartner = npc;
+                    nearestDistance = distance;
+                }
+            }
+
+            if (clickedPartner == null)
+                return false;
+
+            // This press belongs to the configured kiss action. Don't let vanilla also
+            // open dialogue, give a gift, or start a second interaction on the same press.
+            Helper.Input.Suppress(e.Button);
+            talkedToPartnerToday = true;
+
+            if (continuousKissActive || continuousKissPendingRestart || kissSequenceActive)
+                return true;
+
+            if (kissPostSequenceActive)
+                ResetPostKissState();
+
+            int tier;
+            if (useOneRandomTier)
+            {
+                int manualTierRoll = random.Next(100);
+                tier = manualTierRoll < 40 ? 1 : manualTierRoll < 80 ? 2 : 3;
+            }
+            else
+            {
+                tier = RollContinuousKissTier();
+            }
+            bool started = StartContinuousKiss(clickedPartner, tier, isNewSequence: true, manualRightClick: true);
+
+            if (started && useOneRandomTier)
+            {
+                continuousKissSingleCycle = true;
+                continuousKissSingleCycleFinishing = false;
+            }
+
+            Monitor.Log(
+                $"[MANUAL KISS] {e.Button} on {clickedPartner.Name}: tier={tier}, mode={(useOneRandomTier ? "single-random" : "start-multi")}, started={started}.",
+                LogLevel.Trace
+            );
+
+            return true;
         }
     }
 }
