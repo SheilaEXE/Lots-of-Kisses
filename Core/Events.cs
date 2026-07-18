@@ -417,7 +417,7 @@ namespace LotsOfKisses
             if (useOneRandomTier)
             {
                 int manualTierRoll = random.Next(100);
-                tier = manualTierRoll < 40 ? 1 : manualTierRoll < 80 ? 2 : 3;
+                tier = manualTierRoll < 50 ? 1 : manualTierRoll < 80 ? 2 : 3;
             }
             else
             {
