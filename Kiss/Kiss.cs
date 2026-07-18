@@ -785,8 +785,7 @@ namespace LotsOfKisses
                     if (!Context.IsWorldReady)
                         return;
 
-                    Game1.player.CanMove = true;
-                    Game1.player.completelyStopAnimatingOrDoingAction();
+                    ReleasePlayerAfterKissWithoutOverridingCurrentPose();
 
                     if (npc != null && npc.currentLocation == Game1.player.currentLocation)
                     {

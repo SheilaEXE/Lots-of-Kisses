@@ -267,6 +267,23 @@ namespace LotsOfKisses
 
         // Forces the continuous kiss to end when normal end conditions aren't available.
         // This emergency path deliberately never touches the NPC's controller or schedule.
+        private void ReleasePlayerAfterKissWithoutOverridingCurrentPose()
+        {
+            if (Game1.player == null)
+                return;
+
+            Game1.freezeControls = false;
+
+            // Sitting owns its own movement and sprite state. Forcing CanMove or calling
+            // completelyStopAnimatingOrDoingAction here replaces the seated frame with the
+            // farmer's carrying/arms-up pose, and repeated cleanup calls keep it stuck there.
+            if (Game1.player.IsSitting())
+                return;
+
+            Game1.player.CanMove = true;
+            Game1.player.completelyStopAnimatingOrDoingAction();
+        }
+
         private void ForceEndContinuousKiss(NPC npc)
         {
             // Keep the original participant before ResetContinuousKissState clears the field.
@@ -275,12 +292,7 @@ namespace LotsOfKisses
 
             ScheduleBystanderRestore(activeNpc);
 
-            if (Game1.player != null)
-            {
-                Game1.freezeControls = false;
-                Game1.player.CanMove = true;
-                Game1.player.completelyStopAnimatingOrDoingAction();
-            }
+            ReleasePlayerAfterKissWithoutOverridingCurrentPose();
 
             if (activeNpc?.Sprite != null)
             {
@@ -343,12 +355,7 @@ namespace LotsOfKisses
             if (npc == null)
                 return;
 
-            if (Game1.player != null)
-            {
-                Game1.freezeControls = false;
-                Game1.player.CanMove = true;
-                Game1.player.completelyStopAnimatingOrDoingAction();
-            }
+            ReleasePlayerAfterKissWithoutOverridingCurrentPose();
 
             npc.movementPause = 0;
 
@@ -375,6 +382,12 @@ namespace LotsOfKisses
         private void UpdateContinuousKissSystem(NPC partner)
         {
             if (partner == null)
+                return;
+
+            // This update runs whenever a romantic partner is present, even when no multi-kiss
+            // exists. Check ownership before reacting to the farmer's pose; otherwise merely
+            // sitting near a partner calls ForceEndContinuousKiss every tick.
+            if (!continuousKissActive && !continuousKissPendingRestart)
                 return;
 
             // If the player sits down mid-chain (e.g. in a chair the NPC walked them next to),

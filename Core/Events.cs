@@ -279,11 +279,7 @@ namespace LotsOfKisses
         private void AbortActiveModState(bool releasePlayer)
         {
             if (releasePlayer && Game1.player != null)
-            {
-                Game1.freezeControls = false;
-                Game1.player.CanMove = true;
-                Game1.player.completelyStopAnimatingOrDoingAction();
-            }
+                ReleasePlayerAfterKissWithoutOverridingCurrentPose();
 
             NPC heldNpc = continuousKissNpc ?? kissPostSequenceNpc ?? pendingKissNpc ?? OutsideBumpPause.Npc;
             if (heldNpc != null && heldNpc.currentLocation != null)
