@@ -58,6 +58,12 @@ namespace LotsOfKisses
             if (npc == null || npc.Sprite == null || npc.currentLocation == null)
                 return;
 
+            // Recruited followers are restored by The Stardew Squad itself. Capturing an idle
+            // position here could later teleport the follower back to the kiss starting point,
+            // while restoring a Squad task animation would compete with its own task manager.
+            if (IsStardewSquadRecruited(npc))
+                return;
+
             if (preKissSpecialActionSnapshot != null && preKissSpecialActionSnapshot.Npc == npc)
                 return;
 

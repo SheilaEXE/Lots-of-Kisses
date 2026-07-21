@@ -28,6 +28,11 @@ namespace LotsOfKisses
             UpdateBystanderRestore();
             UpdatePipeTextQueues();
 
+            // Farmer-to-Farmer kisses own their own isolated state. Don't let the NPC systems
+            // start a second kiss against a nearby romantic NPC while that sequence is active.
+            if (IsPlayerSpouseKissActiveForLocalPlayer())
+                return;
+
             NPC partner = GetPartner();
             if (partner == null)
                 return;

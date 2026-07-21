@@ -32,6 +32,9 @@ namespace LotsOfKisses
             if (npc == null || npc.currentLocation != Game1.player.currentLocation)
                 return false;
 
+            if (ShouldBlockKissDuringStardewSquadTask(npc))
+                return false;
+
             if (isNewSequence)
             {
                 // publicMultiKiss should be limited to once per multi-kiss chain, not once forever.

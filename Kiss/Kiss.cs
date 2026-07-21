@@ -284,6 +284,67 @@ namespace LotsOfKisses
             }
         }
 
+        private int GetBumpKissCooldown(NPC npc)
+        {
+            if (npc == null)
+                return 0;
+
+            return bumpKissCooldownByNpc.TryGetValue(npc.Name, out int value) ? value : 0;
+        }
+
+        private void SetBumpKissCooldown(NPC npc, int value)
+        {
+            if (npc != null)
+                bumpKissCooldownByNpc[npc.Name] = value;
+        }
+
+        private void TickBumpKissCooldowns()
+        {
+            if (bumpKissCooldownByNpc.Count == 0)
+                return;
+
+            var keys = new List<string>(bumpKissCooldownByNpc.Keys);
+            foreach (string key in keys)
+            {
+                int remaining = bumpKissCooldownByNpc[key];
+                if (remaining > 1)
+                    bumpKissCooldownByNpc[key] = remaining - 1;
+                else
+                    bumpKissCooldownByNpc.Remove(key);
+            }
+        }
+
+        private bool WasBumpKissTouchingNpc(NPC npc)
+        {
+            return npc != null
+                && bumpKissTouchingByNpc.TryGetValue(npc.Name, out bool touching)
+                && touching;
+        }
+
+        private void RefreshBumpKissTouchStates()
+        {
+            if (Game1.player == null || Game1.currentLocation == null)
+                return;
+
+            var trackedNames = new List<string>(bumpKissTouchingByNpc.Keys);
+            foreach (string name in trackedNames)
+                bumpKissTouchingByNpc[name] = false;
+
+            // Track contact only for the closest romantic partner. When several partners
+            // stand together (especially Stardew Squad followers), marking every nearby NPC
+            // as already touched prevents the next partner from receiving a bump kiss until
+            // the player leaves the whole group. Changing the closest partner now creates a
+            // fresh touch immediately, while the per-NPC cooldown still prevents repeats on
+            // the partner who was just kissed.
+            NPC nearestPartner = GetNearestRomanticPartnerInCurrentLocation();
+            if (nearestPartner == null)
+                return;
+
+            bool horizontallyAligned = Game1.player.TilePoint.Y == nearestPartner.TilePoint.Y;
+            bumpKissTouchingByNpc[nearestPartner.Name] =
+                DistanceToPlayer(nearestPartner) <= 64f && horizontallyAligned;
+        }
+
         private bool TryTriggerRomanticContinuousKiss(NPC npc, bool ignoreApproachBlock = false)
         {
             return TryTriggerVanillaRomanticKiss(npc, playSound: true, ignoreApproachBlock: ignoreApproachBlock);
@@ -306,6 +367,9 @@ namespace LotsOfKisses
                 return false;
 
             if (!IsSupportedRomanticPartner(npc.Name))
+                return false;
+
+            if (ShouldBlockKissDuringStardewSquadTask(npc))
                 return false;
 
             // A queued NPC dialogue is temporarily preserved inside TryCheckActionForAutoKissWithoutDialogue.
@@ -332,8 +396,13 @@ namespace LotsOfKisses
             if (!triggered && !lastAutoKissClickWasBlockedDialogue)
                 triggered = TryStartDirectRomanticKissVisuals(npc);
 
-            if (triggered && playSound)
-                Game1.playSound("dwop");
+            if (triggered)
+            {
+                BeginStardewSquadKissHold(npc, activeKissVisualDelayMs);
+
+                if (playSound)
+                    Game1.playSound("dwop");
+            }
 
             return triggered;
         }
@@ -362,7 +431,10 @@ namespace LotsOfKisses
                 triggered = TryStartDirectRomanticKissVisuals(npc);
 
             if (triggered)
+            {
+                BeginStardewSquadKissHold(npc, activeKissVisualDelayMs);
                 Game1.playSound("dwop");
+            }
 
             return triggered;
         }
@@ -419,6 +491,12 @@ namespace LotsOfKisses
         private void RestorePartnerScheduleAfterMultiKiss(NPC partner)
         {
             if (partner == null || partner.currentLocation == null)
+                return;
+
+            // A recruited follower's movement and destination belong to The Stardew Squad.
+            // Its own cooldown resumes that state after the kiss; a vanilla schedule check here
+            // could pull the NPC away or make the Squad catch-up warp them back.
+            if (IsStardewSquadRecruited(partner))
                 return;
 
             // Do NOT clear CurrentDialogue here.
@@ -706,7 +784,7 @@ namespace LotsOfKisses
             bool horizontallyAligned = Game1.player.TilePoint.Y == npc.TilePoint.Y;
             bool touching = distance <= 64f && horizontallyAligned;
             bool useOutsideApproachKissHold = !IsHomeOrFarmLocation();
-            bool justStartedTouchingPartner = touching && !playerWasTouchingPartner;
+            bool justStartedTouchingPartner = touching && !WasBumpKissTouchingNpc(npc);
 
             // Inside the farm/house: no long lock or special hold.
             if (!useOutsideApproachKissHold)
@@ -744,8 +822,9 @@ namespace LotsOfKisses
                 isHorizontal &&
                 Game1.player.isMoving() &&
                 Game1.timeOfDay < 2400 &&
-                cooldown <= 0 &&
+                GetBumpKissCooldown(npc) <= 0 &&
                 GetApproachKissBlockTimer(npc) <= 0 &&
+                !ShouldBlockKissDuringStardewSquadTask(npc) &&
                 !kissPostSequenceActive &&
                 !kissSequenceActive &&
                 pendingKissNpc == null &&
@@ -903,6 +982,7 @@ namespace LotsOfKisses
                 }
 
                 cooldown = 100; // Brief cooldown before allowing another touch reaction, so the partner doesn't react repeatedly if the player stands still next to them.
+                SetBumpKissCooldown(npc, 100);
                 dialogueCooldown = 350;
                 didReactThisTick = true;
                 playerWasTouchingPartner = true;

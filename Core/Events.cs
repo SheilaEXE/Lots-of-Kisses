@@ -60,6 +60,8 @@ namespace LotsOfKisses
 
         private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
         {
+            InitializeStardewSquadSupport();
+
             try
             {
                 var gmcm = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
@@ -174,6 +176,7 @@ namespace LotsOfKisses
             wasDialogueOrMenuOpenLastTick = dialogueOrMenuOpenNow;
 
             TickApproachKissBlockTimers();
+            TickBumpKissCooldowns();
 
             if (OutsideBumpPause.Timer > 0)
                 OutsideBumpPause.Timer--;
@@ -219,9 +222,12 @@ namespace LotsOfKisses
             if (pendingNpcKissResetTimer > 0)
                 pendingNpcKissResetTimer--;
 
+            UpdateStardewSquadKissHold();
+
             didReactThisTick = false;
 
             UpdateKissSystems();
+            RefreshBumpKissTouchStates();
         }
 
         private void OnWarped(object sender, WarpedEventArgs e)
@@ -250,6 +256,7 @@ namespace LotsOfKisses
 
         private void ResetTransientKissContext()
         {
+            ResetStardewSquadSupportState();
             RestoreBystandersBeforeContextReset();
             InvalidateDelayedActions();
             ClearPipeTextQueues();
@@ -257,6 +264,8 @@ namespace LotsOfKisses
 
             ClearPendingPublicMultiKissShyEmote(releaseNpc: true);
             approachKissBlockTimerByNpc.Clear();
+            bumpKissCooldownByNpc.Clear();
+            bumpKissTouchingByNpc.Clear();
             approachKissDialogueLastTimeOfDay = -1;
             kissBlockAfterDialogueTimer = 0;
             wasDialogueOrMenuOpenLastTick = false;
@@ -299,6 +308,13 @@ namespace LotsOfKisses
             SButton manualKissButton = Config.ManualKissButtonPreference == KissClickPreference.Left
                 ? SButton.MouseLeft
                 : SButton.MouseRight;
+            bool controllerPlayerKissButton = Context.IsSplitScreen
+                && e.Button.IsActionButton()
+                && e.Button.TryGetController(out _);
+            if ((e.Button == manualKissButton || controllerPlayerKissButton)
+                && TryHandlePlayerSpouseKissClick(e, allowFrontTileTarget: controllerPlayerKissButton))
+                return;
+
             if (e.Button == manualKissButton && TryHandleManualKissClick(e))
                 return;
 

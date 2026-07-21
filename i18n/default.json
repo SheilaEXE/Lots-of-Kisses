@@ -30,9 +30,16 @@
   "gmcm.option.manual-kiss-button.tooltip": "Choose which mouse button triggers the optional manual kiss features, leaving the other button available for normal dialogue.",
   "gmcm.option.manual-kiss-button.right": "Right Mouse Button",
   "gmcm.option.manual-kiss-button.left": "Left Mouse Button",
+  "gmcm.section.multiplayer": "Multiplayer",
+  "gmcm.option.accept-player-spouse-kisses.name": "Accept Kisses from Player Spouse",
+  "gmcm.option.accept-player-spouse-kisses.tooltip": "Allow the player you married in multiplayer to initiate a synchronized kiss with you. Both players need Lots of Kisses installed.",
 
   "gmcm.option.bump-kiss.name": "Bump Kiss",
   "gmcm.option.bump-kiss.tooltip": "You share a quick kiss when you run toward your boyfriend/girlfriend or spouse.",
+
+  "gmcm.section.mod-compatibility": "Compatibility with Other Mods",
+  "gmcm.option.stardew-squad-task-kisses.name": "Allow Kisses During Stardew Squad Tasks",
+  "gmcm.option.stardew-squad-task-kisses.tooltip": "Lets a kiss temporarily pause a recruited romantic partner's current task. Disable this to prevent Bump Kisses and Multi-Kisses while the partner is working; following and idle partners can still be kissed.",
 
 //===============================================================================================================================================================//
 

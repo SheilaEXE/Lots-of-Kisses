@@ -1,7 +1,7 @@
 {
   "Name": "Lots of Kisses!",
   "Author": "NatrollEXE",
-  "Version": "1.0.3",
+  "Version": "1.0.4",
   "Description": "A mod that expands romantic kiss interactions with your spouse or dating partner.",
   "UniqueID": "NatrollEXE.LotsOfKisses",
   "EntryDll": "LotsOfKisses.dll",

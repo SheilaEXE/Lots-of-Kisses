@@ -79,9 +79,15 @@ namespace LotsOfKisses
             if (ModEntry.Instance?.Config?.ModEnabled != true)
                 return true;
 
+            bool npcKissPatchActive = ModEntry.Instance.LotsOfKissesKissPatchActive == true;
+            bool playerKissPatchActive = ModEntry.Instance.TryGetPlayerSpouseKissAnimationSettings(
+                out int playerKissDurationMs,
+                out bool keepPlayerMovementUnlocked
+            );
+
             // Only alter kisses initiated by this mod. Vanilla kisses and interactions started
             // by other mods must keep their original animation behavior.
-            if (ModEntry.Instance.LotsOfKissesKissPatchActive != true)
+            if (!npcKissPatchActive && !playerKissPatchActive)
                 return true;
 
             try
@@ -92,12 +98,14 @@ namespace LotsOfKisses
                     __instance.isRidingHorse() ||
                     __instance.IsSitting() ||
                     __instance.IsEmoting ||
-                    !__instance.CanMove)
+                    (!__instance.CanMove && !playerKissPatchActive))
                 {
                     return false;
                 }
 
-                int newPlayerKissDelay = ModEntry.Instance?.activeKissVisualDelayMs ?? 1000;
+                int newPlayerKissDelay = playerKissPatchActive
+                    ? playerKissDurationMs
+                    : ModEntry.Instance?.activeKissVisualDelayMs ?? 1000;
 
                 // Only lock player movement for a single, standalone kiss (bump kiss / one-off
                 // vanilla kiss). During the mod's own continuous multi-kiss, each cycle re-triggers
@@ -106,12 +114,14 @@ namespace LotsOfKisses
                 // every NPC's schedule/movement across the entire valley (not just the local
                 // bystanders this mod manages). Leaving CanMove untouched here keeps the visual
                 // kiss animation intact while letting the rest of the world keep moving normally.
-                bool isPartOfContinuousMultiKiss = ModEntry.Instance?.continuousKissActive == true;
+                bool isPartOfContinuousMultiKiss = ModEntry.Instance?.continuousKissActive == true
+                    || (playerKissPatchActive && keepPlayerMovementUnlocked);
 
                 if (!isPartOfContinuousMultiKiss)
                     __instance.CanMove = false;
 
-                ModEntry.Instance.autoKissPlayerAnimationStarted = true;
+                if (npcKissPatchActive)
+                    ModEntry.Instance.autoKissPlayerAnimationStarted = true;
                 __instance.FarmerSprite.PauseForSingleAnimation = false;
                 __instance.faceDirection(facingDirection);
 
