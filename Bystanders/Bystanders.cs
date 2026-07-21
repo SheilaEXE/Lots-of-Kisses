@@ -345,7 +345,7 @@ namespace LotsOfKisses
             KeepBystandersWatchingPlayer();
 
             // If the kiss is still going, keep bystanders watching and reset the countdown.
-            if (continuousKissActive || continuousKissPendingRestart)
+            if (continuousKissActive || continuousKissPendingRestart || IsPlayerSpouseKissActiveForLocalPlayer())
             {
                 bystanderRestore.CountdownStarted = false;
                 bystanderRestore.Timer = BystanderRestoreDelayTicks;

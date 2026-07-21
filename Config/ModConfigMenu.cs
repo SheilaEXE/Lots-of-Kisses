@@ -111,6 +111,35 @@ namespace LotsOfKisses
                 allowedValues: new[] { "Style1", "Style2" },
                 formatAllowedValue: value => T(mod, $"gmcm.option.blush-smoke-style.{value.ToLower()}", value)
             );
+
+            configMenu.AddSectionTitle(
+                mod.ModManifest,
+                () => T(mod, "gmcm.section.multiplayer", "Multiplayer")
+            );
+
+            configMenu.AddBoolOption(
+                mod: mod.ModManifest,
+                name: () => T(mod, "gmcm.option.accept-player-spouse-kisses.name", "Accept kisses from player spouse"),
+                tooltip: () => T(mod, "gmcm.option.accept-player-spouse-kisses.tooltip", "Allow the player you married in multiplayer to initiate a synchronized kiss with you. Both players need Lots of Kisses installed."),
+                getValue: () => mod.Config.AcceptPlayerSpouseKisses,
+                setValue: value => mod.Config.AcceptPlayerSpouseKisses = value
+            );
+
+            if (mod.Helper.ModRegistry.IsLoaded("ThaliaFawnheart.TheStardewSquad"))
+            {
+                configMenu.AddSectionTitle(
+                    mod.ModManifest,
+                    () => T(mod, "gmcm.section.mod-compatibility", "Compatibility with Other Mods")
+                );
+
+                configMenu.AddBoolOption(
+                    mod: mod.ModManifest,
+                    name: () => T(mod, "gmcm.option.stardew-squad-task-kisses.name", "Allow kisses during Stardew Squad tasks"),
+                    tooltip: () => T(mod, "gmcm.option.stardew-squad-task-kisses.tooltip", "Let a kiss temporarily pause a recruited romantic partner's current task. Disable this to prevent Bump Kisses and Multi-Kisses while the partner is working; following and idle partners can still be kissed."),
+                    getValue: () => mod.Config.AllowKissesDuringStardewSquadTasks,
+                    setValue: value => mod.Config.AllowKissesDuringStardewSquadTasks = value
+                );
+            }
         }
     }
 }

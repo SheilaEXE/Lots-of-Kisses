@@ -33,8 +33,15 @@ namespace LotsOfKisses
         // Mouse button used by the two optional manual-kiss features.
         public KissClickPreference ManualKissButtonPreference { get; set; } = KissClickPreference.Right;
 
+        // Let a spouse controlled by another player initiate a synchronized kiss.
+        public bool AcceptPlayerSpouseKisses { get; set; } = true;
+
         // Enable or disable the bump kiss when running toward a partner.
         public bool BumpKissEnabled { get; set; } = true;
+
+        // Let Lots of Kisses temporarily pause an active Stardew Squad task.
+        // When disabled, mod-triggered kisses wait until the recruited partner is idle/following.
+        public bool AllowKissesDuringStardewSquadTasks { get; set; } = true;
 
         // Treat all romantic NPCs as valid kiss partners, including those from other mods.
         // Exposed in GMCM and also configurable directly through config.json.

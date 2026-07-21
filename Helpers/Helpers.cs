@@ -361,7 +361,6 @@ namespace LotsOfKisses
                 pendingKissNpc,
                 continuousKissNpc,
                 kissPostSequenceNpc,
-                OutsideBumpPause.Npc,
                 approachKissHoldNpc,
                 pendingNpcKissResetNpc,
                 pendingPublicMultiKissShyNpc

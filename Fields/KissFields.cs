@@ -33,6 +33,8 @@ namespace LotsOfKisses
         internal NPC approachKissHoldNpc = null;
         private int approachKissHoldToken = 0;
         private System.Collections.Generic.Dictionary<string, int> approachKissBlockTimerByNpc = new();
+        private System.Collections.Generic.Dictionary<string, int> bumpKissCooldownByNpc = new();
+        private System.Collections.Generic.Dictionary<string, bool> bumpKissTouchingByNpc = new();
         private int approachKissDialogueLastTimeOfDay = -1;
         private string pendingKissCycleLine = null;
         internal readonly OutsideBumpPauseState OutsideBumpPause = new();

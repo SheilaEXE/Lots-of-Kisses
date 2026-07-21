@@ -51,6 +51,8 @@ namespace LotsOfKisses
 
             helper.Events.Player.Warped += OnWarped;
             helper.Events.Input.ButtonPressed += OnButtonPressed;
+
+            InitializePlayerSpouseKissSupport(helper);
         }
 
         // =====================================================================

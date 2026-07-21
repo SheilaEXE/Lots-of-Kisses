@@ -13,6 +13,7 @@ namespace LotsOfKisses
         private Texture2D blushSmokeTexture;
 
         private readonly Dictionary<string, BlushSmokeInstance> activeBlushSmokes = new();
+        private uint lastBlushSmokeUpdateTick;
 
         private const int BlushSmokeFrameWidth = 16;
         private const int BlushSmokeFrameHeight = 16;
@@ -28,7 +29,8 @@ namespace LotsOfKisses
         private static readonly int[] BlushSmokeFrameSequence = { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4 };
         private sealed class BlushSmokeInstance
         {
-            public NPC Npc;
+            public Character Character;
+            public bool IsFarmer;
             public int Row;
             public int SequenceIndex;
             public int Timer;
@@ -47,11 +49,33 @@ namespace LotsOfKisses
             if (npc == null)
                 return;
 
+            ShowBlushSmoke(npc, $"npc:{npc.Name}");
+        }
+
+        private void ShowBlushSmoke(Farmer farmer, int smokeId = 64)
+        {
+            if (farmer == null)
+                return;
+
+            // In split-screen, both local screens receive the same kiss cycle.
+            // Keep the original effect instead of restarting it from the second screen.
+            ShowBlushSmoke(farmer, $"farmer:{farmer.UniqueMultiplayerID}", restartExisting: false);
+        }
+
+        private void ShowBlushSmoke(Character character, string key, bool restartExisting = true)
+        {
+            if (character == null)
+                return;
+
+            if (!restartExisting && activeBlushSmokes.ContainsKey(key))
+                return;
+
             int row = (int)(this.Config?.BlushSmokeStyle ?? BlushSmokeStyle.Style2);
 
-            activeBlushSmokes[npc.Name] = new BlushSmokeInstance
+            activeBlushSmokes[key] = new BlushSmokeInstance
             {
-                Npc = npc,
+                Character = character,
+                IsFarmer = character is Farmer,
                 Row = row,
                 SequenceIndex = 0,
                 Timer = 0
@@ -59,6 +83,13 @@ namespace LotsOfKisses
         }
         private void OnBlushSmokeUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
+            // UpdateTicked runs once per local viewport in split-screen, but this
+            // collection is shared by the mod instance. Advance it only once so the
+            // smoke keeps the same speed as it has in a single-player/NPC kiss.
+            if (lastBlushSmokeUpdateTick == e.Ticks)
+                return;
+            lastBlushSmokeUpdateTick = e.Ticks;
+
             if (!Context.IsWorldReady)
             {
                 activeBlushSmokes.Clear();
@@ -71,7 +102,7 @@ namespace LotsOfKisses
             {
                 BlushSmokeInstance smoke = pair.Value;
 
-                if (smoke.Npc == null)
+                if (smoke.Character == null)
                 {
                     finished.Add(pair.Key);
                     continue;
@@ -100,9 +131,9 @@ namespace LotsOfKisses
 
             foreach (BlushSmokeInstance smoke in activeBlushSmokes.Values)
             {
-                NPC npc = smoke.Npc;
+                Character character = smoke.Character;
 
-                if (npc == null || npc.currentLocation != Game1.currentLocation)
+                if (character == null || character.currentLocation != Game1.currentLocation)
                     continue;
 
                 int frame = BlushSmokeFrameSequence[Math.Min(smoke.SequenceIndex, BlushSmokeFrameSequence.Length - 1)];
@@ -114,9 +145,10 @@ namespace LotsOfKisses
                     BlushSmokeFrameHeight
                 );
 
-                // Position above the head.
-                // Adjust -64f to move the effect higher or lower relative to the NPC.
-                Vector2 worldPos = npc.Position + new Vector2(32f, -64f);
+                // Farmers use a slightly different sprite origin than NPCs. Raise
+                // their blush a little so it sits above the head in multiplayer too.
+                float verticalOffset = smoke.IsFarmer ? -88f : -64f;
+                Vector2 worldPos = character.Position + new Vector2(32f, verticalOffset);
 
                 // Drifts upward slightly during the animation to look like rising smoke.
                 worldPos.Y -= frame * 2f;
@@ -126,7 +158,7 @@ namespace LotsOfKisses
                 // Origin at the bottom-center of the 16x16 frame.
                 Vector2 origin = new Vector2(8f, 16f);
 
-                float layerDepth = Math.Min(0.999f, (npc.Position.Y + 128f) / 10000f);
+                float layerDepth = Math.Min(0.999f, (character.Position.Y + 128f) / 10000f);
 
                 e.SpriteBatch.Draw(
                     blushSmokeTexture,
