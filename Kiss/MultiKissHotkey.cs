@@ -8,6 +8,11 @@ namespace LotsOfKisses
 {
     public partial class ModEntry
     {
+        private NPC hotkeyStoppedMultiKissNpc;
+        private bool hotkeyStoppedMultiKissAwaitingMoveAway;
+        private float hotkeyStoppedMultiKissInitialDistance = -1f;
+        private Vector2 hotkeyStoppedMultiKissPlayerStartPosition;
+
         private bool IsMultiKissHotkeyConfigured()
         {
             string keyText = Config?.MultiKissToggleKey?.ToString();
@@ -36,6 +41,9 @@ namespace LotsOfKisses
                 StopPlayerKissSequence(playerState, notifyOtherPlayer: true);
                 return true;
             }
+
+            if (hotkeyStoppedMultiKissAwaitingMoveAway)
+                return true;
 
             // Outdoors, a completed bump kiss deliberately keeps its NPC facing the player for
             // a few seconds. Treat pressing the hotkey during that window as an escalation into
@@ -106,25 +114,94 @@ namespace LotsOfKisses
                 return;
             }
 
+            ScheduleBystanderRestore(partner);
+            ReleasePlayerAfterKissWithoutOverridingCurrentPose();
+            ResetContinuousKissState();
+            ResetPostKissState();
+
+            kissProximityTimer = 0;
+            playerWasTouchingPartner = false;
+            continuousKissTouchHoldTimer = 0;
+            continuousKissWasTouchingPartner = false;
+            activeKissVisualDelayMs = bumpKissVisualDelayMs;
+
+            hotkeyStoppedMultiKissNpc = partner;
+            hotkeyStoppedMultiKissAwaitingMoveAway = true;
+            hotkeyStoppedMultiKissInitialDistance = DistanceToPlayer(partner);
+            hotkeyStoppedMultiKissPlayerStartPosition = Game1.player.Position;
+            partner.movementPause = Math.Max(partner.movementPause, 60);
+            partner.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
+        }
+
+        private void UpdateHotkeyStoppedMultiKiss()
+        {
+            if (!hotkeyStoppedMultiKissAwaitingMoveAway || hotkeyStoppedMultiKissNpc == null)
+                return;
+
+            NPC partner = hotkeyStoppedMultiKissNpc;
+            if (!Context.IsWorldReady || Game1.player == null
+                || partner.currentLocation == null
+                || partner.currentLocation != Game1.player.currentLocation)
+            {
+                ClearHotkeyStoppedMultiKissWait(releaseNpc: true);
+                return;
+            }
+
+            float distance = DistanceToPlayer(partner);
+            bool playerActuallyMoved = Vector2.Distance(
+                Game1.player.Position,
+                hotkeyStoppedMultiKissPlayerStartPosition
+            ) > 2f;
+            bool playerMovedAway = hotkeyStoppedMultiKissInitialDistance < 0f
+                || distance > hotkeyStoppedMultiKissInitialDistance + 2f;
+
+            if (distance <= 90f || !playerActuallyMoved || !playerMovedAway)
+            {
+                partner.movementPause = Math.Max(partner.movementPause, 60);
+                partner.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
+                return;
+            }
+
             string postLine = GetDialogueLine(
                 HasBystandersWithLineOfSight() ? "PublicKissReaction" : "kissReaction",
                 partner
             );
-            float endingDistance = DistanceToPlayer(partner);
 
-            // Use the full safety cleanup first, then restore only the lightweight post-kiss
-            // state. The public interruption stays cancelled, but the partner can still show
-            // their usual little reaction bubble once the player starts moving away.
-            ForceEndContinuousKiss(partner);
+            // Match the normal distance-based ending: stop reinforcing the hold, but don't zero
+            // movementPause or force a schedule check. A walking NPC's existing controller resumes
+            // naturally when the remaining pause expires; saved idle/special states still use the
+            // normal deferred restoration distance.
+            ClearHotkeyStoppedMultiKissWait(releaseNpc: false);
 
-            if (partner.currentLocation != Game1.currentLocation || string.IsNullOrEmpty(postLine))
+            if (string.IsNullOrEmpty(postLine))
                 return;
 
-            kissPostSequenceActive = true;
-            kissPostSequenceNpc = partner;
-            lastKissPostDistance = endingDistance;
-            kissPostLineTriggered = false;
-            kissPostLine = postLine;
+            int delayedActionToken = delayedActionContextToken;
+            DelayedAction.functionAfterDelay(() =>
+            {
+                if (!IsCurrentDelayedAction(delayedActionToken)
+                    || partner.currentLocation != Game1.player?.currentLocation
+                    || DistanceToPlayer(partner) < 72f
+                    || Game1.activeClickableMenu != null)
+                {
+                    return;
+                }
+
+                ShowTextAboveHeadWithPipeSupport(partner, postLine);
+                dialogueCooldown = 120;
+            }, 200);
+        }
+
+        private void ClearHotkeyStoppedMultiKissWait(bool releaseNpc)
+        {
+            NPC partner = hotkeyStoppedMultiKissNpc;
+            if (releaseNpc && partner != null)
+                partner.movementPause = 0;
+
+            hotkeyStoppedMultiKissNpc = null;
+            hotkeyStoppedMultiKissAwaitingMoveAway = false;
+            hotkeyStoppedMultiKissInitialDistance = -1f;
+            hotkeyStoppedMultiKissPlayerStartPosition = Vector2.Zero;
         }
     }
 }

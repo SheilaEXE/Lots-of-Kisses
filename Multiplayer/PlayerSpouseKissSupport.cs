@@ -632,8 +632,12 @@ namespace LotsOfKisses
                     return;
                 }
 
-                TriggerBystanderReactions(state.Tier, partner: null);
-                ScheduleBystanderRestore();
+                // Match NPC multi-kisses: the audience can first notice after cycle three.
+                if (state.CycleNumber >= BystanderNoticeMinimumCompletedCycles)
+                {
+                    TriggerBystanderReactions(state.Tier, partner: null);
+                    ScheduleBystanderRestore();
+                }
                 state.Tier = RollContinuousKissTier();
                 state.GapTimerTicks = PlayerMultiKissGapTicks;
                 return;

@@ -117,8 +117,7 @@ namespace LotsOfKisses
             int chance = continuousKissCyclesDone switch
             {
                 3 => 10,
-                4 => 20,
-                _ => 30
+                _ => 20
             };
 
             if (random.Next(100) >= chance)
@@ -596,8 +595,9 @@ namespace LotsOfKisses
             // original NPC snapshot queued for the final move-away restoration.
             ClearDirectRomanticKissVisual(partner, holdForNextCycle: true);
 
-            // Bystanders react based on current kiss tier.
-            TriggerBystanderReactions(continuousKissTier, partner);
+            // Let the scene build naturally before anyone in the area can notice it.
+            if (continuousKissCyclesDone >= BystanderNoticeMinimumCompletedCycles)
+                TriggerBystanderReactions(continuousKissTier, partner);
 
             if (TryTriggerPublicMultiKissDialogue(partner))
                 return;

@@ -348,7 +348,8 @@ namespace LotsOfKisses
                 kissPostSequenceNpc,
                 approachKissHoldNpc,
                 pendingNpcKissResetNpc,
-                pendingPublicMultiKissShyNpc
+                pendingPublicMultiKissShyNpc,
+                hotkeyStoppedMultiKissNpc
             };
 
             foreach (NPC npc in candidates)

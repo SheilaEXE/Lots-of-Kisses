@@ -282,6 +282,7 @@ namespace LotsOfKisses
             InvalidateDelayedActions();
             ClearPipeTextQueues();
             ResetOutsideBumpPause();
+            ClearHotkeyStoppedMultiKissWait(releaseNpc: true);
 
             ClearPendingPublicMultiKissShyEmote(releaseNpc: true);
             approachKissBlockTimerByNpc.Clear();
@@ -312,7 +313,8 @@ namespace LotsOfKisses
             if (releasePlayer && Game1.player != null)
                 ReleasePlayerAfterKissWithoutOverridingCurrentPose();
 
-            NPC heldNpc = continuousKissNpc ?? kissPostSequenceNpc ?? pendingKissNpc ?? OutsideBumpPause.Npc;
+            NPC heldNpc = continuousKissNpc ?? kissPostSequenceNpc ?? pendingKissNpc
+                ?? OutsideBumpPause.Npc ?? hotkeyStoppedMultiKissNpc;
             if (heldNpc != null && heldNpc.currentLocation != null)
                 heldNpc.movementPause = 0;
 

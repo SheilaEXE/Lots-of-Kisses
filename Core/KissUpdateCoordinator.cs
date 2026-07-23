@@ -10,6 +10,9 @@ namespace LotsOfKisses
             if (continuousKissActive && continuousKissNpc != null)
                 continuousKissNpc.movementPause = System.Math.Max(continuousKissNpc.movementPause, 60);
 
+            if (hotkeyStoppedMultiKissAwaitingMoveAway && hotkeyStoppedMultiKissNpc != null)
+                hotkeyStoppedMultiKissNpc.movementPause = System.Math.Max(hotkeyStoppedMultiKissNpc.movementPause, 60);
+
             NPC partner = GetPartner();
             if (partner != null && (kissSequenceActive || kissPostSequenceActive))
                 partner.movementPause = System.Math.Max(partner.movementPause, 60);
@@ -27,6 +30,7 @@ namespace LotsOfKisses
             UpdateDeferredNpcSpecialActionRestore();
             UpdateBystanderRestore();
             UpdatePipeTextQueues();
+            UpdateHotkeyStoppedMultiKiss();
 
             // Farmer-to-Farmer kisses own their own isolated state. Don't let the NPC systems
             // start a second kiss against a nearby romantic NPC while that sequence is active.
