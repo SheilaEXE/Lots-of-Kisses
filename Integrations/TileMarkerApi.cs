@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using StardewValley;
 
 namespace LotsOfKisses
 {
@@ -14,6 +15,24 @@ namespace LotsOfKisses
             string ownerModId,
             string category,
             string locationName
+        );
+
+        bool IsTileMarked(
+            string ownerModId,
+            string category,
+            GameLocation location,
+            int x,
+            int y
+        );
+    }
+
+    public interface ISharedTileMarkerApi : ITileMarkerApi
+    {
+        void RegisterCategoryWithSharedGroup(
+            string ownerModId,
+            string category,
+            string displayName,
+            string sharedGroup
         );
     }
 }

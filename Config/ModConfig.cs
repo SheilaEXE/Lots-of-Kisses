@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using StardewModdingAPI.Utilities;
 
 namespace LotsOfKisses
 {
@@ -22,8 +23,12 @@ namespace LotsOfKisses
         // Enable or disable multi-kiss sequences.
         public bool MultiKissEnabled { get; set; } = true;
 
-        // When multi-kisses are disabled, replace a manually initiated vanilla kiss
-        // with one equally weighted random tier, without starting a kiss chain.
+        // Optional start/stop control for multi-kisses. When bound, the hotkey becomes
+        // the exclusive way to start the chain, leaving proximity and mouse clicks free.
+        public KeybindList MultiKissToggleKey { get; set; } = KeybindList.Parse("None");
+
+        // Replace a manually initiated vanilla kiss with one random tier, without starting
+        // a chain. Also available while multi-kisses are controlled exclusively by hotkey.
         public bool RandomManualKissTier { get; set; } = false;
 
         // When multi-kisses are enabled, let a successful manual vanilla kiss start

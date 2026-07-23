@@ -106,6 +106,11 @@ Blue tiles are already marked, green is an add preview, and red is a remove prev
 
 Tile Marker is optional. If it isn't installed, Lots of Kisses continues working normally with the manual configuration below.
 
+Tile Marker 1.1.0+ can also merge this category with other compatible vision categories, such as
+Outfit Reactions. Enable **Merge compatible categories** in Tile Marker's GMCM to make both mods
+read the union of their selections. Each category remains stored separately, so disabling the
+option restores their individual markings without deleting anything.
+
 ### Manual config.json setup
 
 1. Launch the game with Lots of Kisses installed at least once so SMAPI creates `config.json`.

@@ -60,12 +60,13 @@ namespace LotsOfKisses
             PlayerKissMode mode = PlayerKissMode.Simple;
             int tier = 1;
 
-            if (Config.MultiKissEnabled && Config.ManualKissStartsMultiKiss)
+            if (Config.MultiKissEnabled && Config.ManualKissStartsMultiKiss && !IsMultiKissHotkeyConfigured())
             {
                 mode = PlayerKissMode.Multi;
                 tier = RollContinuousKissTier();
             }
-            else if (!Config.MultiKissEnabled && Config.RandomManualKissTier)
+            else if (Config.RandomManualKissTier
+                && (!Config.MultiKissEnabled || IsMultiKissHotkeyConfigured()))
             {
                 mode = PlayerKissMode.SingleTier;
                 tier = RollManualPlayerKissTier();
@@ -557,7 +558,8 @@ namespace LotsOfKisses
                 return;
             }
 
-            if (!Config.MultiKissEnabled || Config.ManualKissStartsMultiKiss || !touching)
+            if (!Config.MultiKissEnabled || Config.ManualKissStartsMultiKiss
+                || IsMultiKissHotkeyConfigured() || !touching)
             {
                 state.AutomaticMultiKissHoldTicks = 0;
                 return;

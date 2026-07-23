@@ -77,12 +77,33 @@ namespace LotsOfKisses
 
             try
             {
-                tileMarkerApi = Helper.ModRegistry.GetApi<ITileMarkerApi>(TileMarkerModId);
-                tileMarkerApi?.RegisterCategory(
-                    ModManifest.UniqueID,
-                    TileMarkerVisionCategory,
-                    Helper.Translation.Get("tile-marker.vision-ignored.name").ToString()
-                );
+                string displayName = Helper.Translation.Get("tile-marker.vision-ignored.name").ToString();
+                try
+                {
+                    ISharedTileMarkerApi sharedApi = Helper.ModRegistry.GetApi<ISharedTileMarkerApi>(TileMarkerModId);
+                    if (sharedApi != null)
+                    {
+                        sharedApi.RegisterCategoryWithSharedGroup(
+                            ModManifest.UniqueID,
+                            TileMarkerVisionCategory,
+                            displayName,
+                            TileMarkerSharedVisionGroup
+                        );
+                        tileMarkerApi = sharedApi;
+                    }
+                    else
+                    {
+                        tileMarkerApi = Helper.ModRegistry.GetApi<ITileMarkerApi>(TileMarkerModId);
+                        tileMarkerApi?.RegisterCategory(ModManifest.UniqueID, TileMarkerVisionCategory, displayName);
+                    }
+                }
+                catch
+                {
+                    // Tile Marker 1.0.x has no shared-group method, but its original individual
+                    // category remains fully usable until the player updates the framework.
+                    tileMarkerApi = Helper.ModRegistry.GetApi<ITileMarkerApi>(TileMarkerModId);
+                    tileMarkerApi?.RegisterCategory(ModManifest.UniqueID, TileMarkerVisionCategory, displayName);
+                }
             }
             catch (System.Exception ex)
             {
@@ -305,6 +326,9 @@ namespace LotsOfKisses
             if (this.Config != null && !this.Config.ModEnabled)
                 return;
 
+            if (TryHandleMultiKissHotkey(e))
+                return;
+
             SButton manualKissButton = Config.ManualKissButtonPreference == KissClickPreference.Left
                 ? SButton.MouseLeft
                 : SButton.MouseRight;
@@ -337,8 +361,11 @@ namespace LotsOfKisses
 
         private bool TryHandleManualKissClick(ButtonPressedEventArgs e)
         {
-            bool startFullMultiKiss = Config.MultiKissEnabled && Config.ManualKissStartsMultiKiss;
-            bool useOneRandomTier = !Config.MultiKissEnabled && Config.RandomManualKissTier;
+            bool startFullMultiKiss = Config.MultiKissEnabled
+                && Config.ManualKissStartsMultiKiss
+                && !IsMultiKissHotkeyConfigured();
+            bool useOneRandomTier = Config.RandomManualKissTier
+                && (!Config.MultiKissEnabled || IsMultiKissHotkeyConfigured());
             if (!startFullMultiKiss && !useOneRandomTier)
                 return false;
 
