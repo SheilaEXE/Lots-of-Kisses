@@ -9,6 +9,10 @@ namespace LotsOfKisses
 {
     public partial class ModEntry
     {
+        // Give a multi-kiss time to become noticeable naturally. The first audience scan
+        // happens only after the third kiss cycle has fully completed.
+        private const int BystanderNoticeMinimumCompletedCycles = 3;
+
         // ── Constants ────────────────────────────────────────────────────────
 
         /// <summary>Chance (0–1) per bystander of noticing the kiss, per tier.</summary>

@@ -50,6 +50,9 @@ namespace LotsOfKisses
             if (OutsideBumpPause.IsActive && OutsideBumpPause.Npc == npc)
                 return true;
 
+            if (hotkeyStoppedMultiKissAwaitingMoveAway && hotkeyStoppedMultiKissNpc == npc)
+                return true;
+
             return false;
         }
 
