@@ -50,6 +50,14 @@ namespace LotsOfKisses
                 setValue: value => mod.Config.MultiKissEnabled = value
             );
 
+            configMenu.AddKeybindList(
+                mod: mod.ModManifest,
+                name: () => T(mod, "gmcm.option.multi-kiss-toggle-key.name", "Multi-Kiss start/stop key"),
+                tooltip: () => T(mod, "gmcm.option.multi-kiss-toggle-key.tooltip", "Optional: choose a key to start Multi-Kisses near a romantic partner and press it again to stop. When a key is assigned, automatic proximity and click starts are disabled. Set it to None to keep the normal behavior."),
+                getValue: () => mod.Config.MultiKissToggleKey,
+                setValue: value => mod.Config.MultiKissToggleKey = value
+            );
+
             configMenu.AddBoolOption(
                 mod: mod.ModManifest,
                 name: () => T(mod, "gmcm.option.manual-kiss-starts-multi-kiss.name", "Manual kiss starts Multi-Kisses"),
@@ -66,7 +74,7 @@ namespace LotsOfKisses
             configMenu.AddBoolOption(
                 mod: mod.ModManifest,
                 name: () => T(mod, "gmcm.option.random-manual-kiss-tier.name", "Random tier for manual kisses"),
-                tooltip: () => T(mod, "gmcm.option.random-manual-kiss-tier.tooltip", "When Multi-Kisses is disabled, clicking your partner with the preferred kiss button starts one random tier. Keep Multi-Kisses disabled while using this option."),
+                tooltip: () => T(mod, "gmcm.option.random-manual-kiss-tier.tooltip", "Clicking your partner with the preferred kiss button starts one random tier without continuing into a chain. Use it with Multi-Kisses disabled, or keep Multi-Kisses enabled and assign a start/stop key to control the full sequence separately."),
                 getValue: () => mod.Config.RandomManualKissTier,
                 setValue: value =>
                 {

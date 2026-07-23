@@ -213,28 +213,13 @@ namespace LotsOfKisses
 
             try
             {
-                IReadOnlyList<string> markedRanges = tileMarkerApi.GetMarkedTileRanges(
+                return tileMarkerApi.IsTileMarked(
                     ModManifest.UniqueID,
                     TileMarkerVisionCategory,
-                    location.NameOrUniqueName
+                    location,
+                    tileX,
+                    tileY
                 );
-
-                if (IsTileInsideAnyConfiguredVisionRange(markedRanges, tileX, tileY))
-                    return true;
-
-                // Tile Marker saves the unique name used by the active map instance. The base-name
-                // fallback also supports older/shared entries intended for every instance.
-                if (!string.Equals(location.NameOrUniqueName, location.Name, StringComparison.Ordinal))
-                {
-                    markedRanges = tileMarkerApi.GetMarkedTileRanges(
-                        ModManifest.UniqueID,
-                        TileMarkerVisionCategory,
-                        location.Name
-                    );
-
-                    if (IsTileInsideAnyConfiguredVisionRange(markedRanges, tileX, tileY))
-                        return true;
-                }
             }
             catch (Exception ex)
             {
@@ -440,6 +425,7 @@ namespace LotsOfKisses
         internal const string PublicMultiKissInterruptionModDataKey = "NatrollEXE.LotsOfKisses/PublicMultiKissInterruption";
         private const string TileMarkerModId = "NatrollEXE.TileMarker";
         private const string TileMarkerVisionCategory = "VisionIgnored";
+        private const string TileMarkerSharedVisionGroup = "NatrollEXE.SharedVisionIgnored";
 
     }
 }

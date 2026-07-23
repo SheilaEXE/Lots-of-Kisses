@@ -14,9 +14,11 @@
   
   "gmcm.option.multi-kisses.name": "Multi-Beijos!",
   "gmcm.option.multi-kisses.tooltip": "Permite sequências românticas com vários beijos enquanto vocês estão próximos.",
+  "gmcm.option.multi-kiss-toggle-key.name": "Tecla para Iniciar/Encerrar Multi-Beijos",
+  "gmcm.option.multi-kiss-toggle-key.tooltip": "Opcional: escolha uma tecla para iniciar os Multi-Beijos perto de um parceiro romântico e pressione-a novamente para encerrar. Ao definir uma tecla, o início automático por proximidade e por clique é desativado. Selecione None para manter o comportamento normal.",
 
   "gmcm.option.random-manual-kiss-tier.name": "Tier Aleatório no Beijo Manual",
-  "gmcm.option.random-manual-kiss-tier.tooltip": "Quando os Multi-Beijos estiverem desativados, clicar no parceiro com o botão de beijo escolhido iniciará um dos três tiers. Mantenha os Multi-Beijos desativados ao usar esta opção para evitar conflitos.",
+  "gmcm.option.random-manual-kiss-tier.tooltip": "Clicar no parceiro com o botão de beijo escolhido inicia apenas um dos três tiers, sem continuar em ciclos. Use com os Multi-Beijos desativados ou mantenha-os ativados e configure uma tecla para controlar a sequência completa separadamente.",
 
   "gmcm.option.manual-kiss-starts-multi-kiss.name": "Beijo Manual Inicia Multi-Beijos",
   "gmcm.option.manual-kiss-starts-multi-kiss.tooltip": "Quando os Multi-Beijos estiverem ativados, clicar no parceiro com o botão de beijo escolhido iniciará a sequência completa e substituirá o início normal por proximidade. Deixe desmarcado para manter o comportamento automático.",

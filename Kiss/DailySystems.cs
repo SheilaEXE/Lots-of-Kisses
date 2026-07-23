@@ -26,7 +26,8 @@ namespace LotsOfKisses
                 Game1.player.canMove &&
                 !Game1.player.IsSitting() && // Don't let the player be pulled into a kiss chain while seated (e.g. chair/bench) — they can't act or move away normally while sitting.
                 this.Config.MultiKissEnabled &&
-                !this.Config.ManualKissStartsMultiKiss)
+                !this.Config.ManualKissStartsMultiKiss &&
+                !IsMultiKissHotkeyConfigured())
             {
                 float touchDistance = DistanceToPlayer(partner);
                 bool touchingPartnerNow = touchDistance <= 64f;
