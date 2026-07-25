@@ -21,37 +21,37 @@ namespace LotsOfKisses
 
             if (partner == null || partner != OutsideBumpPause.Npc)
             {
-                ResetOutsideBumpPause();
+                ResetOutsideBumpPause("active romantic partner changed");
                 return;
             }
 
             if (!Context.IsWorldReady || Game1.player == null)
             {
-                ResetOutsideBumpPause();
+                ResetOutsideBumpPause("world or player became unavailable");
                 return;
             }
 
             if (partner.currentLocation != Game1.player.currentLocation)
             {
-                ResetOutsideBumpPause();
+                ResetOutsideBumpPause("partner changed location");
                 return;
             }
 
             if (IsHomeOrFarmLocation())
             {
-                ResetOutsideBumpPause();
+                ResetOutsideBumpPause("entered home or farm location");
                 return;
             }
 
             if (continuousKissActive || continuousKissPendingRestart)
             {
-                ResetOutsideBumpPause();
+                ResetOutsideBumpPause("escalated into Multi-Kiss");
                 return;
             }
 
             if (OutsideBumpPause.Timer <= 0)
             {
-                ResetOutsideBumpPause();
+                ResetOutsideBumpPause("pause timer expired");
                 return;
             }
 
@@ -59,7 +59,7 @@ namespace LotsOfKisses
 
             if (distance >= 600f) // Far enough to assume the player moved away or the NPC warped — cancel the pause to avoid locking the NPC unnecessarily.
             {
-                ResetOutsideBumpPause();
+                ResetOutsideBumpPause($"player moved away ({distance:0}/600)");
                 return;
             }
 
@@ -71,8 +71,11 @@ namespace LotsOfKisses
         }
 
         // activates the outdoor pause after a bump kiss to prevent NPC teleport or walk-away before the kiss can escalate
-        private void ResetOutsideBumpPause()
+        private void ResetOutsideBumpPause(string reason = "cleared")
         {
+            if (OutsideBumpPause.IsActive)
+                DebugLog("BUMP", () => $"Released outside bump pause ({reason}): token={OutsideBumpPause.Token}, {DescribeNpcDebugState(OutsideBumpPause.Npc)}.");
+
             OutsideBumpPause.IsActive = false;
             OutsideBumpPause.Npc = null;
             OutsideBumpPause.Timer = 0;

@@ -250,12 +250,24 @@ namespace LotsOfKisses
         private void TryRestartNpcMiddleAnimation(NPC npc, string behaviorName)
         {
             if (npc?.currentLocation == null || npc.Sprite == null)
+            {
+                DebugLog("FISHING", $"Middle-animation restart skipped for {npc?.Name ?? "null"}: NPC, location, or sprite unavailable.");
                 return;
+            }
 
             try
             {
+                DebugLog("FISHING", () => $"Restarting middle animation '{behaviorName ?? "null"}': {DescribeNpcDebugState(npc)}.");
                 TrySetPrivateField(npc, "_startedEndOfRouteBehavior", behaviorName);
-                GetCachedMethod(npc.GetType(), "doMiddleAnimation", BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(npc, new object[] { null });
+                MethodInfo method = GetCachedMethod(npc.GetType(), "doMiddleAnimation", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (method == null)
+                {
+                    DebugLog("FISHING", $"Could not find doMiddleAnimation for {npc.Name}; restart was not applied.");
+                    return;
+                }
+
+                method.Invoke(npc, new object[] { null });
+                DebugLog("FISHING", () => $"Middle animation restart completed: {DescribeNpcDebugState(npc)}.");
             }
             catch (Exception ex)
             {

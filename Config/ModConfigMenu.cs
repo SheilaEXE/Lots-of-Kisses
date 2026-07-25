@@ -148,6 +148,27 @@ namespace LotsOfKisses
                     setValue: value => mod.Config.AllowKissesDuringStardewSquadTasks = value
                 );
             }
+
+            configMenu.AddSectionTitle(
+                mod.ModManifest,
+                () => T(mod, "gmcm.section.diagnostics", "Diagnostics")
+            );
+
+            configMenu.AddBoolOption(
+                mod: mod.ModManifest,
+                name: () => T(mod, "gmcm.option.enable-debug-logging.name", "Enable debug logging"),
+                tooltip: () => T(mod, "gmcm.option.enable-debug-logging.tooltip", "Records detailed state transitions for troubleshooting. Leave disabled during normal play and enable it only while reproducing a problem."),
+                getValue: () => mod.Config.EnableDebugLogging,
+                setValue: value =>
+                {
+                    mod.Config.EnableDebugLogging = value;
+                    if (value)
+                    {
+                        mod.DebugLog("DIAGNOSTICS", "Debug logging enabled. Reproduce the problem, then share the SMAPI log.");
+                        mod.LogDebugSessionHeader("enabled in GMCM");
+                    }
+                }
+            );
         }
     }
 }

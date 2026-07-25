@@ -55,6 +55,9 @@ namespace LotsOfKisses
         // Which blush smoke animation style to use (row 0 = Style1, row 1 = Style2).
         public BlushSmokeStyle BlushSmokeStyle { get; set; } = BlushSmokeStyle.Style2;
 
+        // Opt-in diagnostic logging for troubleshooting state capture/restoration.
+        public bool EnableDebugLogging { get; set; } = false;
+
         // Per-location tile coordinates that should not block NPC line of sight for kiss reactions.
         // Each axis accepts one coordinate or an inclusive range.
         // Example: { "SeedShop": [ "6,12", "1-8,15-18" ] }

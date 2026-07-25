@@ -51,6 +51,8 @@ namespace LotsOfKisses
         private bool passiveLookDialogueWasOpenLastTick = false;
         private Point passiveLookRestoreTile = Point.Zero;
         private string passiveLookRestoreLocationName = "";
+        private int passiveLookDebugSnapshotId = 0;
+        private bool passiveLookRestoreLogged = false;
         private bool wasGameWindowActiveLastTick = true;
         // Disabling the mod needs one cleanup pass, not a cleanup on every update tick. Repeating
         // completelyStopAnimatingOrDoingAction each tick freezes the player's walking sprite.

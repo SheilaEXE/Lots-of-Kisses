@@ -150,9 +150,15 @@ namespace LotsOfKisses
             passiveLookRestoreLocationName = npc.currentLocation.NameOrUniqueName;
 
             passiveLookRestoreTimer = 900;
+            passiveLookDebugSnapshotId = GetNextDebugSnapshotId();
+            passiveLookRestoreLogged = false;
+            DebugLog("PASSIVE", $"Captured passive-look snapshot #{passiveLookDebugSnapshotId}: npc={npc.Name}, location={passiveLookRestoreLocationName}, tile={passiveLookRestoreTile.X},{passiveLookRestoreTile.Y}, facing={passiveLookRestoreFacing}, frame={passiveLookRestoreFrame}.");
         }
-        private void ClearPassiveLookOriginalPose()
+        private void ClearPassiveLookOriginalPose(string reason = "cleared")
         {
+            if (passiveLookRestoreActive)
+                DebugLog("PASSIVE", $"Discarded passive-look snapshot #{passiveLookDebugSnapshotId} ({reason}): npc={passiveLookRestoreNpcName}, location={passiveLookRestoreLocationName}, tile={passiveLookRestoreTile.X},{passiveLookRestoreTile.Y}, facing={passiveLookRestoreFacing}, frame={passiveLookRestoreFrame}.");
+
             passiveLookRestoreActive = false;
             passiveLookRestoreNpcName = "";
             passiveLookRestoreFacing = -1;
@@ -160,6 +166,8 @@ namespace LotsOfKisses
             passiveLookRestoreTimer = 0;
             passiveLookRestoreTile = Point.Zero;
             passiveLookRestoreLocationName = "";
+            passiveLookDebugSnapshotId = 0;
+            passiveLookRestoreLogged = false;
         }
 
         private void RestorePassiveLookOriginalPose(NPC npc)
@@ -177,7 +185,7 @@ namespace LotsOfKisses
             // If the NPC started walking, the saved pose is no longer valid.
             if (npc.controller != null || npc.isMoving())
             {
-                ClearPassiveLookOriginalPose();
+                ClearPassiveLookOriginalPose("NPC resumed movement or gained a controller");
                 return;
             }
 
@@ -197,6 +205,12 @@ namespace LotsOfKisses
                 npc.Sprite.CurrentFrame = passiveLookRestoreFrame;
 
             npc.Sprite.UpdateSourceRect();
+
+            if (!passiveLookRestoreLogged)
+            {
+                passiveLookRestoreLogged = true;
+                DebugLog("PASSIVE", () => $"Restored passive-look snapshot #{passiveLookDebugSnapshotId} after player moved away: {DescribeNpcDebugState(npc)}.");
+            }
 
             // Do NOT clear here.
             // The original pose stays saved until the NPC moves or changes state.
@@ -222,7 +236,7 @@ namespace LotsOfKisses
 
             if (npc == null || npc.Name != passiveLookRestoreNpcName)
             {
-                ClearPassiveLookOriginalPose();
+                ClearPassiveLookOriginalPose("active romantic NPC changed");
                 return;
             }
 
@@ -256,7 +270,7 @@ namespace LotsOfKisses
 
             if (isActivelyMovingOrControlled)
             {
-                ClearPassiveLookOriginalPose();
+                ClearPassiveLookOriginalPose("NPC resumed movement or gained a controller");
                 return;
             }
 
@@ -267,7 +281,7 @@ namespace LotsOfKisses
 
             if (locationOrTileChanged)
             {
-                ClearPassiveLookOriginalPose();
+                ClearPassiveLookOriginalPose("NPC changed location or tile");
                 return;
             }
 

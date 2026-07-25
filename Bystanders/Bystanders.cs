@@ -174,6 +174,7 @@ namespace LotsOfKisses
                 // hold idea as the partner's outside bump-kiss pause.
                 var snapshot = new BystanderSnapshot
                 {
+                    DebugId         = GetNextDebugSnapshotId(),
                     Npc              = npc,
                     Location         = npc.currentLocation,
                     Position         = npc.Position,
@@ -197,6 +198,20 @@ namespace LotsOfKisses
                 npc.modData[BystanderWatchingModDataKey] = "1";
 
                 HoldBystanderWatching(snapshot);
+
+                string behavior = snapshot.SavedStartedEndOfRouteBehavior;
+                string classification = snapshot.WasPausedByMod
+                    ? "route"
+                    : !string.IsNullOrEmpty(behavior)
+                        ? "fishing-special-action"
+                        : snapshot.CurrentAnimation?.Count > 0
+                            ? "special-animation"
+                            : "static-pose";
+                DebugLog("BYSTANDER", () =>
+                    $"Captured bystander snapshot #{snapshot.DebugId} ({classification}, distance={distance:0}, forced={forceReact}, " +
+                    $"savedPosition={snapshot.Position}, savedFacing={snapshot.FacingDirection}, savedFrame={snapshot.CurrentFrame}, " +
+                    $"savedAnimationFrames={snapshot.CurrentAnimation?.Count ?? 0}, endBehavior={behavior ?? "none"}): {DescribeNpcDebugState(npc)}."
+                );
 
                 // Roll the emote now, but don't play it yet — faceGeneralDirection/faceDirection take
                 // a few ticks to visually finish the turn. Stash it on the snapshot and let
@@ -269,6 +284,22 @@ namespace LotsOfKisses
         }
 
         /// <summary>
+        /// Returns whether at least one crowd-reaction speech bubble is still inside its
+        /// guaranteed three-second display window. This is intentionally based on the mod's
+        /// real-tick lifetime rather than the game's pause-sensitive textAboveHead timer.
+        /// </summary>
+        private bool HasActiveCrowdReactionSpeechBubble()
+        {
+            foreach (BystanderSnapshot snapshot in activeBystanderSnapshots)
+            {
+                if (snapshot?.Npc != null && snapshot.CrowdReactionBubbleCloseTicks > 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Sets the NPC's speech bubble opacity directly (0 = invisible, 1 = fully visible),
         /// using the same textAboveHeadAlpha field confirmed from the game's compiled metadata
         /// that ForceCloseSpeechBubble zeroes out at the end of the fade.
@@ -312,11 +343,15 @@ namespace LotsOfKisses
             if (activeBystanderSnapshots.Count == 0)
                 return;
 
+            bool wasAlreadyPending = bystanderRestore.IsPending;
+
             bystanderRestore.IsPending = true;
             bystanderRestore.CountdownStarted = false;
             bystanderRestore.Timer = BystanderRestoreDelayTicks;
             bystanderRestore.SafetyTimer = BystanderRestoreSafetyTicks;
             bystanderRestore.Partner = partner;
+            if (!wasAlreadyPending)
+                DebugLog("BYSTANDER", $"Scheduled restore for {activeBystanderSnapshots.Count} bystander snapshot(s); partner={partner?.Name ?? "none"}, delay={BystanderRestoreDelayTicks}, safety={BystanderRestoreSafetyTicks} ticks.");
         }
 
         /// <summary>
@@ -342,6 +377,7 @@ namespace LotsOfKisses
                 bystanderRestore.SafetyTimer--;
             else
             {
+                DebugLog("BYSTANDER", $"Safety timeout reached; forcing restore of {activeBystanderSnapshots.Count} bystander snapshot(s).");
                 RestoreAllBystanders();
                 return;
             }
@@ -382,6 +418,7 @@ namespace LotsOfKisses
             {
                 bystanderRestore.CountdownStarted = true;
                 bystanderRestore.Timer = BystanderRestoreDelayTicks;
+                DebugLog("BYSTANDER", $"Restore countdown started for {activeBystanderSnapshots.Count} bystander snapshot(s).");
                 return;
             }
 
@@ -610,6 +647,7 @@ namespace LotsOfKisses
 
         private void RestoreAllBystanders()
         {
+            DebugLog("BYSTANDER", $"Restoring {activeBystanderSnapshots.Count} bystander snapshot(s).");
             var routeSnapshots = new List<BystanderSnapshot>();
             int delayedActionToken = delayedActionContextToken;
 
@@ -622,7 +660,10 @@ namespace LotsOfKisses
                 snapshot.PendingEmote = null;
 
                 if (npc == null || npc.currentLocation == null)
+                {
+                    DebugLog("BYSTANDER", $"Snapshot #{snapshot.DebugId} skipped during restore because its NPC or location is unavailable.");
                     continue;
+                }
 
                 // Release the cross-mod watching flag now that this bystander is going back to normal.
                 npc.modData.Remove(BystanderWatchingModDataKey);
@@ -633,6 +674,7 @@ namespace LotsOfKisses
 
                 if (wasRouteNpc)
                 {
+                    DebugLog("BYSTANDER", () => $"Restoring route snapshot #{snapshot.DebugId} with pause-only release: {DescribeNpcDebugState(npc)}.");
                     ReleaseRouteBystanderPauseOnly(snapshot);
                     routeSnapshots.Add(snapshot);
                     continue;
@@ -683,11 +725,15 @@ namespace LotsOfKisses
                     string behaviorName = snapshot.SavedStartedEndOfRouteBehavior;
                     snapshot.SavedStartedEndOfRouteBehavior = null;
                     NPC npcForDelay = npc;
+                    DebugLog("FISHING", $"Scheduled middle-animation restart for snapshot #{snapshot.DebugId}, NPC={npc.Name}, behavior={behaviorName}, delay=150 ms, token={delayedActionToken}.");
 
                     DelayedAction.functionAfterDelay(() =>
                     {
                         if (!IsCurrentDelayedAction(delayedActionToken) || npcForDelay?.currentLocation == null || npcForDelay.Sprite == null)
+                        {
+                            DebugLog("DELAYED", $"Skipped stale/unavailable fishing restart for snapshot #{snapshot.DebugId}, token={delayedActionToken}.");
                             return;
+                        }
 
                         TryRestartNpcMiddleAnimation(npcForDelay, behaviorName);
                     }, 150);
@@ -709,6 +755,7 @@ namespace LotsOfKisses
 
                 npc.Sprite.CurrentFrame = snapshot.CurrentFrame;
                 npc.Sprite.UpdateSourceRect();
+                DebugLog("BYSTANDER", () => $"Restored static/special snapshot #{snapshot.DebugId}: {DescribeNpcDebugState(npc)}.");
             }
 
             // Tiny safety pass: only removes any refreshed pause that might remain from an emote/animation tick.
@@ -718,10 +765,14 @@ namespace LotsOfKisses
                 DelayedAction.functionAfterDelay(() =>
                 {
                     if (!IsCurrentDelayedAction(delayedActionToken))
+                    {
+                        DebugLog("DELAYED", $"Skipped stale bystander route safety release for token {delayedActionToken}.");
                         return;
+                    }
 
                     foreach (var snapshot in routeSnapshots)
                         ReleaseRouteBystanderPauseOnly(snapshot);
+                    DebugLog("BYSTANDER", $"Completed delayed safety release for {routeSnapshots.Count} route snapshot(s).");
                 }, 250);
             }
 
@@ -795,11 +846,15 @@ namespace LotsOfKisses
                 string behaviorName = snapshot.SavedStartedEndOfRouteBehavior;
                 snapshot.SavedStartedEndOfRouteBehavior = null;
                 int delayedActionToken = delayedActionContextToken;
+                DebugLog("FISHING", $"Scheduled route middle-animation restart for snapshot #{snapshot.DebugId}, NPC={npc.Name}, behavior={behaviorName}, delay=150 ms, token={delayedActionToken}.");
 
                 DelayedAction.functionAfterDelay(() =>
                 {
                     if (!IsCurrentDelayedAction(delayedActionToken) || npc?.currentLocation == null || npc.Sprite == null)
+                    {
+                        DebugLog("DELAYED", $"Skipped stale/unavailable route fishing restart for snapshot #{snapshot.DebugId}, token={delayedActionToken}.");
                         return;
+                    }
 
                     TryRestartNpcMiddleAnimation(npc, behaviorName);
                 }, 150);

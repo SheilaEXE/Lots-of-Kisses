@@ -52,6 +52,12 @@ namespace LotsOfKisses
             helper.Events.Player.Warped += OnWarped;
             helper.Events.Input.ButtonPressed += OnButtonPressed;
 
+            helper.ConsoleCommands.Add(
+                "lok_debug_state",
+                "Print the current Lots of Kisses diagnostic state. Enable debug logging in GMCM first.",
+                OnDebugStateCommand
+            );
+
             InitializePlayerSpouseKissSupport(helper);
         }
 
@@ -66,8 +72,10 @@ namespace LotsOfKisses
 
             try
             {
+                DebugLog("SCHEDULE", () => $"Requesting vanilla checkSchedule at {Game1.timeOfDay}: {DescribeNpcDebugState(partner)}.");
                 allowForcedScheduleCheck = true;
                 partner.checkSchedule(Game1.timeOfDay);
+                DebugLog("SCHEDULE", () => $"Vanilla checkSchedule completed: {DescribeNpcDebugState(partner)}.");
             }
             finally
             {
