@@ -32,6 +32,9 @@ namespace LotsOfKisses
             continuousKissSingleCycle = false;
             continuousKissSingleCycleFinishing = false;
             publicMultiKissDialogueTriggered = false;
+            pendingPublicMultiKissDialogue = false;
+            pendingPublicMultiKissDialogueNpc = null;
+            pendingPublicMultiKissDialogueLine = null;
         }
 
         private void ResetPostKissState()

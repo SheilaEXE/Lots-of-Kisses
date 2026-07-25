@@ -1053,5 +1053,9 @@
   "IndoorKisses.Penny.10": "(Whispering) My heart is beating so hard I swear the people next to us can hear it.$l#$b#This room is way too cramped for you to kiss me like this.$s#$b#Let's be more discreet.$l",
   "IndoorKisses.Penny.11": "I was going to tell you something important, but with you kissing me in front of everyone I completely forgot!$l#$b#You leave me totally flustered.$l",
   "IndoorKisses.Penny.12": "I-I feel like apologizing to everyone here for our behavior.$s#$b#We can't act like this in public.$s#$b#My face is on fire, @...$l",
-  "IndoorKisses.Penny.13": "I swear I'll run out the door if you don't stop this right now.$a#$b#I-I don't have the courage to face anyone after this whole display!$l"
+  "IndoorKisses.Penny.13": "I swear I'll run out the door if you don't stop this right now.$a#$b#I-I don't have the courage to face anyone after this whole display!$l",
+
+  "gmcm.section.diagnostics": "Diagnostics",
+  "gmcm.option.enable-debug-logging.name": "Enable debug logging",
+  "gmcm.option.enable-debug-logging.tooltip": "Records detailed state transitions for troubleshooting. Leave disabled during normal play and enable it only while reproducing a problem."
 }

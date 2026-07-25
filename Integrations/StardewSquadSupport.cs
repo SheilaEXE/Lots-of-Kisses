@@ -23,11 +23,15 @@ namespace LotsOfKisses
         private NPC stardewSquadKissHoldNpc;
         private int stardewSquadKissHoldTicks;
         private readonly HashSet<string> stardewSquadNpcsWithActiveTasks = new(StringComparer.Ordinal);
+        private readonly HashSet<string> stardewSquadNpcsWithSuppressedAnimations = new(StringComparer.Ordinal);
 
         private void InitializeStardewSquadSupport()
         {
             if (!Helper.ModRegistry.IsLoaded(StardewSquadModId))
+            {
+                DebugLog("SQUAD", "The Stardew Squad is not loaded; optional compatibility remains inactive.");
                 return;
+            }
 
             try
             {
@@ -77,6 +81,7 @@ namespace LotsOfKisses
 
                 stardewSquadIntegrationReady = true;
                 Monitor.Log("[Stardew Squad] Compatibility enabled for recruited romantic partners.", LogLevel.Info);
+                DebugLog("SQUAD", "Compatibility patches initialized successfully.");
             }
             catch (Exception ex)
             {
@@ -100,8 +105,12 @@ namespace LotsOfKisses
             if (!IsStardewSquadRecruited(npc))
                 return;
 
+            bool changedNpc = !IsSameStardewSquadNpc(stardewSquadKissHoldNpc, npc);
+            int oldTicks = stardewSquadKissHoldTicks;
             stardewSquadKissHoldNpc = npc;
             stardewSquadKissHoldTicks = Math.Max(stardewSquadKissHoldTicks, MsToTicks(durationMs) + 2);
+            if (changedNpc || stardewSquadKissHoldTicks != oldTicks)
+                DebugLog("SQUAD", () => $"Kiss hold started/extended: durationMs={durationMs}, holdTicks={stardewSquadKissHoldTicks}, {DescribeNpcDebugState(npc)}.");
         }
 
         private void UpdateStardewSquadKissHold()
@@ -113,7 +122,7 @@ namespace LotsOfKisses
                 || Game1.player == null
                 || stardewSquadKissHoldNpc.currentLocation != Game1.player.currentLocation)
             {
-                ResetStardewSquadKissHold();
+                ResetStardewSquadKissHold("world, player, NPC, or location became unavailable");
                 return;
             }
 
@@ -123,19 +132,22 @@ namespace LotsOfKisses
                 stardewSquadKissHoldTicks--;
 
             if (stardewSquadKissHoldTicks <= 0 && !IsStardewSquadNpcActivelyHeld(stardewSquadKissHoldNpc))
-                ResetStardewSquadKissHold();
+                ResetStardewSquadKissHold("kiss no longer owns the recruited NPC");
         }
 
-        private void ResetStardewSquadKissHold()
+        private void ResetStardewSquadKissHold(string reason = "cleared")
         {
+            if (stardewSquadKissHoldNpc != null)
+                DebugLog("SQUAD", () => $"Kiss hold released ({reason}): {DescribeNpcDebugState(stardewSquadKissHoldNpc)}.");
             stardewSquadKissHoldNpc = null;
             stardewSquadKissHoldTicks = 0;
         }
 
         private void ResetStardewSquadSupportState()
         {
-            ResetStardewSquadKissHold();
+            ResetStardewSquadKissHold("support state reset");
             stardewSquadNpcsWithActiveTasks.Clear();
+            stardewSquadNpcsWithSuppressedAnimations.Clear();
         }
 
         internal void UpdateStardewSquadTaskState(NPC npc, bool hasTask)
@@ -144,10 +156,11 @@ namespace LotsOfKisses
             if (key == null)
                 return;
 
-            if (hasTask)
-                stardewSquadNpcsWithActiveTasks.Add(key);
-            else
-                stardewSquadNpcsWithActiveTasks.Remove(key);
+            bool changed = hasTask
+                ? stardewSquadNpcsWithActiveTasks.Add(key)
+                : stardewSquadNpcsWithActiveTasks.Remove(key);
+            if (changed)
+                DebugLog("SQUAD", () => $"Task state changed: hasTask={hasTask}, {DescribeNpcDebugState(npc)}.");
         }
 
         private bool ShouldBlockKissDuringStardewSquadTask(NPC npc)
@@ -156,7 +169,10 @@ namespace LotsOfKisses
                 return false;
 
             string key = GetStardewSquadNpcStateKey(npc);
-            return key != null && stardewSquadNpcsWithActiveTasks.Contains(key);
+            bool blocked = key != null && stardewSquadNpcsWithActiveTasks.Contains(key);
+            if (blocked)
+                DebugLog("SQUAD", () => $"Kiss blocked by active Squad task and player configuration: {DescribeNpcDebugState(npc)}.");
+            return blocked;
         }
 
         private static string GetStardewSquadNpcStateKey(NPC npc)
@@ -177,6 +193,7 @@ namespace LotsOfKisses
 
             stardewSquadIntegrationReady = false;
             ResetStardewSquadSupportState();
+            DebugLog("SQUAD", "Compatibility disabled after a runtime reflection error.");
             Monitor.Log(
                 $"[Stardew Squad] Optional compatibility was disabled after a runtime reflection error. Lots of Kisses will continue normally: {ex}",
                 LogLevel.Warn
@@ -222,7 +239,17 @@ namespace LotsOfKisses
 
         internal bool ShouldSuppressStardewSquadTaskAnimation(NPC npc)
         {
-            return GetStardewSquadRequiredKissCooldown(npc) > 0;
+            bool suppress = GetStardewSquadRequiredKissCooldown(npc) > 0;
+            string key = GetStardewSquadNpcStateKey(npc);
+            if (key != null)
+            {
+                bool changed = suppress
+                    ? stardewSquadNpcsWithSuppressedAnimations.Add(key)
+                    : stardewSquadNpcsWithSuppressedAnimations.Remove(key);
+                if (changed)
+                    DebugLog("SQUAD", () => $"Task animation suppression changed: suppress={suppress}, {DescribeNpcDebugState(npc)}.");
+            }
+            return suppress;
         }
 
         private static bool IsSameStardewSquadNpc(NPC expected, NPC candidate)

@@ -35,6 +35,7 @@ namespace LotsOfKisses
         private System.Collections.Generic.Dictionary<string, int> approachKissBlockTimerByNpc = new();
         private System.Collections.Generic.Dictionary<string, int> bumpKissCooldownByNpc = new();
         private System.Collections.Generic.Dictionary<string, bool> bumpKissTouchingByNpc = new();
+        private System.Collections.Generic.Dictionary<string, string> bumpKissLastDebugRejectionByNpc = new();
         private int approachKissDialogueLastTimeOfDay = -1;
         private string pendingKissCycleLine = null;
         internal readonly OutsideBumpPauseState OutsideBumpPause = new();
@@ -85,6 +86,9 @@ namespace LotsOfKisses
         private const int ContinuousKissTier3LeanAnimationTicks = 22;
 
         private bool publicMultiKissDialogueTriggered = false;
+        private bool pendingPublicMultiKissDialogue = false;
+        private NPC pendingPublicMultiKissDialogueNpc = null;
+        private string pendingPublicMultiKissDialogueLine = null;
         private bool pendingPublicMultiKissShyEmote = false;
         private NPC pendingPublicMultiKissShyNpc = null;
         private int pendingPublicMultiKissShyEmoteTimer = 0;

@@ -11,6 +11,7 @@ namespace LotsOfKisses
     /// </summary>
     internal class BystanderSnapshot
     {
+        public int DebugId                         { get; set; }
         public NPC Npc                              { get; set; }
         public GameLocation Location                { get; set; }
         public Vector2 Position                     { get; set; }

@@ -30,10 +30,16 @@ namespace LotsOfKisses
         private bool StartContinuousKiss(NPC npc, int kissTier, bool isNewSequence = false, bool manualRightClick = false)
         {
             if (npc == null || npc.currentLocation != Game1.player.currentLocation)
+            {
+                DebugLog("MULTIKISS", $"Start rejected: NPC is null or not in the player's location (npc={npc?.Name ?? "null"}, tier={kissTier}).");
                 return false;
+            }
 
             if (ShouldBlockKissDuringStardewSquadTask(npc))
+            {
+                DebugLog("MULTIKISS", () => $"Start rejected because Stardew Squad task interruption is disabled: {DescribeNpcDebugState(npc)}.");
                 return false;
+            }
 
             if (isNewSequence)
             {
@@ -41,16 +47,25 @@ namespace LotsOfKisses
                 // The flag is set when the dialogue opens; rearm it only when the player starts
                 // a brand-new multi-kiss chain, so repeated cycles in the same chain don't spam it.
                 publicMultiKissDialogueTriggered = false;
+                pendingPublicMultiKissDialogue = false;
+                pendingPublicMultiKissDialogueNpc = null;
+                pendingPublicMultiKissDialogueLine = null;
                 continuousKissCyclesDone = 0;
             }
 
             // A queued NPC dialogue is preserved by the simulated click; only an open dialogue/menu
             // should block starting a new continuous kiss.
             if (IsAutoKissBlockedByOpenDialogueOrMenu())
+            {
+                DebugLog("MULTIKISS", $"Start rejected for {npc.Name}: dialogue or menu is open.");
                 return false;
+            }
 
             if (!manualRightClick && GetApproachKissBlockTimer(npc) > 0)
+            {
+                DebugLog("MULTIKISS", $"Start rejected for {npc.Name}: approach-kiss block timer is active.");
                 return false;
+            }
 
             CaptureNpcPreKissSpecialAction(npc);
 
@@ -73,6 +88,7 @@ namespace LotsOfKisses
             bool vanillaTriggered = TryTriggerRomanticContinuousKiss(npc, ignoreApproachBlock: manualRightClick);
             if (!vanillaTriggered)
             {
+                DebugLog("MULTIKISS", () => $"Start failed because the romantic kiss visual did not trigger: {DescribeNpcDebugState(npc)}.");
                 TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
                 return false;
             }
@@ -91,6 +107,7 @@ namespace LotsOfKisses
             continuousKissWasTouchingPartner = true;
             continuousKissSingleCycle = false;
             continuousKissSingleCycleFinishing = false;
+            DebugLog("MULTIKISS", () => $"Started {(isNewSequence ? "new sequence" : "cycle")} with {npc.Name}: tier={kissTier}, durationMs={durationMs}, manual={manualRightClick}, completedCycles={continuousKissCyclesDone}.");
             return true;
         }
 
@@ -135,9 +152,71 @@ namespace LotsOfKisses
 
             publicMultiKissDialogueTriggered = true;
 
+            // If a spectator has just spoken, keep the multi-kiss running while their bubble
+            // receives its full three seconds on screen. Opening the large NPC dialogue box in
+            // this same tick would draw over world-space speech bubbles (especially near the
+            // bottom of indoor maps), making them look as though they vanished instantly.
+            // No new crowd lines are rolled while this interruption is armed, so the wait can't
+            // extend indefinitely.
+            if (HasActiveCrowdReactionSpeechBubble())
+            {
+                pendingPublicMultiKissDialogue = true;
+                pendingPublicMultiKissDialogueNpc = npc;
+                pendingPublicMultiKissDialogueLine = line;
+                DebugLog("MULTIKISS", $"Public interruption armed for {npc.Name}; waiting for existing spectator bubbles and a clean cycle boundary.");
+                return false;
+            }
+
+            OpenPublicMultiKissDialogue(npc, line);
+            return true;
+        }
+
+        /// <summary>
+        /// Opens an interruption that was armed while a spectator bubble was visible. This is
+        /// called only at a kiss-cycle boundary, so the current kiss animation finishes cleanly
+        /// instead of being cut off midway through a tier.
+        /// </summary>
+        private bool TryOpenPendingPublicMultiKissDialogue(NPC npc)
+        {
+            if (!pendingPublicMultiKissDialogue)
+                return false;
+
+            if (npc == null
+                || pendingPublicMultiKissDialogueNpc != npc
+                || npc.currentLocation != Game1.player?.currentLocation)
+            {
+                pendingPublicMultiKissDialogue = false;
+                pendingPublicMultiKissDialogueNpc = null;
+                pendingPublicMultiKissDialogueLine = null;
+                DebugLog("MULTIKISS", "Pending public interruption canceled because its NPC or location changed.");
+                return false;
+            }
+
+            if (HasActiveCrowdReactionSpeechBubble())
+                return false;
+
+            string line = pendingPublicMultiKissDialogueLine;
+            pendingPublicMultiKissDialogue = false;
+            pendingPublicMultiKissDialogueNpc = null;
+            pendingPublicMultiKissDialogueLine = null;
+
+            if (string.IsNullOrEmpty(line))
+                return false;
+
+            OpenPublicMultiKissDialogue(npc, line);
+            DebugLog("MULTIKISS", $"Pending public interruption opened for {npc.Name} after spectator bubbles closed.");
+            return true;
+        }
+
+        private void OpenPublicMultiKissDialogue(NPC npc, string line)
+        {
+            if (npc == null || string.IsNullOrEmpty(line))
+                return;
+
             continuousKissActive = false;
             continuousKissPendingRestart = false;
             continuousKissGapTimer = 0;
+            BeginPostMultiKissLookWait(npc, "public interruption");
 
             // Push our line on top of existing dialogue instead of clearing the stack.
             // Daily, quest, event, and other-mod dialogue must remain available afterward.
@@ -149,6 +228,7 @@ namespace LotsOfKisses
             pendingPublicMultiKissShyEmoteTimer = 30;
             pendingPublicMultiKissShyEmoteStarted = false;
             npc.modData[PublicMultiKissInterruptionModDataKey] = "1";
+            DebugLog("MULTIKISS", $"Public interruption dialogue opened for {npc.Name} after {continuousKissCyclesDone} completed cycle(s).");
 
             ScheduleBystanderRestore(npc);
             bystanderRestore.ForceStart = true;
@@ -156,8 +236,6 @@ namespace LotsOfKisses
             didReactThisTick = true;
             cooldown = 120;
             dialogueCooldown = 90;
-
-            return true;
         }
 
         // Slides the farmer a few pixels toward their partner during tier 3.
@@ -293,11 +371,12 @@ namespace LotsOfKisses
             Game1.player.completelyStopAnimatingOrDoingAction();
         }
 
-        private void ForceEndContinuousKiss(NPC npc)
+        private void ForceEndContinuousKiss(NPC npc, string reason = "forced cleanup")
         {
             // Keep the original participant before ResetContinuousKissState clears the field.
             // This matters when GetPartner() has already changed to a different romantic NPC.
             NPC activeNpc = continuousKissNpc ?? npc;
+            DebugLog("MULTIKISS", () => $"Force-ending sequence ({reason}): {DescribeNpcDebugState(activeNpc)}, tier={continuousKissTier}, completedCycles={continuousKissCyclesDone}, active={continuousKissActive}, pendingRestart={continuousKissPendingRestart}.");
 
             ScheduleBystanderRestore(activeNpc);
 
@@ -309,12 +388,23 @@ namespace LotsOfKisses
                 bool snapshotMatchesCurrentLocation =
                     hasSnapshot &&
                     activeNpc.currentLocation == preKissSpecialActionSnapshot.Location;
+                bool deferStationaryRestore =
+                    snapshotMatchesCurrentLocation &&
+                    Game1.player != null &&
+                    !Game1.player.IsSitting() &&
+                    !Game1.eventUp &&
+                    BeginPostMultiKissLookWait(activeNpc, $"forced end: {reason}");
                 bool restoreSpecialActionNow =
                     snapshotMatchesCurrentLocation &&
+                    !deferStationaryRestore &&
                     preKissSpecialActionSnapshot.RestorePositionWhenPlayerLeaves == false &&
                     activeNpc.currentLocation != null;
 
-                if (restoreSpecialActionNow)
+                if (deferStationaryRestore)
+                {
+                    ApplyPostMultiKissLookAtPlayer(activeNpc, 6);
+                }
+                else if (restoreSpecialActionNow)
                 {
                     // Special/scripted poses can be restored immediately. Plain idle snapshots
                     // stay queued so their saved position is restored only after the player leaves.
@@ -405,7 +495,7 @@ namespace LotsOfKisses
             // location, rather than just silently skipping updates and leaving them stuck.
             if (Game1.player.IsSitting())
             {
-                ForceEndContinuousKiss(partner ?? continuousKissNpc);
+                ForceEndContinuousKiss(partner ?? continuousKissNpc, "player sat down");
                 return;
             }
 
@@ -434,7 +524,7 @@ namespace LotsOfKisses
             {
                 if (continuousKissNpc == null || continuousKissNpc.currentLocation != Game1.player.currentLocation)
                 {
-                    ForceEndContinuousKiss(partner ?? continuousKissNpc);
+                    ForceEndContinuousKiss(partner ?? continuousKissNpc, "NPC changed location before cycle restart");
                     return;
                 }
 
@@ -481,7 +571,7 @@ namespace LotsOfKisses
                 // a stale "still active but nothing progressing" state — cleanly end it, same as
                 // any other abort path (releasing the NPC's pose/movementPause properly).
                 if (!StartContinuousKiss(continuousKissNpc, continuousKissTier, false))
-                    ForceEndContinuousKiss(continuousKissNpc);
+                    ForceEndContinuousKiss(continuousKissNpc, "next romantic kiss cycle failed to start");
 
                 return;
             }
@@ -491,7 +581,7 @@ namespace LotsOfKisses
 
             if (continuousKissNpc != partner || partner.currentLocation != Game1.player.currentLocation)
             {
-                ForceEndContinuousKiss(partner);
+                ForceEndContinuousKiss(partner, "active romantic partner or location changed");
                 return;
             }
 
@@ -499,6 +589,8 @@ namespace LotsOfKisses
 
             if (distance > 90f)
             {
+                DebugLog("MULTIKISS", $"Sequence ended because player moved away from {partner.Name}: distance={distance:0}/90, completedCycles={continuousKissCyclesDone}.");
+                BeginPostMultiKissLookWait(partner, "normal distance ending");
                 NPC postNpc = partner;
                 string postLine = GetDialogueLine("kissReaction", postNpc);
                 string publicLine = GetDialogueLine("PublicKissReaction", postNpc);
@@ -589,18 +681,29 @@ namespace LotsOfKisses
 
             continuousKissActive = false;
             continuousKissCyclesDone++;
+            DebugLog("MULTIKISS", $"Completed cycle {continuousKissCyclesDone} with {partner.Name}: tier={continuousKissTier}.");
 
             // The Cinderbox fallback owns a full-duration static kiss frame. Remove that frame
             // before the inter-cycle gap so each new kiss visibly starts again, while keeping the
             // original NPC snapshot queued for the final move-away restoration.
             ClearDirectRomanticKissVisual(partner, holdForNextCycle: true);
 
-            // Let the scene build naturally before anyone in the area can notice it.
-            if (continuousKissCyclesDone >= BystanderNoticeMinimumCompletedCycles)
-                TriggerBystanderReactions(continuousKissTier, partner);
+            if (pendingPublicMultiKissDialogue)
+            {
+                // Keep completing normal kiss cycles until every already-visible spectator
+                // bubble has finished. The interruption then opens at this clean cycle boundary.
+                if (TryOpenPendingPublicMultiKissDialogue(partner))
+                    return;
+            }
+            else
+            {
+                // Let the scene build naturally before anyone in the area can notice it.
+                if (continuousKissCyclesDone >= BystanderNoticeMinimumCompletedCycles)
+                    TriggerBystanderReactions(continuousKissTier, partner);
 
-            if (TryTriggerPublicMultiKissDialogue(partner))
-                return;
+                if (TryTriggerPublicMultiKissDialogue(partner))
+                    return;
+            }
 
             // publicMultiKiss did not fire — kiss will restart. Schedule restore so bystanders
             // don't stay frozen if the player moves away before publicMultiKiss ever triggers.
@@ -609,6 +712,7 @@ namespace LotsOfKisses
             continuousKissPendingRestart = true;
             continuousKissGapTimer = 25;
             continuousKissTier = RollContinuousKissTier();
+            DebugLog("MULTIKISS", $"Queued next cycle for {partner.Name}: nextTier={continuousKissTier}, gapTicks={continuousKissGapTimer}.");
         }
     }
 }

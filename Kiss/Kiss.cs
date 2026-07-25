@@ -238,16 +238,19 @@ namespace LotsOfKisses
 
         private sealed class NpcPreKissSpecialActionSnapshot
         {
+            public int DebugId;
             public NPC Npc;
             public GameLocation Location;
             public Vector2 Position;
             public bool RestorePositionWhenPlayerLeaves;
+            public bool WasMovingOrControlled;
             public int FacingDirection;
             public int CurrentFrame;
             public bool Flip;
             public int MovementPause;
             public int AddedSpeed;
             public List<FarmerSprite.AnimationFrame> CurrentAnimation;
+            public string LastDebugWaitReason;
         }
 
         private NpcPreKissSpecialActionSnapshot preKissSpecialActionSnapshot = null;
@@ -321,6 +324,18 @@ namespace LotsOfKisses
                 && touching;
         }
 
+        private void DebugBumpKissRejectionOnce(NPC npc, string reason)
+        {
+            if (npc == null || string.IsNullOrEmpty(reason))
+                return;
+
+            if (bumpKissLastDebugRejectionByNpc.TryGetValue(npc.Name, out string previous) && previous == reason)
+                return;
+
+            bumpKissLastDebugRejectionByNpc[npc.Name] = reason;
+            DebugLog("BUMP", $"Bump kiss rejected for {npc.Name}: {reason}.");
+        }
+
         private void RefreshBumpKissTouchStates()
         {
             if (Game1.player == null || Game1.currentLocation == null)
@@ -364,10 +379,16 @@ namespace LotsOfKisses
             lastAutoKissClickWasBlockedDialogue = false;
 
             if (npc == null || Game1.player == null || npc.currentLocation != Game1.player.currentLocation)
+            {
+                DebugLog("KISS", $"Romantic kiss rejected: NPC/player unavailable or location mismatch (npc={npc?.Name ?? "null"}).");
                 return false;
+            }
 
             if (!IsSupportedRomanticPartner(npc.Name))
+            {
+                DebugLog("KISS", $"Romantic kiss rejected: {npc.Name} is not an eligible romantic partner.");
                 return false;
+            }
 
             if (ShouldBlockKissDuringStardewSquadTask(npc))
                 return false;
@@ -375,26 +396,40 @@ namespace LotsOfKisses
             // A queued NPC dialogue is temporarily preserved inside TryCheckActionForAutoKissWithoutDialogue.
             // Only an actually open dialogue/menu should stop the automatic kiss before that point.
             if (IsAutoKissBlockedByOpenDialogueOrMenu())
+            {
+                DebugLog("KISS", $"Romantic kiss rejected for {npc.Name}: dialogue or menu is open.");
                 return false;
+            }
 
             if (!ignoreApproachBlock && GetApproachKissBlockTimer(npc) > 0)
+            {
+                DebugLog("KISS", $"Romantic kiss rejected for {npc.Name}: approach block timer={GetApproachKissBlockTimer(npc)}.");
                 return false;
+            }
 
             if (Game1.activeClickableMenu != null)
                 return false;
 
             float distance = DistanceToPlayer(npc);
             if (distance > 72f)
+            {
+                DebugLog("KISS", $"Romantic kiss rejected for {npc.Name}: distance={distance:0}/72.");
                 return false;
+            }
 
             CaptureNpcPreKissSpecialAction(npc);
 
             FaceEachOther(npc);
 
             bool triggered = TryCheckActionForAutoKissWithoutDialogue(npc);
+            string animationPath = triggered ? "vanilla checkAction" : "none";
 
             if (!triggered && !lastAutoKissClickWasBlockedDialogue)
+            {
                 triggered = TryStartDirectRomanticKissVisuals(npc);
+                if (triggered)
+                    animationPath = "direct visual fallback";
+            }
 
             if (triggered)
             {
@@ -403,6 +438,8 @@ namespace LotsOfKisses
                 if (playSound)
                     Game1.playSound("dwop");
             }
+
+            DebugLog("KISS", $"Romantic kiss result for {npc.Name}: triggered={triggered}, path={animationPath}, blockedDialogue={lastAutoKissClickWasBlockedDialogue}, playSound={playSound}.");
 
             return triggered;
         }
@@ -446,18 +483,26 @@ namespace LotsOfKisses
                 return;
 
             int delayedActionToken = delayedActionContextToken;
+            DebugLog("SCHEDULE", () => $"Beginning staged post-kiss release with token {delayedActionToken}: {DescribeNpcDebugState(partner)}.");
 
             WakeNpcAfterMultiKiss(partner);
+            DebugLog("SCHEDULE", () => $"Synchronous visual/movement release completed: {DescribeNpcDebugState(partner)}.");
 
             DelayedAction.functionAfterDelay(() =>
             {
                 if (!IsCurrentDelayedAction(delayedActionToken) || partner == null || partner.currentLocation == null)
+                {
+                    DebugLog("DELAYED", $"Skipped 80 ms post-kiss callback for stale token {delayedActionToken} or unavailable partner.");
                     return;
+                }
 
                 // If a snapshot is still saved for this NPC, don't overwrite the idle frame —
                 // UpdateDeferredNpcSpecialActionRestore will restore the animation when the player moves away.
                 if (HasNpcPreKissSpecialAction(partner))
+                {
+                    DebugLog("RESTORE", $"80 ms post-kiss callback left snapshot #{preKissSpecialActionSnapshot?.DebugId} queued for move-away restoration.");
                     return;
+                }
 
                 // Visual release already happened synchronously. Don't touch the NPC here:
                 // another mod or vanilla may have started a new route/animation meanwhile.
@@ -466,7 +511,10 @@ namespace LotsOfKisses
             DelayedAction.functionAfterDelay(() =>
             {
                 if (!IsCurrentDelayedAction(delayedActionToken) || partner == null || partner.currentLocation != Game1.player.currentLocation)
+                {
+                    DebugLog("DELAYED", $"Skipped 220 ms post-kiss state cleanup for stale token {delayedActionToken} or location mismatch.");
                     return;
+                }
 
                 didReactThisTick = false;
                 kissProximityTimer = 0;
@@ -476,12 +524,16 @@ namespace LotsOfKisses
                 continuousKissNpc = null;
                 kissPostSequenceActive = false;
                 kissPostSequenceNpc = null;
+                DebugLog("SCHEDULE", () => $"220 ms post-kiss logical state cleanup completed: {DescribeNpcDebugState(partner)}.");
             }, 220);
 
             DelayedAction.functionAfterDelay(() =>
             {
                 if (!IsCurrentDelayedAction(delayedActionToken) || partner == null)
+                {
+                    DebugLog("DELAYED", $"Skipped 420 ms schedule check for stale token {delayedActionToken} or unavailable partner.");
                     return;
+                }
 
                 RestorePartnerScheduleAfterMultiKiss(partner);
             }, 420);
@@ -497,7 +549,10 @@ namespace LotsOfKisses
             // Its own cooldown resumes that state after the kiss; a vanilla schedule check here
             // could pull the NPC away or make the Squad catch-up warp them back.
             if (IsStardewSquadRecruited(partner))
+            {
+                DebugLog("SCHEDULE", () => $"Schedule restore skipped because Stardew Squad owns the NPC: {DescribeNpcDebugState(partner)}.");
                 return;
+            }
 
             // Do NOT clear CurrentDialogue here.
             // Another mod may have queued dialogue on the NPC.
@@ -510,7 +565,21 @@ namespace LotsOfKisses
                 !partner.isMoving() &&
                 !hasActiveAnimation &&
                 !hasSpecialStaticFrame)
+            {
+                DebugLog("SCHEDULE", () => $"Nothing resumed naturally; requesting vanilla schedule check: {DescribeNpcDebugState(partner)}.");
                 ForceScheduleCheckNow(partner);
+            }
+            else
+            {
+                string owner = partner.controller != null
+                    ? "controller already active"
+                    : partner.isMoving()
+                        ? "NPC already moving"
+                        : hasActiveAnimation
+                            ? "animation already active"
+                            : "special static frame active";
+                DebugLog("SCHEDULE", () => $"Vanilla schedule check not needed ({owner}): {DescribeNpcDebugState(partner)}.");
+            }
         }
 
         private bool IsNpcShowingKissVisual(NPC npc)
@@ -771,12 +840,20 @@ namespace LotsOfKisses
             // Don't let a bump kiss trigger while the player is seated (e.g. chair/bench) — they
             // can't meaningfully act or move away normally while sitting.
             if (Game1.player.IsSitting())
+            {
+                if (distance <= 64f && Game1.player.TilePoint.Y == npc.TilePoint.Y && !WasBumpKissTouchingNpc(npc))
+                    DebugLog("BUMP", $"Touch ignored for {npc.Name}: player is sitting.");
                 return;
+            }
 
             // Same reasoning as UpdateContinuousKissSystem: a menu being open shouldn't let the
             // bump kiss trigger or continue behind it.
             if (Game1.activeClickableMenu != null)
+            {
+                if (distance <= 64f && Game1.player.TilePoint.Y == npc.TilePoint.Y && !WasBumpKissTouchingNpc(npc))
+                    DebugLog("BUMP", $"Touch ignored for {npc.Name}: a menu is open.");
                 return;
+            }
 
             // Kiss sprites face sideways, so a bump only counts once both characters occupy
             // the same horizontal tile row. Including alignment in the touch state also lets
@@ -785,6 +862,11 @@ namespace LotsOfKisses
             bool touching = distance <= 64f && horizontallyAligned;
             bool useOutsideApproachKissHold = !IsHomeOrFarmLocation();
             bool justStartedTouchingPartner = touching && !WasBumpKissTouchingNpc(npc);
+
+            if (distance <= 64f && !horizontallyAligned)
+                DebugBumpKissRejectionOnce(npc, $"different tile rows (player={Game1.player.TilePoint.Y}, npc={npc.TilePoint.Y}, distance={distance:0})");
+            else if (distance > 80f)
+                bumpKissLastDebugRejectionByNpc.Remove(npc.Name);
 
             // Inside the farm/house: no long lock or special hold.
             if (!useOutsideApproachKissHold)
@@ -806,6 +888,8 @@ namespace LotsOfKisses
 
             if (multiKissBusy)
             {
+                if (justStartedTouchingPartner)
+                    DebugLog("BUMP", $"Touch ignored for {npc.Name}: an NPC Multi-Kiss sequence already owns the interaction.");
                 approachKissHoldActive = false;
                 approachKissHoldNpc = null;
                 approachKissHoldToken++;
@@ -830,6 +914,8 @@ namespace LotsOfKisses
                 pendingKissNpc == null &&
                 !continuousKissActive)
             {
+                bumpKissLastDebugRejectionByNpc.Remove(npc.Name);
+                DebugLog("BUMP", $"Bump kiss candidate accepted: npc={npc.Name}, distance={distance:0}, horizontalMotion={isHorizontal}, aligned={horizontallyAligned}, cooldown={GetBumpKissCooldown(npc)}, approachBlock={GetApproachKissBlockTimer(npc)}.");
                 CaptureNpcPreKissSpecialAction(npc);
 
                 npc.faceDirection(diff.X > 0 ? 1 : 3);
@@ -849,6 +935,7 @@ namespace LotsOfKisses
                 bool vanillaTriggered = TryTriggerRomanticBumpKiss(npc);
                 if (!vanillaTriggered)
                 {
+                    DebugLog("BUMP", $"Bump kiss failed for {npc.Name}: neither vanilla nor direct animation path started.");
                     // No real vanilla kiss happened (ghost kiss caught) — cleanly undo what was
                     // already applied above (pose capture, halt, pause, player freeze) instead of
                     // running the rest of this mod's own bump-kiss effects (sound, emote,
@@ -862,11 +949,15 @@ namespace LotsOfKisses
 
                 Game1.playSound("dwop");
                 npc.doEmote(20);
+                DebugLog("BUMP", $"Bump kiss started successfully for {npc.Name}; visualDurationMs={activeKissVisualDelayMs}.");
 
                 DelayedAction.functionAfterDelay(() =>
                 {
                     if (!Context.IsWorldReady)
+                    {
+                        DebugLog("DELAYED", $"Skipped bump visual release for {npc?.Name ?? "null"}: world is no longer ready.");
                         return;
+                    }
 
                     ReleasePlayerAfterKissWithoutOverridingCurrentPose();
 
@@ -879,6 +970,7 @@ namespace LotsOfKisses
                             npc.Sprite.UpdateSourceRect();
                         }
                     }
+                    DebugLog("BUMP", $"Bump visual release callback completed for {npc?.Name ?? "null"}.");
                 }, activeKissVisualDelayMs);
 
                 string locName = npc.currentLocation.Name;
@@ -904,7 +996,10 @@ namespace LotsOfKisses
                     DelayedAction.functionAfterDelay(() =>
                     {
                         if (!IsCurrentDelayedAction(delayedActionToken) || npc == null || npc.currentLocation != Game1.player.currentLocation)
+                        {
+                            DebugLog("DELAYED", $"Skipped bump dialogue callback for stale token {delayedActionToken} or location mismatch.");
                             return;
+                        }
 
                         if (approachDialogueCooledDown)
                         {
@@ -914,6 +1009,7 @@ namespace LotsOfKisses
                                 ShowTextAboveHeadWithPipeSupport(npc, surpriseLine);
                                 SetApproachKissBlockTimer(npc, 300);
                                 approachKissDialogueLastTimeOfDay = kissTimeOfDay;
+                                DebugLog("BUMP", $"Displayed approach-kiss line for {npc.Name}; dialogue block set to 300 ticks.");
                             }
                         }
                     }, 1200);
@@ -967,6 +1063,7 @@ namespace LotsOfKisses
                         OutsideBumpPause.IsActive = true;
                         OutsideBumpPause.Npc = pauseNpc;
                         OutsideBumpPause.Timer = 360; // 6-second pause
+                        DebugLog("BUMP", () => $"Activated outside bump pause: token={OutsideBumpPause.Token}, timer={OutsideBumpPause.Timer}, {DescribeNpcDebugState(pauseNpc)}.");
                         pauseNpc.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
 
                     }, activeKissVisualDelayMs);
@@ -987,6 +1084,16 @@ namespace LotsOfKisses
                 didReactThisTick = true;
                 playerWasTouchingPartner = true;
                 return;
+            }
+
+            if (justStartedTouchingPartner)
+            {
+                DebugLog("BUMP", () =>
+                    $"Bump kiss touch rejected: npc={npc.Name}, enabled={Config.BumpKissEnabled}, distance={distance:0}, aligned={horizontallyAligned}, " +
+                    $"horizontalMotion={isHorizontal}, playerMoving={Game1.player.isMoving()}, time={Game1.timeOfDay}, cooldown={GetBumpKissCooldown(npc)}, " +
+                    $"approachBlock={GetApproachKissBlockTimer(npc)}, squadBlocked={ShouldBlockKissDuringStardewSquadTask(npc)}, " +
+                    $"postSequence={kissPostSequenceActive}, kissSequence={kissSequenceActive}, pendingNpc={pendingKissNpc?.Name ?? "null"}, continuousActive={continuousKissActive}."
+                );
             }
 
             float currentDistance = DistanceToPlayer(npc);

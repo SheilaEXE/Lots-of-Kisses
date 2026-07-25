@@ -41,12 +41,20 @@ namespace LotsOfKisses
 
         private bool TryHandlePlayerSpouseKissClick(ButtonPressedEventArgs e, bool allowFrontTileTarget)
         {
-            if (!Context.IsMultiplayer || !CanLocalPlayerStartPlayerKiss(requireStill: true))
+            if (!Context.IsMultiplayer)
                 return false;
+
+            if (!CanLocalPlayerStartPlayerKiss(requireStill: true))
+            {
+                DebugLog("MULTIPLAYER", () => $"Manual player-spouse kiss click rejected because the local player is not ready: {DescribeFarmerDebugState(Game1.player)}, npcKissBusy={IsLocalNpcKissSystemBusy()}.");
+                return false;
+            }
 
             Farmer spouse = FindClickedPlayerSpouse(e.Cursor.AbsolutePixels, allowFrontTileTarget);
             if (spouse == null)
                 return false;
+
+            DebugLog("MULTIPLAYER", () => $"Manual click targeted player spouse: {DescribeFarmerDebugState(spouse)}.");
 
             Helper.Input.Suppress(e.Button);
 
@@ -54,6 +62,7 @@ namespace LotsOfKisses
             if (state.CooldownTicksRemaining > 0 || state.HasOutgoingRequest
                 || IsPlayerSpouseKissActiveFor(Game1.player.UniqueMultiplayerID))
             {
+                DebugLog("MULTIPLAYER", $"Manual player-spouse kiss blocked: cooldown={state.CooldownTicksRemaining}, outgoingRequest={state.HasOutgoingRequest}, participantBusy={IsPlayerSpouseKissActiveFor(Game1.player.UniqueMultiplayerID)}.");
                 return true;
             }
 
@@ -127,14 +136,22 @@ namespace LotsOfKisses
         private void RequestOrStartPlayerKiss(Farmer spouse, PlayerKissMode mode, int tier)
         {
             if (spouse == null || playerKissState.Value.HasOutgoingRequest)
+            {
+                DebugLog("MULTIPLAYER", $"Request not started: spouse={(spouse?.Name ?? "null")}, outgoingRequest={playerKissState.Value.HasOutgoingRequest}.");
                 return;
+            }
 
             string requestId = Guid.NewGuid().ToString("N");
 
             if (IsLocalSplitScreenPlayer(spouse))
             {
                 if (Config.AcceptPlayerSpouseKisses == true)
+                {
+                    DebugLog("MULTIPLAYER", $"Starting approved local split-screen kiss: request={requestId}, mode={mode}, tier={tier}, target={spouse.UniqueMultiplayerID}.");
                     StartApprovedPlayerKiss(spouse, mode, tier, requestId);
+                }
+                else
+                    DebugLog("MULTIPLAYER", $"Local split-screen kiss rejected because AcceptPlayerSpouseKisses is disabled: request={requestId}.");
 
                 return;
             }
@@ -160,6 +177,7 @@ namespace LotsOfKisses
                 modIDs: new[] { ModManifest.UniqueID },
                 playerIDs: new[] { spouse.UniqueMultiplayerID }
             );
+            DebugLog("MULTIPLAYER", $"Sent kiss request: request={requestId}, initiator={Game1.player.UniqueMultiplayerID}, target={spouse.UniqueMultiplayerID}, mode={mode}, tier={tier}, location={Game1.currentLocation.NameOrUniqueName}.");
         }
 
         private bool IsLocalSplitScreenPlayer(Farmer player)
@@ -182,6 +200,7 @@ namespace LotsOfKisses
 
             try
             {
+                DebugLog("MULTIPLAYER", $"Received message: type={e.Type}, fromPlayer={e.FromPlayerID}.");
                 switch (e.Type)
                 {
                     case PlayerKissRequestMessageType:
@@ -216,25 +235,35 @@ namespace LotsOfKisses
                 || IsLocalNpcKissSystemBusy()
                 || IsPlayerSpouseKissActiveFor(Game1.player.UniqueMultiplayerID))
             {
+                DebugLog("MULTIPLAYER", $"Incoming kiss request rejected during validation: sender={senderId}, request={request?.RequestId ?? "null"}, target={request?.TargetId}, mode={request?.Mode}, tier={request?.Tier}, acceptEnabled={Config.AcceptPlayerSpouseKisses}, npcKissBusy={IsLocalNpcKissSystemBusy()}.");
                 return;
             }
 
             Farmer initiator = Game1.GetPlayer(request.InitiatorId, true);
             bool allowMovement = request.Mode is PlayerKissMode.Bump or PlayerKissMode.Multi;
             if (!CanPlayersStartKiss(Game1.player, initiator, allowMovement))
+            {
+                DebugLog("MULTIPLAYER", () => $"Incoming kiss request rejected because participants cannot start: request={request.RequestId}; local={DescribeFarmerDebugState(Game1.player)}; initiator={DescribeFarmerDebugState(initiator)}.");
                 return;
+            }
 
             PlayerKissState state = playerKissState.Value;
             if (state.HasOutgoingRequest)
             {
                 if (Game1.player.UniqueMultiplayerID < request.InitiatorId)
+                {
+                    DebugLog("MULTIPLAYER", $"Simultaneous request resolved in favor of existing local request: incoming={request.RequestId}, sender={senderId}.");
                     return;
+                }
 
                 state.ClearOutgoingRequest();
             }
 
             if (state.CooldownTicksRemaining > 0)
+            {
+                DebugLog("MULTIPLAYER", $"Incoming request {request.RequestId} rejected by cooldown={state.CooldownTicksRemaining}.");
                 return;
+            }
 
             state.CooldownTicksRemaining = 30;
 
@@ -249,6 +278,7 @@ namespace LotsOfKisses
                 modIDs: new[] { ModManifest.UniqueID },
                 playerIDs: new[] { request.InitiatorId }
             );
+            DebugLog("MULTIPLAYER", $"Accepted kiss request: request={request.RequestId}, initiator={request.InitiatorId}, target={request.TargetId}, mode={request.Mode}, tier={request.Tier}.");
         }
 
         private void HandlePlayerKissAccept(long senderId, PlayerKissAcceptMessage accept)
@@ -263,6 +293,7 @@ namespace LotsOfKisses
                 || IsLocalNpcKissSystemBusy()
                 || IsPlayerSpouseKissActiveFor(Game1.player.UniqueMultiplayerID))
             {
+                DebugLog("MULTIPLAYER", $"Kiss acceptance rejected during validation: sender={senderId}, request={accept?.RequestId ?? "null"}, outgoing={state.OutgoingRequestId ?? "none"}, npcKissBusy={IsLocalNpcKissSystemBusy()}.");
                 return;
             }
 
@@ -274,7 +305,10 @@ namespace LotsOfKisses
             Farmer spouse = Game1.GetPlayer(accept.TargetId, true);
             bool allowMovement = mode is PlayerKissMode.Bump or PlayerKissMode.Multi;
             if (!CanPlayersStartKiss(Game1.player, spouse, allowMovement))
+            {
+                DebugLog("MULTIPLAYER", () => $"Accepted request {requestId} could not start because participants changed state: local={DescribeFarmerDebugState(Game1.player)}; spouse={DescribeFarmerDebugState(spouse)}.");
                 return;
+            }
 
             StartApprovedPlayerKiss(spouse, mode, tier, requestId);
         }
@@ -283,6 +317,8 @@ namespace LotsOfKisses
         {
             if (spouse == null)
                 return;
+
+            DebugLog("MULTIPLAYER", $"Starting approved kiss: sequence={sequenceId}, spouse={spouse.UniqueMultiplayerID}, mode={mode}, tier={tier}.");
 
             PlayerKissState state = playerKissState.Value;
             state.CooldownTicksRemaining = PlayerKissCooldownTicks;
@@ -324,6 +360,8 @@ namespace LotsOfKisses
             state.IsAuthority = isAuthority;
             state.FollowerSafetyTicks = PlayerKissFollowerSafetyTicks;
 
+            DebugLog("MULTIPLAYER", () => $"Custom sequence initialized: {DescribePlayerKissDebugState(state)}.");
+
             MarkPlayerKissParticipants(state.SequenceId, state.InitiatorId, state.TargetId);
 
             if (isAuthority)
@@ -336,7 +374,7 @@ namespace LotsOfKisses
             Farmer target = Game1.GetPlayer(state.TargetId, true);
             if (!CanPlayersRemainInKiss(initiator, target))
             {
-                StopPlayerKissSequence(state, notifyOtherPlayer: true);
+                StopPlayerKissSequence(state, notifyOtherPlayer: true, reason: "participants could not remain in kiss before cycle start");
                 return;
             }
 
@@ -347,6 +385,7 @@ namespace LotsOfKisses
             state.HeartTriggered = false;
             state.SmokeTriggered = false;
             ResetPlayerKissLean(state, initiator, restorePosition: true);
+            DebugLog("MULTIPLAYER", () => $"Beginning synchronized cycle: {DescribePlayerKissDebugState(state)}; initiator={DescribeFarmerDebugState(initiator)}; target={DescribeFarmerDebugState(target)}.");
 
             PlayerKissCycleMessage cycleMessage = new()
             {
@@ -366,6 +405,7 @@ namespace LotsOfKisses
                 // is the active context too; otherwise only the initiating viewport
                 // sees the Farmer animation even though shared effects still appear.
                 pendingLocalSplitKissCycles[state.TargetId] = cycleMessage;
+                DebugLog("MULTIPLAYER", $"Queued cycle {state.CycleNumber} for local split-screen target {state.TargetId}.");
             }
             else
             {
@@ -375,6 +415,7 @@ namespace LotsOfKisses
                     modIDs: new[] { ModManifest.UniqueID },
                     playerIDs: new[] { state.TargetId }
                 );
+                DebugLog("MULTIPLAYER", $"Sent cycle {state.CycleNumber} to remote target {state.TargetId}: sequence={state.SequenceId}, tier={state.Tier}.");
             }
 
             ApplyPlayerKissAnimation(state, initiator, target);
@@ -391,22 +432,29 @@ namespace LotsOfKisses
                 || !string.Equals(cycle.LocationName, Game1.currentLocation?.NameOrUniqueName, StringComparison.Ordinal)
                 || Config.AcceptPlayerSpouseKisses != true)
             {
+                DebugLog("MULTIPLAYER", $"Incoming cycle rejected during validation: sender={senderId}, sequence={cycle?.SequenceId ?? "null"}, cycle={cycle?.CycleNumber}, mode={cycle?.Mode}, tier={cycle?.Tier}.");
                 return;
             }
 
             Farmer initiator = Game1.GetPlayer(cycle.InitiatorId, true);
             if (!CanPlayersRemainInKiss(Game1.player, initiator))
+            {
+                DebugLog("MULTIPLAYER", () => $"Incoming cycle {cycle.CycleNumber} rejected because participants cannot remain: local={DescribeFarmerDebugState(Game1.player)}; initiator={DescribeFarmerDebugState(initiator)}.");
                 return;
+            }
 
             PlayerKissState state = playerKissState.Value;
             if (state.HasActiveSequence && state.SequenceId != cycle.SequenceId)
-                StopPlayerKissSequence(state, notifyOtherPlayer: false);
+                StopPlayerKissSequence(state, notifyOtherPlayer: false, reason: "incoming cycle replaced a different active sequence");
 
             if (!state.HasActiveSequence)
                 StartCustomPlayerKissSequence(initiator, cycle.Mode, cycle.Tier, cycle.SequenceId, isAuthority: false);
 
             if (cycle.CycleNumber <= state.CycleNumber)
+            {
+                DebugLog("MULTIPLAYER", $"Ignored stale/duplicate cycle {cycle.CycleNumber}; current cycle is {state.CycleNumber}, sequence={cycle.SequenceId}.");
                 return;
+            }
 
             state.Mode = cycle.Mode;
             state.Tier = cycle.Tier;
@@ -418,6 +466,7 @@ namespace LotsOfKisses
             state.FollowerSafetyTicks = PlayerKissFollowerSafetyTicks;
 
             ApplyPlayerKissAnimation(state, initiator, Game1.player);
+            DebugLog("MULTIPLAYER", () => $"Applied received cycle: {DescribePlayerKissDebugState(state)}.");
         }
 
         private void ApplyPlayerKissAnimation(PlayerKissState state, Farmer initiator, Farmer target)
@@ -469,7 +518,7 @@ namespace LotsOfKisses
             if (!Context.IsWorldReady || Config?.ModEnabled != true)
             {
                 if (state.HasActiveSequence)
-                    StopPlayerKissSequence(state, notifyOtherPlayer: Context.IsWorldReady);
+                    StopPlayerKissSequence(state, notifyOtherPlayer: Context.IsWorldReady, reason: "world unavailable or mod disabled");
                 state.Reset();
                 return;
             }
@@ -480,7 +529,7 @@ namespace LotsOfKisses
             if (Game1.eventUp)
             {
                 if (state.HasActiveSequence)
-                    StopPlayerKissSequence(state, notifyOtherPlayer: true);
+                    StopPlayerKissSequence(state, notifyOtherPlayer: true, reason: "event started");
                 state.ClearOutgoingRequest();
                 return;
             }
@@ -499,7 +548,10 @@ namespace LotsOfKisses
             {
                 state.OutgoingRequestTicksRemaining--;
                 if (state.OutgoingRequestTicksRemaining == 0)
+                {
+                    DebugLog("MULTIPLAYER", $"Outgoing kiss request timed out: request={state.OutgoingRequestId ?? "none"}, target={state.OutgoingTargetId}.");
                     state.ClearOutgoingRequest();
+                }
             }
 
             if (state.HasActiveSequence)
@@ -517,10 +569,16 @@ namespace LotsOfKisses
             // Process an ending before a new cycle so a stale sequence can never
             // overwrite a newer one when both local screens update on the same tick.
             if (pendingLocalSplitKissStops.Remove(localPlayerId, out PlayerKissStopMessage stop))
+            {
+                DebugLog("MULTIPLAYER", $"Processing queued local split-screen stop: sequence={stop.SequenceId}, localPlayer={localPlayerId}.");
                 HandlePlayerKissStop(stop.InitiatorId, stop);
+            }
 
             if (pendingLocalSplitKissCycles.Remove(localPlayerId, out PlayerKissCycleMessage cycle))
+            {
+                DebugLog("MULTIPLAYER", $"Processing queued local split-screen cycle: sequence={cycle.SequenceId}, cycle={cycle.CycleNumber}, localPlayer={localPlayerId}.");
                 HandlePlayerKissCycle(cycle.InitiatorId, cycle);
+            }
         }
 
         private void UpdateAutomaticPlayerSpouseKissTriggers(PlayerKissState state)
@@ -554,6 +612,7 @@ namespace LotsOfKisses
                 && state.BumpCooldownTicksRemaining <= 0 && Game1.timeOfDay < 2400)
             {
                 state.AutomaticMultiKissHoldTicks = PlayerMultiKissHoldTicks;
+                DebugLog("MULTIPLAYER", $"Automatic player bump kiss triggered: spouse={spouse.UniqueMultiplayerID}, distance={distance:0}, aligned={horizontallyAligned}.");
                 RequestOrStartPlayerKiss(spouse, PlayerKissMode.Bump, 1);
                 return;
             }
@@ -571,7 +630,10 @@ namespace LotsOfKisses
                 state.AutomaticMultiKissHoldTicks--;
 
             if (state.AutomaticMultiKissHoldTicks == 0)
+            {
+                DebugLog("MULTIPLAYER", $"Automatic player Multi-Kiss hold completed: spouse={spouse.UniqueMultiplayerID}, distance={distance:0}.");
                 RequestOrStartPlayerKiss(spouse, PlayerKissMode.Multi, RollContinuousKissTier());
+            }
         }
 
         private void UpdateActivePlayerKissSequence(PlayerKissState state)
@@ -580,14 +642,17 @@ namespace LotsOfKisses
             Farmer target = Game1.GetPlayer(state.TargetId, true);
             if (!CanPlayersRemainInKiss(initiator, target))
             {
-                StopPlayerKissSequence(state, notifyOtherPlayer: true);
+                StopPlayerKissSequence(state, notifyOtherPlayer: true, reason: "participants can no longer remain in kiss");
                 return;
             }
 
             float distance = Vector2.Distance(initiator.getStandingPosition(), target.getStandingPosition());
             if (distance > PlayerMultiKissStopDistance || initiator.TilePoint.Y != target.TilePoint.Y)
             {
-                StopPlayerKissSequence(state, notifyOtherPlayer: true);
+                string reason = distance > PlayerMultiKissStopDistance
+                    ? $"distance {distance:0}/{PlayerMultiKissStopDistance:0}"
+                    : $"players are on different tile rows ({initiator.TilePoint.Y}/{target.TilePoint.Y})";
+                StopPlayerKissSequence(state, notifyOtherPlayer: true, reason: reason);
                 return;
             }
 
@@ -600,7 +665,7 @@ namespace LotsOfKisses
                     state.FollowerSafetyTicks--;
                 else
                 {
-                    StopPlayerKissSequence(state, notifyOtherPlayer: false);
+                    StopPlayerKissSequence(state, notifyOtherPlayer: false, reason: "follower safety timeout");
                     return;
                 }
 
@@ -625,10 +690,11 @@ namespace LotsOfKisses
                     return;
 
                 state.IsCycleActive = false;
+                DebugLog("MULTIPLAYER", () => $"Authority completed synchronized cycle: {DescribePlayerKissDebugState(state)}.");
 
                 if (state.Mode == PlayerKissMode.SingleTier)
                 {
-                    StopPlayerKissSequence(state, notifyOtherPlayer: true);
+                    StopPlayerKissSequence(state, notifyOtherPlayer: true, reason: "single-tier manual kiss completed");
                     return;
                 }
 
@@ -652,7 +718,7 @@ namespace LotsOfKisses
             if (distance <= PlayerMultiKissRestartDistance)
                 BeginPlayerKissCycle(state);
             else
-                StopPlayerKissSequence(state, notifyOtherPlayer: true);
+                StopPlayerKissSequence(state, notifyOtherPlayer: true, reason: $"distance {distance:0} exceeded restart distance {PlayerMultiKissRestartDistance:0}");
         }
 
         private void UpdatePlayerKissTierEffects(PlayerKissState state, Farmer initiator, Farmer target)
@@ -757,10 +823,12 @@ namespace LotsOfKisses
             state.LeanAppliedOffset = Vector2.Zero;
         }
 
-        private void StopPlayerKissSequence(PlayerKissState state, bool notifyOtherPlayer)
+        private void StopPlayerKissSequence(PlayerKissState state, bool notifyOtherPlayer, string reason = "sequence stopped")
         {
             if (state == null || !state.HasActiveSequence)
                 return;
+
+            DebugLog("MULTIPLAYER", () => $"Stopping synchronized sequence ({reason}, notifyOther={notifyOtherPlayer}): {DescribePlayerKissDebugState(state)}.");
 
             string sequenceId = state.SequenceId;
             long initiatorId = state.InitiatorId;
@@ -790,6 +858,7 @@ namespace LotsOfKisses
                         InitiatorId = initiatorId,
                         TargetId = targetId
                     };
+                    DebugLog("MULTIPLAYER", $"Queued stop for local split-screen participant {otherId}: sequence={sequenceId}.");
                 }
                 else if (other != null)
                 {
@@ -804,12 +873,14 @@ namespace LotsOfKisses
                         modIDs: new[] { ModManifest.UniqueID },
                         playerIDs: new[] { otherId }
                     );
+                    DebugLog("MULTIPLAYER", $"Sent stop to remote participant {otherId}: sequence={sequenceId}.");
                 }
             }
 
             UnmarkPlayerKissParticipants(sequenceId, initiatorId, targetId);
             state.ClearActiveSequence();
             ScheduleBystanderRestore();
+            DebugLog("MULTIPLAYER", $"Synchronized sequence {sequenceId} cleared locally.");
         }
 
         private static void StopOwnedPlayerKissAnimation(Farmer player)
@@ -831,7 +902,7 @@ namespace LotsOfKisses
                 return;
             }
 
-            StopPlayerKissSequence(state, notifyOtherPlayer: false);
+            StopPlayerKissSequence(state, notifyOtherPlayer: false, reason: $"stop message received from player {senderId}");
         }
 
         private void MarkPlayerKissParticipants(string sequenceId, long initiatorId, long targetId)
@@ -941,7 +1012,7 @@ namespace LotsOfKisses
             if (state.HasActiveSequence
                 && (state.InitiatorId == e.Peer.PlayerID || state.TargetId == e.Peer.PlayerID))
             {
-                StopPlayerKissSequence(state, notifyOtherPlayer: false);
+                StopPlayerKissSequence(state, notifyOtherPlayer: false, reason: $"participant {e.Peer.PlayerID} disconnected");
             }
         }
 
@@ -952,7 +1023,7 @@ namespace LotsOfKisses
 
             PlayerKissState state = playerKissState.Value;
             if (state.HasActiveSequence)
-                StopPlayerKissSequence(state, notifyOtherPlayer: true);
+                StopPlayerKissSequence(state, notifyOtherPlayer: true, reason: "local player warped");
             state.ClearOutgoingRequest();
             state.WasTouchingSpouse = false;
             state.AutomaticMultiKissHoldTicks = 0;
@@ -962,7 +1033,7 @@ namespace LotsOfKisses
         {
             PlayerKissState state = playerKissState.Value;
             if (state.HasActiveSequence)
-                StopPlayerKissSequence(state, notifyOtherPlayer: false);
+                StopPlayerKissSequence(state, notifyOtherPlayer: false, reason: "returned to title");
             state.Reset();
             activePlayerKissSequenceByParticipant.Clear();
             pendingLocalSplitKissCycles.Clear();

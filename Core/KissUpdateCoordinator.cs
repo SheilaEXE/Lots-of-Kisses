@@ -27,6 +27,7 @@ namespace LotsOfKisses
         private void UpdateKissSystems()
         {
             UpdateContinuousKissPlayerLeanEffect();
+            UpdatePostMultiKissLookWait();
             UpdateDeferredNpcSpecialActionRestore();
             UpdateBystanderRestore();
             UpdatePipeTextQueues();

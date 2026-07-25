@@ -9,7 +9,7 @@ namespace LotsOfKisses
     {
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
-            ResetTransientKissContext();
+            ResetTransientKissContext("save loaded");
             lastDayChecked = Game1.dayOfMonth;
             talkedToPartnerToday = false;
             didReactThisTick = false;
@@ -17,10 +17,11 @@ namespace LotsOfKisses
             lastNoticeDistance = -1f;
 
             contentPackLoader.Load();
+            LogDebugSessionHeader("save loaded");
         }
         private void OnDayStarted(object sender, DayStartedEventArgs e)
         {
-            ResetTransientKissContext();
+            ResetTransientKissContext("day started");
             lastDayChecked = Game1.dayOfMonth;
             talkedToPartnerToday = false;
 
@@ -45,7 +46,7 @@ namespace LotsOfKisses
         }
         private void OnReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
         {
-            ResetTransientKissContext();
+            ResetTransientKissContext("returned to title");
             lastDayChecked = -1;
             lastLocation = "";
             cooldown = 0;
@@ -111,6 +112,8 @@ namespace LotsOfKisses
                 Monitor.Log($"[Tile Marker] Could not register the vision-ignored tile category: {ex}", LogLevel.Warn);
             }
 
+            LogDebugSessionHeader("game launched");
+
         }
 
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
@@ -122,7 +125,7 @@ namespace LotsOfKisses
             {
                 if (!modDisabledCleanupApplied)
                 {
-                    AbortActiveModState(releasePlayer: !Game1.eventUp);
+                    AbortActiveModState(releasePlayer: !Game1.eventUp, reason: "mod disabled");
                     modDisabledCleanupApplied = true;
                 }
 
@@ -134,7 +137,7 @@ namespace LotsOfKisses
 
             if (Game1.eventUp)
             {
-                AbortActiveModState(releasePlayer: false);
+                AbortActiveModState(releasePlayer: false, reason: "event started");
                 return;
             }
 
@@ -256,7 +259,7 @@ namespace LotsOfKisses
             if (!Context.IsWorldReady || e == null || !e.IsLocalPlayer)
                 return;
 
-            ResetTransientKissContext();
+            ResetTransientKissContext($"local player warped from {e.OldLocation?.NameOrUniqueName ?? "null"} to {e.NewLocation?.NameOrUniqueName ?? "null"}");
 
             lastLocation = e.NewLocation?.NameOrUniqueName ?? "";
 
@@ -270,24 +273,34 @@ namespace LotsOfKisses
             return token == delayedActionContextToken && Context.IsWorldReady && Game1.player != null;
         }
 
-        private void InvalidateDelayedActions()
+        private void InvalidateDelayedActions(string reason)
         {
+            int oldToken = delayedActionContextToken;
             delayedActionContextToken++;
+            DebugLog("DELAYED", $"Invalidated delayed actions ({reason}): token {oldToken} -> {delayedActionContextToken}.");
         }
 
-        private void ResetTransientKissContext()
+        private void ResetTransientKissContext(string reason)
         {
+            DebugLog("RESET", () =>
+                $"Resetting transient context ({reason}): continuousActive={continuousKissActive}, continuousPending={continuousKissPendingRestart}, " +
+                $"kissSequence={kissSequenceActive}, postSequence={kissPostSequenceActive}, specialSnapshot={(preKissSpecialActionSnapshot != null)}, " +
+                $"bystanders={activeBystanderSnapshots.Count}, outsideBumpPause={OutsideBumpPause.IsActive}, hotkeyWait={hotkeyStoppedMultiKissAwaitingMoveAway}, " +
+                $"postMultiKissLook={postMultiKissLookActive}."
+            );
             ResetStardewSquadSupportState();
             RestoreBystandersBeforeContextReset();
-            InvalidateDelayedActions();
+            InvalidateDelayedActions(reason);
             ClearPipeTextQueues();
             ResetOutsideBumpPause();
             ClearHotkeyStoppedMultiKissWait(releaseNpc: true);
+            ClearPostMultiKissLookWait(releaseNpc: true, reason: $"context reset: {reason}");
 
             ClearPendingPublicMultiKissShyEmote(releaseNpc: true);
             approachKissBlockTimerByNpc.Clear();
             bumpKissCooldownByNpc.Clear();
             bumpKissTouchingByNpc.Clear();
+            bumpKissLastDebugRejectionByNpc.Clear();
             approachKissDialogueLastTimeOfDay = -1;
             kissBlockAfterDialogueTimer = 0;
             wasDialogueOrMenuOpenLastTick = false;
@@ -305,10 +318,11 @@ namespace LotsOfKisses
             ResetKissState();
             ResetContinuousKissState();
             ResetPostKissState();
-            ClearNpcPreKissSpecialAction();
+            ClearNpcPreKissSpecialAction(reason: $"context reset: {reason}");
+            DebugLog("RESET", $"Transient context reset completed ({reason}).");
         }
 
-        private void AbortActiveModState(bool releasePlayer)
+        private void AbortActiveModState(bool releasePlayer, string reason)
         {
             if (releasePlayer && Game1.player != null)
                 ReleasePlayerAfterKissWithoutOverridingCurrentPose();
@@ -318,7 +332,7 @@ namespace LotsOfKisses
             if (heldNpc != null && heldNpc.currentLocation != null)
                 heldNpc.movementPause = 0;
 
-            ResetTransientKissContext();
+            ResetTransientKissContext(reason);
         }
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
         {
@@ -476,9 +490,9 @@ namespace LotsOfKisses
                 continuousKissSingleCycleFinishing = false;
             }
 
-            Monitor.Log(
-                $"[MANUAL KISS] {e.Button} on {clickedPartner.Name}: tier={tier}, mode={(useOneRandomTier ? "single-random" : "start-multi")}, started={started}.",
-                LogLevel.Trace
+            DebugLog(
+                "MANUAL",
+                $"{e.Button} on {clickedPartner.Name}: tier={tier}, mode={(useOneRandomTier ? "single-random" : "start-multi")}, started={started}."
             );
 
             return true;

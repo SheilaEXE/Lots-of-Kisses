@@ -1054,5 +1054,9 @@
   "approachKiss.Penny.17": "Acho que esqueci o que eu ia dizer.",
   "approachKiss.Penny.18": "Oh! Que surpresa adorável.",
   "approachKiss.Penny.19": "Ah... |meu rosto me entregou.",
-  "approachKiss.Penny.20": "Acho que meu rosto ficou vermelho."
+  "approachKiss.Penny.20": "Acho que meu rosto ficou vermelho.",
+
+  "gmcm.section.diagnostics": "Diagnóstico",
+  "gmcm.option.enable-debug-logging.name": "Ativar logs de depuração",
+  "gmcm.option.enable-debug-logging.tooltip": "Registra mudanças detalhadas de estado para investigar problemas. Deixe desativado durante o jogo normal e ative apenas ao reproduzir um problema."
 }
