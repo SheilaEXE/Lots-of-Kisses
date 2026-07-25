@@ -13,6 +13,8 @@ namespace LotsOfKisses
         private float hotkeyStoppedMultiKissInitialDistance = -1f;
         private Vector2 hotkeyStoppedMultiKissPlayerStartPosition;
         private string hotkeyStoppedMultiKissLastDebugWaitReason;
+        private bool hotkeyStoppedMultiKissUseExtendedWait;
+        private bool hotkeyStoppedMultiKissResumeRouteNaturally;
 
         private bool IsMultiKissHotkeyConfigured()
         {
@@ -134,6 +136,9 @@ namespace LotsOfKisses
 
             DebugLog("HOTKEY", () => $"Stopping NPC Multi-Kiss and entering move-away wait: {DescribeNpcDebugState(partner)}.");
 
+            bool useExtendedWait = CanUsePostMultiKissLookWait(partner);
+            bool resumeRouteNaturally = CanResumeExistingRouteAfterMultiKiss(partner);
+
             ScheduleBystanderRestore(partner);
             ReleasePlayerAfterKissWithoutOverridingCurrentPose();
             ResetContinuousKissState();
@@ -150,6 +155,8 @@ namespace LotsOfKisses
             hotkeyStoppedMultiKissInitialDistance = DistanceToPlayer(partner);
             hotkeyStoppedMultiKissPlayerStartPosition = Game1.player.Position;
             hotkeyStoppedMultiKissLastDebugWaitReason = null;
+            hotkeyStoppedMultiKissUseExtendedWait = useExtendedWait;
+            hotkeyStoppedMultiKissResumeRouteNaturally = resumeRouteNaturally;
             partner.movementPause = Math.Max(partner.movementPause, 60);
             partner.faceGeneralDirection(Game1.player.getStandingPosition(), 0, false, false);
         }
@@ -169,7 +176,7 @@ namespace LotsOfKisses
             }
 
             float distance = DistanceToPlayer(partner);
-            bool useExtendedSnapshotWait = CanUsePostMultiKissLookWait(partner);
+            bool useExtendedSnapshotWait = hotkeyStoppedMultiKissUseExtendedWait;
             float requiredDistance = useExtendedSnapshotWait
                 ? PostMultiKissLookRestoreDistance
                 : 90f;
@@ -192,7 +199,7 @@ namespace LotsOfKisses
                     hotkeyStoppedMultiKissLastDebugWaitReason = waitReason;
                     DebugLog("HOTKEY", $"Waiting to release {partner.Name}: {waitReason}; distance={distance:0}, initialDistance={hotkeyStoppedMultiKissInitialDistance:0}, extendedSnapshotWait={useExtendedSnapshotWait}.");
                 }
-                if (useExtendedSnapshotWait)
+                if (useExtendedSnapshotWait && !IsNpcShowingKissVisual(partner))
                     ApplyPostMultiKissLookAtPlayer(partner, 60);
                 else
                 {
@@ -239,7 +246,10 @@ namespace LotsOfKisses
             NPC partner = hotkeyStoppedMultiKissNpc;
             if (hotkeyStoppedMultiKissAwaitingMoveAway)
                 DebugLog("HOTKEY", $"Cleared move-away wait ({reason}): npc={partner?.Name ?? "null"}, releaseNpc={releaseNpc}.");
-            if (releaseNpc && partner != null)
+
+            if (hotkeyStoppedMultiKissResumeRouteNaturally && partner != null)
+                ReleaseExistingRouteAfterMultiKiss(partner, maximumOwnedPause: 60, reason);
+            else if (releaseNpc && partner != null)
                 partner.movementPause = 0;
 
             hotkeyStoppedMultiKissNpc = null;
@@ -247,6 +257,8 @@ namespace LotsOfKisses
             hotkeyStoppedMultiKissInitialDistance = -1f;
             hotkeyStoppedMultiKissPlayerStartPosition = Vector2.Zero;
             hotkeyStoppedMultiKissLastDebugWaitReason = null;
+            hotkeyStoppedMultiKissUseExtendedWait = false;
+            hotkeyStoppedMultiKissResumeRouteNaturally = false;
         }
     }
 }
