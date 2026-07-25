@@ -30,7 +30,11 @@ namespace LotsOfKisses
             return npc != null
                 && continuousKissNpc == npc
                 && continuousKissNpcHadControllerAtSequenceStart
-                && npc.controller != null;
+                && npc.controller != null
+                // A stationary special-animation snapshot is the source of truth even if a
+                // controller happened to remain attached at capture time. Restore that pose
+                // after 600px instead of treating it as an active walking route.
+                && !HasStationaryPostMultiKissSnapshot(npc);
         }
 
         private bool CanUsePostMultiKissLookWait(NPC npc)

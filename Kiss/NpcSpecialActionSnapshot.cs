@@ -100,12 +100,14 @@ namespace LotsOfKisses
             int originalFrame = npc.Sprite.CurrentFrame;
             TryTransferPassiveLookOriginalPose(npc, out originalFacing, out originalFrame);
 
-            // A schedule controller remains attached while another mod temporarily pauses the NPC.
-            // Treat that as walking too, otherwise the paused partner is misclassified as plain idle
-            // and the deferred restore teleports them back to the position where the kiss started.
-            bool isWalking = npc.isMoving() || npc.controller != null;
             bool hasSpecialAnimation = animation != null && animation.Count > 0;
             bool hasSpecialStaticFrame = originalFrame >= 16;
+            // A controller can remain attached even after a stationary route-end action has begun
+            // (for example Penny sitting and reading). A visible special pose takes precedence when
+            // the NPC isn't actually moving; ordinary route NPCs with an attached controller are
+            // still classified as walking and resume that unchanged route after the 600px wait.
+            bool isWalking = npc.isMoving() ||
+                (npc.controller != null && !hasSpecialAnimation && !hasSpecialStaticFrame);
             bool isPlainIdle = !isWalking && !hasSpecialAnimation && !hasSpecialStaticFrame;
 
             // If the NPC is walking with no special animation or frame, skip capture —
