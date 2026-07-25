@@ -4,9 +4,9 @@ using StardewValley;
 namespace LotsOfKisses
 {
     /// <summary>
-    /// Keeps an originally stationary partner looking at the player after a Multi-Kiss, while
-    /// preserving the pre-kiss pose/animation until the player moves far enough away.
-    /// Controllers are never touched; originally moving NPCs never enter this state.
+    /// Keeps a partner looking at the player after a Multi-Kiss until the player moves far enough
+    /// away. Stationary NPCs restore their saved pose/animation; walking NPCs resume the existing
+    /// route naturally. Controllers are never replaced or cleared.
     /// </summary>
     public partial class ModEntry
     {
@@ -14,14 +14,29 @@ namespace LotsOfKisses
         private bool postMultiKissLookActive;
         private NPC postMultiKissLookNpc;
         private string postMultiKissLookReason;
+        private bool postMultiKissLookResumeRouteNaturally;
 
-        private bool CanUsePostMultiKissLookWait(NPC npc)
+        private bool HasStationaryPostMultiKissSnapshot(NPC npc)
         {
             return npc != null
                 && preKissSpecialActionSnapshot != null
                 && preKissSpecialActionSnapshot.Npc == npc
                 && preKissSpecialActionSnapshot.Location == npc.currentLocation
                 && !preKissSpecialActionSnapshot.WasMovingOrControlled;
+        }
+
+        private bool CanResumeExistingRouteAfterMultiKiss(NPC npc)
+        {
+            return npc != null
+                && continuousKissNpc == npc
+                && continuousKissNpcHadControllerAtSequenceStart
+                && npc.controller != null;
+        }
+
+        private bool CanUsePostMultiKissLookWait(NPC npc)
+        {
+            return HasStationaryPostMultiKissSnapshot(npc)
+                || CanResumeExistingRouteAfterMultiKiss(npc);
         }
 
         private bool BeginPostMultiKissLookWait(NPC npc, string reason)
@@ -36,11 +51,17 @@ namespace LotsOfKisses
                 return false;
             }
 
+            bool resumeRouteNaturally = CanResumeExistingRouteAfterMultiKiss(npc);
+
             postMultiKissLookActive = true;
             postMultiKissLookNpc = npc;
             postMultiKissLookReason = reason;
+            postMultiKissLookResumeRouteNaturally = resumeRouteNaturally;
             npc.movementPause = System.Math.Max(npc.movementPause, 6);
-            DebugLog("POST-LOOK", $"Started post-Multi-Kiss look wait ({reason}): npc={npc.Name}, restoreDistance={PostMultiKissLookRestoreDistance:0}, snapshot=#{preKissSpecialActionSnapshot.DebugId}.");
+            string restoreMode = resumeRouteNaturally
+                ? "resume existing controller naturally"
+                : $"restore snapshot #{preKissSpecialActionSnapshot.DebugId}";
+            DebugLog("POST-LOOK", $"Started post-Multi-Kiss look wait ({reason}): npc={npc.Name}, restoreDistance={PostMultiKissLookRestoreDistance:0}, mode={restoreMode}.");
             return true;
         }
 
@@ -81,9 +102,34 @@ namespace LotsOfKisses
             }
 
             string reason = postMultiKissLookReason;
+            bool resumeRouteNaturally = postMultiKissLookResumeRouteNaturally;
             ClearPostMultiKissLookWait(releaseNpc: false, $"player reached restore distance ({distance:0}/{PostMultiKissLookRestoreDistance:0})");
+            if (resumeRouteNaturally)
+            {
+                ReleaseExistingRouteAfterMultiKiss(npc, maximumOwnedPause: 6, reason);
+                return;
+            }
+
             DebugLog("POST-LOOK", $"Restoring original pose after post-Multi-Kiss wait ({reason}): npc={npc.Name}, distance={distance:0}.");
             TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
+        }
+
+        private void ReleaseExistingRouteAfterMultiKiss(NPC npc, int maximumOwnedPause, string reason)
+        {
+            if (npc == null)
+                return;
+
+            // A late-night walking snapshot may exist, but the unchanged controller is the source
+            // of truth for the route. Don't restore a stale walking frame over it.
+            if (preKissSpecialActionSnapshot?.Npc == npc && preKissSpecialActionSnapshot.WasMovingOrControlled)
+                ClearNpcPreKissSpecialAction(npc, $"existing route released after {reason}");
+
+            if (npc.movementPause <= maximumOwnedPause)
+                npc.movementPause = 0;
+
+            DebugLog("POST-LOOK", () =>
+                $"Released post-Multi-Kiss route hold ({reason}) without changing the controller: {DescribeNpcDebugState(npc)}."
+            );
         }
 
         /// <summary>
@@ -125,6 +171,7 @@ namespace LotsOfKisses
             postMultiKissLookActive = false;
             postMultiKissLookNpc = null;
             postMultiKissLookReason = null;
+            postMultiKissLookResumeRouteNaturally = false;
         }
     }
 }

@@ -31,6 +31,7 @@ namespace LotsOfKisses
             continuousKissCyclesDone = 0;
             continuousKissSingleCycle = false;
             continuousKissSingleCycleFinishing = false;
+            continuousKissNpcHadControllerAtSequenceStart = false;
             publicMultiKissDialogueTriggered = false;
             pendingPublicMultiKissDialogue = false;
             pendingPublicMultiKissDialogueNpc = null;

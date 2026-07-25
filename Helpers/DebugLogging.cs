@@ -95,6 +95,7 @@ namespace LotsOfKisses
                 $"bystanderSnapshots={activeBystanderSnapshots.Count}, bystanderRestorePending={bystanderRestore.IsPending}, " +
                 $"outsideBumpPause={OutsideBumpPause.IsActive}, hotkeyMoveAwayWait={hotkeyStoppedMultiKissAwaitingMoveAway}, " +
                 $"postMultiKissLook={postMultiKissLookActive}, postMultiKissNpc={postMultiKissLookNpc?.Name ?? "null"}, " +
+                $"postMultiKissRouteResume={postMultiKissLookResumeRouteNaturally}, sequenceStartedWithController={continuousKissNpcHadControllerAtSequenceStart}, " +
                 $"publicDialoguePending={pendingPublicMultiKissDialogue}, publicShyEmotePending={pendingPublicMultiKissShyEmote}, " +
                 $"crowdBubbleActive={HasActiveCrowdReactionSpeechBubble()}, passiveLookSnapshot={passiveLookRestoreActive}, " +
                 $"squadReady={stardewSquadIntegrationReady}, squadHoldNpc={stardewSquadKissHoldNpc?.Name ?? "null"}, " +

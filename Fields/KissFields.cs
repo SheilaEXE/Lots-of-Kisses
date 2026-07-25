@@ -68,6 +68,10 @@ namespace LotsOfKisses
         private bool continuousKissWasTouchingPartner = false;
         private bool continuousKissSingleCycle = false;
         private bool continuousKissSingleCycleFinishing = false;
+        // Records route ownership before the first kiss halts the NPC. The controller itself is
+        // never replaced or cleared; this only decides whether it should remain paused until the
+        // player reaches the post-Multi-Kiss release distance.
+        private bool continuousKissNpcHadControllerAtSequenceStart = false;
 
         // =====================================================================
         // EFEITO VISUAL DO TIER 3: FARMER SE APROXIMA EM PIXELS E VOLTA

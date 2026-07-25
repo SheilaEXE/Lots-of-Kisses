@@ -72,6 +72,11 @@ namespace LotsOfKisses
 
             continuousKissApproachBlockDebugLoggedByNpc.Remove(npc.Name);
 
+            // Capture this before the kiss path halts the NPC. A walking NPC keeps the same
+            // controller throughout the sequence and can resume it naturally after the 600px
+            // post-kiss look wait.
+            bool hadControllerAtSequenceStart = isNewSequence && npc.controller != null;
+
             CaptureNpcPreKissSpecialAction(npc);
 
             int durationMs = GetContinuousKissTierDurationMs(kissTier);
@@ -112,6 +117,8 @@ namespace LotsOfKisses
             continuousKissWasTouchingPartner = true;
             continuousKissSingleCycle = false;
             continuousKissSingleCycleFinishing = false;
+            if (isNewSequence)
+                continuousKissNpcHadControllerAtSequenceStart = hadControllerAtSequenceStart;
             DebugLog("MULTIKISS", () => $"Started {(isNewSequence ? "new sequence" : "cycle")} with {npc.Name}: tier={kissTier}, durationMs={durationMs}, manual={manualRightClick}, completedCycles={continuousKissCyclesDone}.");
             return true;
         }
@@ -543,6 +550,8 @@ namespace LotsOfKisses
                     string postLine = GetDialogueLine("kissReaction", postNpc);
                     string publicLine = GetDialogueLine("PublicKissReaction", postNpc);
 
+                    DebugLog("MULTIKISS", $"Sequence ended during the inter-cycle gap because the player moved away from {postNpc.Name}: distance={restartDistance:0}/72, completedCycles={continuousKissCyclesDone}.");
+                    BeginPostMultiKissLookWait(postNpc, "inter-cycle distance ending");
                     ResetContinuousKissState();
                     activeKissVisualDelayMs = bumpKissVisualDelayMs;
 
