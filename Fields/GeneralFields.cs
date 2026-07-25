@@ -57,6 +57,9 @@ namespace LotsOfKisses
         // Disabling the mod needs one cleanup pass, not a cleanup on every update tick. Repeating
         // completelyStopAnimatingOrDoingAction each tick freezes the player's walking sprite.
         private bool modDisabledCleanupApplied = false;
+        // Events can remain active for hundreds of update ticks. Their transition cleanup must
+        // run only once, otherwise state resets and diagnostic messages repeat every tick.
+        private bool eventCleanupApplied = false;
         // Invalidates callbacks scheduled by this mod when the save/context changes.
         private int delayedActionContextToken = 0;
 

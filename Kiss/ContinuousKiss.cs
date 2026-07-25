@@ -63,9 +63,14 @@ namespace LotsOfKisses
 
             if (!manualRightClick && GetApproachKissBlockTimer(npc) > 0)
             {
-                DebugLog("MULTIKISS", $"Start rejected for {npc.Name}: approach-kiss block timer is active.");
+                // Automatic proximity checks run every tick. Record this unchanged rejection only
+                // once per blocked period instead of flooding the diagnostic log.
+                if (continuousKissApproachBlockDebugLoggedByNpc.Add(npc.Name))
+                    DebugLog("MULTIKISS", $"Start rejected for {npc.Name}: approach-kiss block timer is active.");
                 return false;
             }
+
+            continuousKissApproachBlockDebugLoggedByNpc.Remove(npc.Name);
 
             CaptureNpcPreKissSpecialAction(npc);
 

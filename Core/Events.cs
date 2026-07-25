@@ -137,9 +137,17 @@ namespace LotsOfKisses
 
             if (Game1.eventUp)
             {
-                AbortActiveModState(releasePlayer: false, reason: "event started");
+                if (!eventCleanupApplied)
+                {
+                    AbortActiveModState(releasePlayer: false, reason: "event started");
+                    eventCleanupApplied = true;
+                }
+
                 return;
             }
+
+            // Rearm the transition cleanup only after the event has genuinely ended.
+            eventCleanupApplied = false;
 
             // Freeze the entire mod while the game window isn't focused (player alt-tabbed,
             // switched to another app/browser, etc). Timers, kiss cycles, and NPC holds all
@@ -301,6 +309,7 @@ namespace LotsOfKisses
             bumpKissCooldownByNpc.Clear();
             bumpKissTouchingByNpc.Clear();
             bumpKissLastDebugRejectionByNpc.Clear();
+            continuousKissApproachBlockDebugLoggedByNpc.Clear();
             approachKissDialogueLastTimeOfDay = -1;
             kissBlockAfterDialogueTimer = 0;
             wasDialogueOrMenuOpenLastTick = false;

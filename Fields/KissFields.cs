@@ -36,6 +36,7 @@ namespace LotsOfKisses
         private System.Collections.Generic.Dictionary<string, int> bumpKissCooldownByNpc = new();
         private System.Collections.Generic.Dictionary<string, bool> bumpKissTouchingByNpc = new();
         private System.Collections.Generic.Dictionary<string, string> bumpKissLastDebugRejectionByNpc = new();
+        private System.Collections.Generic.HashSet<string> continuousKissApproachBlockDebugLoggedByNpc = new();
         private int approachKissDialogueLastTimeOfDay = -1;
         private string pendingKissCycleLine = null;
         internal readonly OutsideBumpPauseState OutsideBumpPause = new();
