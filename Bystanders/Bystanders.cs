@@ -684,6 +684,37 @@ namespace LotsOfKisses
                 npc.FacingDirection = snapshot.FacingDirection;
                 npc.flip = snapshot.Flip;
 
+                // Fishing needs an atomic restore. Its saved sprite dimensions cover two
+                // tilesheet rows, so restoring those dimensions and CurrentFrame now, then
+                // waiting 150 ms to restart doMiddleAnimation, exposes one visibly corrupted
+                // frame. Keep the clean watching pose during the delay and restore every fishing
+                // field inside the same callback that restarts vanilla's animation instead.
+                if (!string.IsNullOrEmpty(snapshot.SavedStartedEndOfRouteBehavior))
+                {
+                    string behaviorName = snapshot.SavedStartedEndOfRouteBehavior;
+                    snapshot.SavedStartedEndOfRouteBehavior = null;
+                    NPC npcForDelay = npc;
+                    DebugLog("FISHING", $"Scheduled atomic middle-animation restore for snapshot #{snapshot.DebugId}, NPC={npc.Name}, behavior={behaviorName}, delay=150 ms, token={delayedActionToken}.");
+
+                    DelayedAction.functionAfterDelay(() =>
+                    {
+                        if (!IsCurrentDelayedAction(delayedActionToken)
+                            || npcForDelay?.currentLocation == null
+                            || npcForDelay.currentLocation != snapshot.Location
+                            || npcForDelay.Sprite == null)
+                        {
+                            DebugLog("DELAYED", $"Skipped stale/unavailable atomic fishing restore for snapshot #{snapshot.DebugId}, token={delayedActionToken}.");
+                            return;
+                        }
+
+                        RestoreFishingBystanderVisualState(snapshot, npcForDelay);
+                        TryRestartNpcMiddleAnimation(npcForDelay, behaviorName);
+                        DebugLog("FISHING", () => $"Atomic fishing restore completed for snapshot #{snapshot.DebugId}: {DescribeNpcDebugState(npcForDelay)}.");
+                    }, 150);
+
+                    continue;
+                }
+
                 // FISHING FIX: restore the sprite dimensions BEFORE touching CurrentAnimation/
                 // CurrentFrame/UpdateSourceRect below — see the matching comment in
                 // HoldBystanderWatching. Restoring dimensions first means the CurrentFrame set
@@ -718,25 +749,6 @@ namespace LotsOfKisses
                     TrySetPrivateField(npc, "loadedEndOfRouteBehavior", snapshot.SavedLoadedEndOfRouteBehavior);
                     TrySetPrivateField(npc, "drawOffset", snapshot.SavedDrawOffset);
                     snapshot.HasSavedRodLayerFields = false;
-                }
-
-                if (!string.IsNullOrEmpty(snapshot.SavedStartedEndOfRouteBehavior))
-                {
-                    string behaviorName = snapshot.SavedStartedEndOfRouteBehavior;
-                    snapshot.SavedStartedEndOfRouteBehavior = null;
-                    NPC npcForDelay = npc;
-                    DebugLog("FISHING", $"Scheduled middle-animation restart for snapshot #{snapshot.DebugId}, NPC={npc.Name}, behavior={behaviorName}, delay=150 ms, token={delayedActionToken}.");
-
-                    DelayedAction.functionAfterDelay(() =>
-                    {
-                        if (!IsCurrentDelayedAction(delayedActionToken) || npcForDelay?.currentLocation == null || npcForDelay.Sprite == null)
-                        {
-                            DebugLog("DELAYED", $"Skipped stale/unavailable fishing restart for snapshot #{snapshot.DebugId}, token={delayedActionToken}.");
-                            return;
-                        }
-
-                        TryRestartNpcMiddleAnimation(npcForDelay, behaviorName);
-                    }, 150);
                 }
 
                 if (snapshot.CurrentAnimation != null && snapshot.CurrentAnimation.Count > 0)
@@ -783,6 +795,58 @@ namespace LotsOfKisses
             bystanderRestore.SafetyTimer = 0;
             bystanderRestore.Partner = null;
             bystanderRestore.ForceStart = false;
+        }
+
+        /// <summary>
+        /// Restores every field that belongs to a stationary fishing pose immediately before
+        /// vanilla restarts its middle animation. Keeping these writes together prevents the
+        /// two-row fishing source rectangle from being drawn with a temporary idle/saved frame.
+        /// </summary>
+        private void RestoreFishingBystanderVisualState(BystanderSnapshot snapshot, NPC npc)
+        {
+            if (snapshot == null || npc?.Sprite == null)
+                return;
+
+            if (snapshot.HasSavedSpriteDimensions)
+            {
+                TrySetPrivateField(npc.Sprite, "spriteWidth", snapshot.SavedSpriteWidth);
+                TrySetPrivateField(npc.Sprite, "tempSpriteHeight", snapshot.SavedTempSpriteHeight);
+                TrySetPrivateField(npc.Sprite, "ignoreSourceRectUpdates", snapshot.SavedIgnoreSourceRectUpdates);
+                snapshot.HasSavedSpriteDimensions = false;
+            }
+
+            if (snapshot.SavedDoingEndOfRouteAnimation.HasValue)
+            {
+                TrySetNetBoolField(npc, "doingEndOfRouteAnimation", snapshot.SavedDoingEndOfRouteAnimation.Value);
+                TrySetPrivateField(npc, "currentlyDoingEndOfRouteAnimation", snapshot.SavedCurrentlyDoingEndOfRouteAnimation ?? false);
+                snapshot.SavedDoingEndOfRouteAnimation = null;
+                snapshot.SavedCurrentlyDoingEndOfRouteAnimation = null;
+            }
+
+            if (snapshot.HasSavedRodLayerFields)
+            {
+                TrySetPrivateField(npc, "yOffset", snapshot.SavedYOffset);
+                TrySetPrivateField(npc, "loadedEndOfRouteBehavior", snapshot.SavedLoadedEndOfRouteBehavior);
+                TrySetPrivateField(npc, "drawOffset", snapshot.SavedDrawOffset);
+                snapshot.HasSavedRodLayerFields = false;
+            }
+
+            if (snapshot.CurrentAnimation != null && snapshot.CurrentAnimation.Count > 0)
+            {
+                npc.Sprite.CurrentAnimation =
+                    new List<FarmerSprite.AnimationFrame>(snapshot.CurrentAnimation);
+                TrySetPrivateField(npc.Sprite, "currentAnimationIndex", 0);
+                TrySetPrivateField(npc.Sprite, "timer", 0);
+            }
+            else
+            {
+                npc.Sprite.StopAnimation();
+                npc.Sprite.ClearAnimation();
+                npc.Sprite.CurrentAnimation = null;
+            }
+
+            npc.Sprite.CurrentFrame = snapshot.CurrentFrame;
+            npc.Sprite.UpdateSourceRect();
         }
 
         private void ReleaseRouteBystanderPauseOnly(BystanderSnapshot snapshot)
