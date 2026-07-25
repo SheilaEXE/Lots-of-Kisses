@@ -69,6 +69,12 @@ namespace LotsOfKisses
             if (npc == null)
                 return true;
 
+            // The pre-kiss snapshot already owns the NPC's original pose until the player moves
+            // away. Capturing a passive-look snapshot during that wait would save the temporary
+            // post-kiss facing and later overwrite the correct restoration.
+            if (HasNpcPreKissSpecialAction(npc))
+                return true;
+
             // If any system or mod is moving the NPC, don't let Lots of Kisses
             // flip the sprite on top of it.
             if (npc.controller != null)
@@ -87,6 +93,35 @@ namespace LotsOfKisses
                 return true;
 
             return false;
+        }
+
+        private bool TryTransferPassiveLookOriginalPose(NPC npc, out int facing, out int frame)
+        {
+            facing = npc?.FacingDirection ?? -1;
+            frame = npc?.Sprite?.CurrentFrame ?? -1;
+
+            if (npc == null || npc.Sprite == null || npc.currentLocation == null ||
+                !passiveLookRestoreActive || passiveLookRestoreNpcName != npc.Name)
+            {
+                return false;
+            }
+
+            bool snapshotStillApplies =
+                npc.currentLocation.NameOrUniqueName == passiveLookRestoreLocationName &&
+                npc.TilePoint == passiveLookRestoreTile;
+
+            if (!snapshotStillApplies)
+            {
+                ClearPassiveLookOriginalPose("not transferable because NPC changed location or tile");
+                return false;
+            }
+
+            facing = passiveLookRestoreFacing;
+            frame = passiveLookRestoreFrame;
+            int transferredSnapshotId = passiveLookDebugSnapshotId;
+            ClearPassiveLookOriginalPose("transferred to pre-kiss snapshot");
+            DebugLog("SNAPSHOT", $"Transferred passive-look snapshot #{transferredSnapshotId} into the pre-kiss snapshot for {npc.Name}: facing={facing}, frame={frame}.");
+            return true;
         }
         private bool HasSpecialSpriteAnimation(NPC npc)
         {

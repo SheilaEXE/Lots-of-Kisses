@@ -707,8 +707,13 @@ namespace LotsOfKisses
                             return;
                         }
 
-                        RestoreFishingBystanderVisualState(snapshot, npcForDelay);
+                        PrepareFishingBystanderVanillaRestart(snapshot, npcForDelay);
                         TryRestartNpcMiddleAnimation(npcForDelay, behaviorName);
+                        // doMiddleAnimation changes CurrentFrame before startRouteBehavior expands
+                        // the fishing sprite, but AddFrame itself doesn't refresh SourceRect. Finish
+                        // the transition now so no draw can see the old coordinates with the newly
+                        // expanded fishing dimensions.
+                        npcForDelay.Sprite.UpdateSourceRect();
                         DebugLog("FISHING", () => $"Atomic fishing restore completed for snapshot #{snapshot.DebugId}: {DescribeNpcDebugState(npcForDelay)}.");
                     }, 150);
 
@@ -798,20 +803,23 @@ namespace LotsOfKisses
         }
 
         /// <summary>
-        /// Restores every field that belongs to a stationary fishing pose immediately before
-        /// vanilla restarts its middle animation. Keeping these writes together prevents the
-        /// two-row fishing source rectangle from being drawn with a temporary idle/saved frame.
+        /// Prepares a stationary fishing spectator for vanilla to rebuild its middle animation.
+        /// The saved fishing rectangle must not be restored here: startRouteBehavior expands the
+        /// current rectangle again, which briefly produces an oversized multi-row source rectangle.
         /// </summary>
-        private void RestoreFishingBystanderVisualState(BystanderSnapshot snapshot, NPC npc)
+        private void PrepareFishingBystanderVanillaRestart(BystanderSnapshot snapshot, NPC npc)
         {
             if (snapshot == null || npc?.Sprite == null)
                 return;
 
             if (snapshot.HasSavedSpriteDimensions)
             {
-                TrySetPrivateField(npc.Sprite, "spriteWidth", snapshot.SavedSpriteWidth);
-                TrySetPrivateField(npc.Sprite, "tempSpriteHeight", snapshot.SavedTempSpriteHeight);
-                TrySetPrivateField(npc.Sprite, "ignoreSourceRectUpdates", snapshot.SavedIgnoreSourceRectUpdates);
+                // Start from the regular one-row NPC rectangle. Vanilla's fishing behavior will
+                // apply its own horizontal/vertical extension exactly once in doMiddleAnimation.
+                TrySetPrivateField(npc.Sprite, "spriteWidth", 16);
+                TrySetPrivateField(npc.Sprite, "tempSpriteHeight", -1);
+                TrySetPrivateField(npc.Sprite, "ignoreSourceRectUpdates", false);
+                npc.Sprite.UpdateSourceRect();
                 snapshot.HasSavedSpriteDimensions = false;
             }
 
@@ -831,22 +839,9 @@ namespace LotsOfKisses
                 snapshot.HasSavedRodLayerFields = false;
             }
 
-            if (snapshot.CurrentAnimation != null && snapshot.CurrentAnimation.Count > 0)
-            {
-                npc.Sprite.CurrentAnimation =
-                    new List<FarmerSprite.AnimationFrame>(snapshot.CurrentAnimation);
-                TrySetPrivateField(npc.Sprite, "currentAnimationIndex", 0);
-                TrySetPrivateField(npc.Sprite, "timer", 0);
-            }
-            else
-            {
-                npc.Sprite.StopAnimation();
-                npc.Sprite.ClearAnimation();
-                npc.Sprite.CurrentAnimation = null;
-            }
-
-            npc.Sprite.CurrentFrame = snapshot.CurrentFrame;
-            npc.Sprite.UpdateSourceRect();
+            // Don't restore the saved animation or frame. doMiddleAnimation rebuilds both from
+            // routeEndAnimation; restoring them first would combine a fishing frame with the
+            // rectangle that startRouteBehavior is about to expand again.
         }
 
         private void ReleaseRouteBystanderPauseOnly(BystanderSnapshot snapshot)
