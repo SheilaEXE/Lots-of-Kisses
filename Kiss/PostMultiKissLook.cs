@@ -66,7 +66,8 @@ namespace LotsOfKisses
             // don't turn the NPC over an active animation, dialogue, or blush emote.
             if (continuousKissActive || continuousKissPendingRestart
                 || Game1.activeClickableMenu != null || Game1.dialogueUp
-                || pendingPublicMultiKissShyEmote)
+                || pendingPublicMultiKissShyEmote
+                || IsNpcShowingKissVisual(npc))
             {
                 npc.movementPause = System.Math.Max(npc.movementPause, 6);
                 return;
