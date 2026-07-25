@@ -94,12 +94,18 @@ namespace LotsOfKisses
             if (npc.Sprite.CurrentAnimation != null && npc.Sprite.CurrentAnimation.Count > 0)
                 animation = new List<FarmerSprite.AnimationFrame>(npc.Sprite.CurrentAnimation);
 
+            // If the passive-look system already turned this NPC, preserve the pose from before
+            // that turn instead of treating the temporary player-facing pose as the kiss origin.
+            int originalFacing = npc.FacingDirection;
+            int originalFrame = npc.Sprite.CurrentFrame;
+            TryTransferPassiveLookOriginalPose(npc, out originalFacing, out originalFrame);
+
             // A schedule controller remains attached while another mod temporarily pauses the NPC.
             // Treat that as walking too, otherwise the paused partner is misclassified as plain idle
             // and the deferred restore teleports them back to the position where the kiss started.
             bool isWalking = npc.isMoving() || npc.controller != null;
             bool hasSpecialAnimation = animation != null && animation.Count > 0;
-            bool hasSpecialStaticFrame = npc.Sprite.CurrentFrame >= 16;
+            bool hasSpecialStaticFrame = originalFrame >= 16;
             bool isPlainIdle = !isWalking && !hasSpecialAnimation && !hasSpecialStaticFrame;
 
             // If the NPC is walking with no special animation or frame, skip capture —
@@ -118,8 +124,8 @@ namespace LotsOfKisses
                 Position = npc.Position,
                 RestorePositionWhenPlayerLeaves = isPlainIdle,
                 WasMovingOrControlled = isWalking,
-                FacingDirection = npc.FacingDirection,
-                CurrentFrame = npc.Sprite.CurrentFrame,
+                FacingDirection = originalFacing,
+                CurrentFrame = originalFrame,
                 Flip = npc.flip,
                 MovementPause = (int)npc.movementPause,
                 AddedSpeed = (int)npc.addedSpeed,
