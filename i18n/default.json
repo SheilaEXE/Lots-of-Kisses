@@ -28,10 +28,8 @@
   "gmcm.option.manual-kiss-starts-multi-kiss.name": "Manual Kiss Starts Multi-Kisses",
   "gmcm.option.manual-kiss-starts-multi-kiss.tooltip": "When Multi-Kisses is enabled, clicking your partner with the preferred kiss button immediately starts the full sequence and replaces the usual proximity start. Leave this disabled to keep the normal automatic behavior.",
 
-  "gmcm.option.manual-kiss-button.name": "Kiss Click Preference",
-  "gmcm.option.manual-kiss-button.tooltip": "Choose which mouse button triggers the optional manual kiss features, leaving the other button available for normal dialogue.",
-  "gmcm.option.manual-kiss-button.right": "Right Mouse Button",
-  "gmcm.option.manual-kiss-button.left": "Left Mouse Button",
+  "gmcm.option.manual-kiss-button.name": "Manual Kiss Button",
+  "gmcm.option.manual-kiss-button.tooltip": "Choose one keyboard, controller, or mouse button for the optional manual kiss features. The button is only used when a romantic partner can actually be kissed.",
   "gmcm.section.multiplayer": "Multiplayer",
   "gmcm.option.accept-player-spouse-kisses.name": "Accept Kisses from Player Spouse",
   "gmcm.option.accept-player-spouse-kisses.tooltip": "Allow the player you married in multiplayer to initiate a synchronized kiss with you. Both players need Lots of Kisses installed.",

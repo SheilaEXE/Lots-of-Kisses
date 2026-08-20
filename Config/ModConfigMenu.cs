@@ -84,18 +84,12 @@ namespace LotsOfKisses
                 }
             );
 
-            configMenu.AddTextOption(
+            configMenu.AddKeybindList(
                 mod: mod.ModManifest,
-                name: () => T(mod, "gmcm.option.manual-kiss-button.name", "Kiss click preference"),
-                tooltip: () => T(mod, "gmcm.option.manual-kiss-button.tooltip", "Choose which mouse button triggers the optional manual kiss features, leaving the other button available for normal dialogue."),
-                getValue: () => mod.Config.ManualKissButtonPreference.ToString(),
-                setValue: value =>
-                {
-                    if (System.Enum.TryParse<KissClickPreference>(value, out var parsed))
-                        mod.Config.ManualKissButtonPreference = parsed;
-                },
-                allowedValues: new[] { "Right", "Left" },
-                formatAllowedValue: value => T(mod, $"gmcm.option.manual-kiss-button.{value.ToLower()}", value)
+                name: () => T(mod, "gmcm.option.manual-kiss-button.name", "Manual kiss button"),
+                tooltip: () => T(mod, "gmcm.option.manual-kiss-button.tooltip", "Choose one keyboard, controller, or mouse button for the optional manual kiss features. The button is only consumed when a romantic partner can actually be kissed."),
+                getValue: () => mod.Config.ManualKissButton,
+                setValue: value => mod.Config.ManualKissButton = KeepSingleBinding(value)
             );
 
             configMenu.AddBoolOption(
@@ -169,6 +163,14 @@ namespace LotsOfKisses
                     }
                 }
             );
+        }
+
+        private static StardewModdingAPI.Utilities.KeybindList KeepSingleBinding(StardewModdingAPI.Utilities.KeybindList value)
+        {
+            if (value?.Keybinds == null || value.Keybinds.Length == 0)
+                return StardewModdingAPI.Utilities.KeybindList.Parse("None");
+
+            return new StardewModdingAPI.Utilities.KeybindList(value.Keybinds[0]);
         }
     }
 }

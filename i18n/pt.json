@@ -23,10 +23,8 @@
   "gmcm.option.manual-kiss-starts-multi-kiss.name": "Beijo Manual Inicia Multi-Beijos",
   "gmcm.option.manual-kiss-starts-multi-kiss.tooltip": "Quando os Multi-Beijos estiverem ativados, clicar no parceiro com o botão de beijo escolhido iniciará a sequência completa e substituirá o início normal por proximidade. Deixe desmarcado para manter o comportamento automático.",
 
-  "gmcm.option.manual-kiss-button.name": "Preferência do Clique de Beijo",
-  "gmcm.option.manual-kiss-button.tooltip": "Escolha qual botão do mouse ativa as opções de beijo manual, deixando o outro botão livre para abrir diálogos normalmente.",
-  "gmcm.option.manual-kiss-button.right": "Botão Direito do Mouse",
-  "gmcm.option.manual-kiss-button.left": "Botão Esquerdo do Mouse",
+  "gmcm.option.manual-kiss-button.name": "Botão do Beijo Manual",
+  "gmcm.option.manual-kiss-button.tooltip": "Escolha uma tecla do teclado, botão do controle ou botão do mouse para as opções de beijo manual. O comando só será usado quando um parceiro romântico realmente puder ser beijado.",
   "gmcm.section.multiplayer": "Multijogador",
   "gmcm.option.accept-player-spouse-kisses.name": "Aceitar Beijos do Cônjuge Jogador",
   "gmcm.option.accept-player-spouse-kisses.tooltip": "Permite que o jogador com quem você se casou no modo multijogador inicie um beijo sincronizado com você. Os dois jogadores precisam ter o Lots of Kisses instalado.",

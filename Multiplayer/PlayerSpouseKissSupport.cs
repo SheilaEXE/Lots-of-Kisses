@@ -39,7 +39,7 @@ namespace LotsOfKisses
             helper.Events.Player.Warped += OnPlayerKissWarped;
         }
 
-        private bool TryHandlePlayerSpouseKissClick(ButtonPressedEventArgs e, bool allowFrontTileTarget)
+        private bool TryHandlePlayerSpouseKissClick(ButtonPressedEventArgs e, bool useCursorTarget, bool allowNearbyTarget)
         {
             if (!Context.IsMultiplayer)
                 return false;
@@ -50,20 +50,18 @@ namespace LotsOfKisses
                 return false;
             }
 
-            Farmer spouse = FindClickedPlayerSpouse(e.Cursor.AbsolutePixels, allowFrontTileTarget);
+            Farmer spouse = FindManualPlayerSpouseTarget(e.Cursor.AbsolutePixels, useCursorTarget, allowNearbyTarget);
             if (spouse == null)
                 return false;
 
             DebugLog("MULTIPLAYER", () => $"Manual click targeted player spouse: {DescribeFarmerDebugState(spouse)}.");
-
-            Helper.Input.Suppress(e.Button);
 
             PlayerKissState state = playerKissState.Value;
             if (state.CooldownTicksRemaining > 0 || state.HasOutgoingRequest
                 || IsPlayerSpouseKissActiveFor(Game1.player.UniqueMultiplayerID))
             {
                 DebugLog("MULTIPLAYER", $"Manual player-spouse kiss blocked: cooldown={state.CooldownTicksRemaining}, outgoingRequest={state.HasOutgoingRequest}, participantBusy={IsPlayerSpouseKissActiveFor(Game1.player.UniqueMultiplayerID)}.");
-                return true;
+                return false;
             }
 
             PlayerKissMode mode = PlayerKissMode.Simple;
@@ -81,23 +79,24 @@ namespace LotsOfKisses
                 tier = RollManualPlayerKissTier();
             }
 
+            Helper.Input.Suppress(e.Button);
             RequestOrStartPlayerKiss(spouse, mode, tier);
             return true;
         }
 
-        private Farmer FindClickedPlayerSpouse(Vector2 cursorPixels, bool allowFrontTileTarget)
+        private Farmer FindManualPlayerSpouseTarget(Vector2 cursorPixels, bool useCursorTarget, bool allowNearbyTarget)
         {
             Farmer spouse = GetOnlinePlayerSpouse(Game1.player);
             if (!CanPlayersStartKiss(Game1.player, spouse, allowMovement: false))
                 return null;
 
-            Rectangle clickArea = spouse.GetBoundingBox();
-            clickArea.Inflate(24, 40);
-            if (clickArea.Contains((int)cursorPixels.X, (int)cursorPixels.Y))
-                return spouse;
-
-            if (!allowFrontTileTarget)
-                return null;
+            if (useCursorTarget)
+            {
+                Rectangle clickArea = spouse.GetBoundingBox();
+                clickArea.Inflate(24, 40);
+                if (clickArea.Contains((int)cursorPixels.X, (int)cursorPixels.Y))
+                    return spouse;
+            }
 
             Point interactionTile = Game1.player.TilePoint;
             switch (Game1.player.FacingDirection)
@@ -115,7 +114,16 @@ namespace LotsOfKisses
                 Game1.tileSize
             );
             interactionArea.Inflate(16, 16);
-            return spouse.GetBoundingBox().Intersects(interactionArea) ? spouse : null;
+            if (spouse.GetBoundingBox().Intersects(interactionArea))
+                return spouse;
+
+            if (allowNearbyTarget
+                && Vector2.Distance(Game1.player.getStandingPosition(), spouse.getStandingPosition()) <= PlayerKissMaximumRequestDistance)
+            {
+                return spouse;
+            }
+
+            return null;
         }
 
         private Farmer GetOnlinePlayerSpouse(Farmer player)

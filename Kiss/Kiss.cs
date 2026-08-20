@@ -69,6 +69,23 @@ namespace LotsOfKisses
                     stashedDialogue.Add(npc.CurrentDialogue.Pop());
             }
 
+            // NPC.checkAction also handles gifts. An automatic kiss is not a real action-button
+            // press, so temporarily hide the selected object while this simulated interaction is
+            // running. Restore the exact inventory slot in finally so the player keeps holding the
+            // same item and gift-confirmation mods never receive a synthetic gift attempt.
+            int stashedActiveObjectIndex = -1;
+            Item stashedActiveObject = null;
+            if (Game1.player.ActiveObject != null)
+            {
+                stashedActiveObjectIndex = Game1.player.CurrentToolIndex;
+                if (stashedActiveObjectIndex >= 0 && stashedActiveObjectIndex < Game1.player.Items.Count)
+                {
+                    stashedActiveObject = Game1.player.Items[stashedActiveObjectIndex];
+                    Game1.player.Items[stashedActiveObjectIndex] = null;
+                    DebugLog("KISS", $"Temporarily stashed the held item for an automatic kiss with {npc.Name}.");
+                }
+            }
+
             try
             {
                 bool result = npc.checkAction(Game1.player, npc.currentLocation);
@@ -115,6 +132,31 @@ namespace LotsOfKisses
 
                 if (!previousKissPatchFlag && Game1.player?.modData != null)
                     Game1.player.modData.Remove(AutoKissClickActiveModDataKey);
+
+                if (stashedActiveObject != null
+                    && Game1.player != null
+                    && stashedActiveObjectIndex >= 0
+                    && stashedActiveObjectIndex < Game1.player.Items.Count)
+                {
+                    if (Game1.player.Items[stashedActiveObjectIndex] == null)
+                    {
+                        Game1.player.Items[stashedActiveObjectIndex] = stashedActiveObject;
+                        DebugLog("KISS", $"Restored the held item after the automatic kiss with {npc.Name}.");
+                    }
+                    else
+                    {
+                        // A third-party checkAction patch unexpectedly changed the original slot.
+                        // Preserve both items instead of overwriting either one.
+                        Item leftover = Game1.player.addItemToInventory(stashedActiveObject);
+                        if (leftover != null)
+                            Game1.createItemDebris(leftover, Game1.player.getStandingPosition(), Game1.player.FacingDirection);
+
+                        Monitor.Log(
+                            $"[AUTO KISS] The original held-item slot changed during the simulated kiss with {npc.Name}; the held item was returned to the inventory instead.",
+                            LogLevel.Warn
+                        );
+                    }
+                }
 
 
                 // Restore the original pending dialogue, unless checkAction pushed a brand new
