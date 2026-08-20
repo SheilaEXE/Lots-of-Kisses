@@ -35,8 +35,9 @@ namespace LotsOfKisses
         // the full chain immediately instead of waiting for the proximity hold.
         public bool ManualKissStartsMultiKiss { get; set; } = false;
 
-        // Mouse button used by the two optional manual-kiss features.
-        public KissClickPreference ManualKissButtonPreference { get; set; } = KissClickPreference.Right;
+        // Keyboard, controller, or mouse button used by the two optional manual-kiss features.
+        // GMCM exposes this as one configurable binding; MouseRight remains the default.
+        public KeybindList ManualKissButton { get; set; } = KeybindList.Parse("MouseRight");
 
         // Let a spouse controlled by another player initiate a synchronized kiss.
         public bool AcceptPlayerSpouseKisses { get; set; } = true;

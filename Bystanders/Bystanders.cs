@@ -485,6 +485,28 @@ namespace LotsOfKisses
                 && !string.IsNullOrEmpty(s.SavedStartedEndOfRouteBehavior));
         }
 
+        /// <summary>
+        /// Gets the current fishing route behavior only while the NPC is actually executing its
+        /// end-of-route action. <c>endOfRouteBehaviorName</c> can remain populated after that action
+        /// has ended (for example, Willy may still carry <c>dick_fish</c> while standing in the
+        /// Saloon), so the behavior name alone is not proof that fishing should be restored.
+        /// </summary>
+        private bool TryGetActiveFishingBehaviorName(NPC npc, out string behaviorName)
+        {
+            behaviorName = TryGetNetStringField(npc, "endOfRouteBehaviorName");
+            if (string.IsNullOrEmpty(behaviorName)
+                || behaviorName.IndexOf("fish", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return false;
+            }
+
+            bool isDoingEndOfRouteAnimation = TryGetNetBoolField(npc, "doingEndOfRouteAnimation") == true;
+            bool isCurrentlyDoingEndOfRouteAnimation =
+                TryGetPrivateField(npc, "currentlyDoingEndOfRouteAnimation") is bool isCurrent && isCurrent;
+
+            return isDoingEndOfRouteAnimation || isCurrentlyDoingEndOfRouteAnimation;
+        }
+
         private void HoldBystanderWatching(BystanderSnapshot snapshot)
         {
             if (snapshot == null || Game1.player == null)
@@ -588,9 +610,7 @@ namespace LotsOfKisses
                 // behavior is genuinely "fish", so every other special-pose NPC (sitting, reading,
                 // etc.) keeps using exactly the plain restore path this mod already used
                 // successfully before.
-                string endOfRouteBehaviorName = TryGetNetStringField(npc, "endOfRouteBehaviorName");
-                bool isFishingBehavior = !string.IsNullOrEmpty(endOfRouteBehaviorName)
-                    && endOfRouteBehaviorName.IndexOf("fish", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool isFishingBehavior = TryGetActiveFishingBehaviorName(npc, out string endOfRouteBehaviorName);
 
                 if (isFishingBehavior)
                 {

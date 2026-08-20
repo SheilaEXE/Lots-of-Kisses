@@ -3,11 +3,14 @@ using Microsoft.Xna.Framework;
 using LotsOfKisses;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
 using StardewValley.GameData.Characters;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
 using xTile.Dimensions;
 
 namespace LotsOfKisses
@@ -27,7 +30,17 @@ namespace LotsOfKisses
         public override void Entry(IModHelper helper)
         {
             Instance = this;
+            KissClickPreference? legacyManualKissButton = ReadLegacyManualKissButton(helper);
             Config = helper.ReadConfig<ModConfig>();
+            if (legacyManualKissButton.HasValue)
+            {
+                Config.ManualKissButton = new KeybindList(
+                    legacyManualKissButton == KissClickPreference.Left
+                        ? SButton.MouseLeft
+                        : SButton.MouseRight
+                );
+                helper.WriteConfig(Config);
+            }
             contentPackLoader = new ContentPackLoader(helper, Monitor);
 
             InitBlushSmokeEffect();
@@ -59,6 +72,38 @@ namespace LotsOfKisses
             );
 
             InitializePlayerSpouseKissSupport(helper);
+        }
+
+        private static KissClickPreference? ReadLegacyManualKissButton(IModHelper helper)
+        {
+            try
+            {
+                string configPath = Path.Combine(helper.DirectoryPath, "config.json");
+                if (!File.Exists(configPath))
+                    return null;
+
+                using JsonDocument document = JsonDocument.Parse(File.ReadAllText(configPath));
+                JsonElement root = document.RootElement;
+
+                // A config already using the new binding always wins over the retired dropdown.
+                if (root.TryGetProperty(nameof(ModConfig.ManualKissButton), out _))
+                    return null;
+
+                if (!root.TryGetProperty("ManualKissButtonPreference", out JsonElement legacyValue)
+                    || legacyValue.ValueKind != JsonValueKind.String)
+                {
+                    return null;
+                }
+
+                return Enum.TryParse(legacyValue.GetString(), ignoreCase: true, out KissClickPreference parsed)
+                    ? parsed
+                    : null;
+            }
+            catch
+            {
+                // Let SMAPI's normal config reader report malformed files in its usual way.
+                return null;
+            }
         }
 
         // =====================================================================

@@ -28,13 +28,13 @@ namespace LotsOfKisses
             if (!IsMultiKissHotkeyConfigured() || Config.MultiKissToggleKey.JustPressed() == false)
                 return false;
 
-            Helper.Input.Suppress(e.Button);
             DebugLog("HOTKEY", $"Multi-Kiss toggle pressed: button={e.Button}, npcSequenceActive={continuousKissActive || continuousKissPendingRestart}, playerSequenceActive={playerKissState.Value.HasActiveSequence}.");
 
             // Stopping always wins over starting. This lets the player end the chain before
             // it reaches the public-interruption dialogue without opening another interaction.
             if (continuousKissActive || continuousKissPendingRestart)
             {
+                Helper.Input.Suppress(e.Button);
                 EndNpcMultiKissFromHotkey();
                 return true;
             }
@@ -42,6 +42,7 @@ namespace LotsOfKisses
             PlayerKissState playerState = playerKissState.Value;
             if (playerState.HasActiveSequence && playerState.Mode == PlayerKissMode.Multi)
             {
+                Helper.Input.Suppress(e.Button);
                 StopPlayerKissSequence(playerState, notifyOtherPlayer: true, reason: "local player pressed Multi-Kiss toggle");
                 return true;
             }
@@ -49,7 +50,7 @@ namespace LotsOfKisses
             if (hotkeyStoppedMultiKissAwaitingMoveAway)
             {
                 DebugLog("HOTKEY", $"Start ignored because the previous NPC Multi-Kiss is still waiting for move-away: npc={hotkeyStoppedMultiKissNpc?.Name ?? "null"}.");
-                return true;
+                return false;
             }
 
             // Outdoors, a completed bump kiss deliberately keeps its NPC facing the player for
@@ -72,7 +73,7 @@ namespace LotsOfKisses
                     $"sitting={Game1.player?.IsSitting()}, holdingItem={(Game1.player?.ActiveObject != null)}, npcKissSequence={kissSequenceActive}, " +
                     $"pendingNpc={pendingKissNpc?.Name ?? "null"}, outgoingPlayerRequest={playerState.HasOutgoingRequest}, activePlayerSequence={playerState.HasActiveSequence}."
                 );
-                return true;
+                return false;
             }
 
             if (kissPostSequenceActive)
@@ -100,13 +101,15 @@ namespace LotsOfKisses
                 if (state.CooldownTicksRemaining <= 0 && !state.HasOutgoingRequest
                     && !IsPlayerSpouseKissActiveFor(Game1.player.UniqueMultiplayerID))
                 {
+                    Helper.Input.Suppress(e.Button);
                     DebugLog("HOTKEY", $"Starting player-spouse Multi-Kiss with {playerSpouse.Name}; distance={playerDistance:0}.");
                     RequestOrStartPlayerKiss(playerSpouse, PlayerKissMode.Multi, RollContinuousKissTier());
+                    return true;
                 }
                 else
                     DebugLog("HOTKEY", $"Player-spouse start blocked: cooldown={state.CooldownTicksRemaining}, outgoingRequest={state.HasOutgoingRequest}, participantBusy={IsPlayerSpouseKissActiveFor(Game1.player.UniqueMultiplayerID)}.");
 
-                return true;
+                return false;
             }
 
             if (npcPartner != null)
@@ -118,11 +121,15 @@ namespace LotsOfKisses
                 int tier = RollContinuousKissTier();
                 bool started = StartContinuousKiss(npcPartner, tier, isNewSequence: true, manualRightClick: true);
                 DebugLog("HOTKEY", $"NPC Multi-Kiss start result: npc={npcPartner.Name}, tier={tier}, distance={npcDistance:0}, started={started}.");
+                if (started)
+                    Helper.Input.Suppress(e.Button);
+
+                return started;
             }
             else
                 DebugLog("HOTKEY", $"No eligible romantic partner found within 120 pixels (nearestNpcDistance={npcDistance:0}, playerSpouseDistance={playerDistance:0}).");
 
-            return true;
+            return false;
         }
 
         private void EndNpcMultiKissFromHotkey()

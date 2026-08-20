@@ -354,18 +354,16 @@ namespace LotsOfKisses
             if (TryHandleMultiKissHotkey(e))
                 return;
 
-            SButton manualKissButton = Config.ManualKissButtonPreference == KissClickPreference.Left
-                ? SButton.MouseLeft
-                : SButton.MouseRight;
-            bool controllerPlayerKissButton = Context.IsSplitScreen
-                && e.Button.IsActionButton()
-                && e.Button.TryGetController(out _);
-            if ((e.Button == manualKissButton || controllerPlayerKissButton)
-                && TryHandlePlayerSpouseKissClick(e, allowFrontTileTarget: controllerPlayerKissButton))
-                return;
+            bool manualKissButtonPressed = Config.ManualKissButton?.JustPressed() == true;
+            if (manualKissButtonPressed)
+            {
+                bool useCursorTarget = IsMouseButton(e.Button);
+                if (TryHandlePlayerSpouseKissClick(e, useCursorTarget, allowNearbyTarget: !useCursorTarget))
+                    return;
 
-            if (e.Button == manualKissButton && TryHandleManualKissClick(e))
-                return;
+                if (TryHandleManualKissInput(e, useCursorTarget))
+                    return;
+            }
 
             if (!e.Button.IsActionButton())
                 return;
@@ -384,7 +382,16 @@ namespace LotsOfKisses
             talkedToPartnerToday = true;
         }
 
-        private bool TryHandleManualKissClick(ButtonPressedEventArgs e)
+        private static bool IsMouseButton(SButton button)
+        {
+            return button is SButton.MouseLeft
+                or SButton.MouseRight
+                or SButton.MouseMiddle
+                or SButton.MouseX1
+                or SButton.MouseX2;
+        }
+
+        private bool TryHandleManualKissInput(ButtonPressedEventArgs e, bool useCursorTarget)
         {
             bool startFullMultiKiss = Config.MultiKissEnabled
                 && Config.ManualKissStartsMultiKiss
@@ -406,22 +413,25 @@ namespace LotsOfKisses
             NPC clickedPartner = null;
             float nearestDistance = float.MaxValue;
 
-            foreach (NPC npc in Game1.currentLocation.characters)
+            if (useCursorTarget)
             {
-                if (npc == null || !IsSupportedRomanticPartner(npc.Name))
-                    continue;
+                foreach (NPC npc in Game1.currentLocation.characters)
+                {
+                    if (npc == null || !IsSupportedRomanticPartner(npc.Name))
+                        continue;
 
-                float distance = DistanceToPlayer(npc);
-                if (distance > 120f || distance >= nearestDistance)
-                    continue;
+                    float distance = DistanceToPlayer(npc);
+                    if (distance > 120f || distance >= nearestDistance)
+                        continue;
 
-                Rectangle clickArea = npc.GetBoundingBox();
-                clickArea.Inflate(24, 40);
-                if (!clickArea.Contains((int)cursorPixels.X, (int)cursorPixels.Y))
-                    continue;
+                    Rectangle clickArea = npc.GetBoundingBox();
+                    clickArea.Inflate(24, 40);
+                    if (!clickArea.Contains((int)cursorPixels.X, (int)cursorPixels.Y))
+                        continue;
 
-                clickedPartner = npc;
-                nearestDistance = distance;
+                    clickedPartner = npc;
+                    nearestDistance = distance;
+                }
             }
 
             // Match vanilla interaction behavior when the cursor isn't directly over the NPC:
@@ -467,16 +477,33 @@ namespace LotsOfKisses
                 }
             }
 
+            // A keyboard or controller button has no meaningful cursor target. If there is no
+            // partner in the facing tile, use the nearest eligible partner inside the same range.
+            if (clickedPartner == null && !useCursorTarget)
+            {
+                foreach (NPC npc in Game1.currentLocation.characters)
+                {
+                    if (npc == null || !IsSupportedRomanticPartner(npc.Name))
+                        continue;
+
+                    float distance = DistanceToPlayer(npc);
+                    if (distance > 120f || distance >= nearestDistance)
+                        continue;
+
+                    clickedPartner = npc;
+                    nearestDistance = distance;
+                }
+            }
+
             if (clickedPartner == null)
                 return false;
 
-            // This press belongs to the configured kiss action. Don't let vanilla also
-            // open dialogue, give a gift, or start a second interaction on the same press.
-            Helper.Input.Suppress(e.Button);
-            talkedToPartnerToday = true;
-
             if (continuousKissActive || continuousKissPendingRestart || kissSequenceActive)
+            {
+                // Protect the sequence from a second interaction on the same configured input.
+                Helper.Input.Suppress(e.Button);
                 return true;
+            }
 
             if (kissPostSequenceActive)
                 ResetPostKissState();
@@ -499,12 +526,20 @@ namespace LotsOfKisses
                 continuousKissSingleCycleFinishing = false;
             }
 
+            if (started)
+            {
+                // Only claim the configurable input after a kiss actually started. If the
+                // target became invalid during this event, the game's normal input remains free.
+                Helper.Input.Suppress(e.Button);
+                talkedToPartnerToday = true;
+            }
+
             DebugLog(
                 "MANUAL",
-                $"{e.Button} on {clickedPartner.Name}: tier={tier}, mode={(useOneRandomTier ? "single-random" : "start-multi")}, started={started}."
+                $"{e.Button} on {clickedPartner.Name}: tier={tier}, mode={(useOneRandomTier ? "single-random" : "start-multi")}, cursorTarget={useCursorTarget}, started={started}."
             );
 
-            return true;
+            return started;
         }
     }
 }
