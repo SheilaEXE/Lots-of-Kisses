@@ -49,8 +49,9 @@ namespace LotsOfKisses
         // When disabled, mod-triggered kisses wait until the recruited partner is idle/following.
         public bool AllowKissesDuringStardewSquadTasks { get; set; } = true;
 
-        // Treat all romantic NPCs as valid kiss partners, including those from other mods.
-        // Exposed in GMCM and also configurable directly through config.json.
+        // Allow simultaneous romantic relationships. When disabled, kisses still work with
+        // exactly one boyfriend/girlfriend, fiance(e), or spouse, but are blocked if the save
+        // contains two or more romantic partners.
         public bool PolyamorySupport { get; set; } = true;
 
         // Which blush smoke animation style to use (row 0 = Style1, row 1 = Style2).

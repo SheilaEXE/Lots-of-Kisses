@@ -10,7 +10,7 @@
   "gmcm.option.enable-mod.tooltip": "Turns all mod features on or off.",
 
   "gmcm.option.enable-polyamory-support.name": "Enable Multiple Partners",
-  "gmcm.option.enable-polyamory-support.tooltip": "Lets this mod's kiss system work with more than one romantic partner at once (for save files using a polyamory mod), instead of only your one official spouse.",
+  "gmcm.option.enable-polyamory-support.tooltip": "Allows kisses when you have more than one romantic partner. When disabled, kisses work only if you have exactly one boyfriend/girlfriend, fiance(e), or spouse.",
   
   "gmcm.option.blush-smoke-style.name": "Blush smoke style",
   "gmcm.option.blush-smoke-style.tooltip": "Choose which blush smoke animation plays during kiss sequences.",

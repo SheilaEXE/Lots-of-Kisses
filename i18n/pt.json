@@ -10,7 +10,7 @@
   "gmcm.option.enable-mod.tooltip": "Liga ou desliga todas as funções do mod.",
 
   "gmcm.option.enable-polyamory-support.name": "Ativar Vários Parceiros",
-  "gmcm.option.enable-polyamory-support.tooltip": "Permite que o sistema de beijos deste mod funcione com mais de um parceiro romântico ao mesmo tempo (pra saves que usam um mod de poliamoria), em vez de só o seu cônjuge oficial.",
+  "gmcm.option.enable-polyamory-support.tooltip": "Permite beijos quando você tem mais de um parceiro romântico. Quando desativado, os beijos só funcionam se você tiver exatamente um namorado, noivo ou cônjuge.",
   
   "gmcm.option.multi-kisses.name": "Multi-Beijos!",
   "gmcm.option.multi-kisses.tooltip": "Permite sequências românticas com vários beijos enquanto vocês estão próximos.",
