@@ -31,7 +31,7 @@ namespace LotsOfKisses
         {
             Instance = this;
             KissClickPreference? legacyManualKissButton = ReadLegacyManualKissButton(helper);
-            Config = helper.ReadConfig<ModConfig>();
+            Config = ReadConfigSafely(helper);
             if (legacyManualKissButton.HasValue)
             {
                 Config.ManualKissButton = new KeybindList(
@@ -39,7 +39,7 @@ namespace LotsOfKisses
                         ? SButton.MouseLeft
                         : SButton.MouseRight
                 );
-                helper.WriteConfig(Config);
+                TryWriteConfig();
             }
             contentPackLoader = new ContentPackLoader(helper, Monitor);
 

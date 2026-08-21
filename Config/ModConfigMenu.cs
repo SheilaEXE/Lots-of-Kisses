@@ -18,7 +18,7 @@ namespace LotsOfKisses
             configMenu.Register(
                 mod: mod.ModManifest,
                 reset: () => mod.Config = new ModConfig(),
-                save: () => mod.Helper.WriteConfig(mod.Config)
+                save: mod.TryWriteConfig
             );
 
             configMenu.AddSectionTitle(
