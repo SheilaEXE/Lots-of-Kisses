@@ -30,9 +30,6 @@ namespace LotsOfKisses
 
         internal bool IsPolyamorySpouse(string npcName)
         {
-            if (this.Config?.PolyamorySupport != true)
-                return false;
-
             if (!Context.IsWorldReady || Game1.player == null)
                 return false;
 
@@ -63,9 +60,6 @@ namespace LotsOfKisses
 
         internal bool IsDatingPartner(string npcName)
         {
-            if (this.Config?.PolyamorySupport != true)
-                return false;
-
             if (!Context.IsWorldReady || Game1.player == null)
                 return false;
 
@@ -97,7 +91,59 @@ namespace LotsOfKisses
 
         internal bool IsSupportedRomanticPartner(string npcName)
         {
+            if (!HasRomanticRelationship(npcName))
+                return false;
+
+            // With multiple-partner support disabled, the mod remains available for a normal
+            // save with exactly one boyfriend/girlfriend, fiance(e), or spouse. If the player
+            // has two or more simultaneous romantic relationships, none are accepted until
+            // the option is enabled.
+            return this.Config?.PolyamorySupport == true || IsOnlyRomanticPartner(npcName);
+        }
+
+        private bool HasRomanticRelationship(string npcName)
+        {
             return IsCurrentSpouse(npcName) || IsDatingPartner(npcName);
+        }
+
+        private bool IsOnlyRomanticPartner(string npcName)
+        {
+            if (!Context.IsWorldReady || Game1.player?.friendshipData == null)
+                return false;
+
+            HashSet<string> romanticPartners = new(StringComparer.OrdinalIgnoreCase);
+
+            if (IsSupportedRomanticNpc(Game1.player.spouse))
+                romanticPartners.Add(Game1.player.spouse);
+
+            try
+            {
+                foreach (KeyValuePair<string, Friendship> pair in Game1.player.friendshipData.Pairs)
+                {
+                    string name = pair.Key;
+                    Friendship friendship = pair.Value;
+                    if (!IsSupportedRomanticNpc(name) || friendship == null)
+                        continue;
+
+                    bool isRomantic = FriendshipBoolMethod(friendship, "IsMarried") ||
+                                      FriendshipBoolMethod(friendship, "IsDating") ||
+                                      FriendshipBoolMethod(friendship, "IsEngaged") ||
+                                      FriendshipStatusEquals(friendship, "Married", "Dating", "Engaged");
+                    if (!isRomantic)
+                        continue;
+
+                    romanticPartners.Add(name);
+                    if (romanticPartners.Count > 1)
+                        return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                this.Monitor.Log($"[ROMANCE CHECK] Could not count romantic partners: {ex.Message}", LogLevel.Trace);
+                return false;
+            }
+
+            return romanticPartners.Count == 1 && romanticPartners.Contains(npcName);
         }
 
 
@@ -125,7 +171,9 @@ namespace LotsOfKisses
                 if (npc == null || npc == partner)
                     continue;
 
-                if (IsSupportedRomanticPartner(npc.Name))
+                // A romantic partner should never be treated as an ordinary spectator merely
+                // because multiple-partner support is disabled for kiss eligibility.
+                if (HasRomanticRelationship(npc.Name))
                     continue;
 
                 if (HasLineOfSightToPlayer(npc))

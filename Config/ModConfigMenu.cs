@@ -37,7 +37,7 @@ namespace LotsOfKisses
             configMenu.AddBoolOption(
                 mod: mod.ModManifest,
                 name: () => T(mod, "gmcm.option.enable-polyamory-support.name", "Enable polyamory support"),
-                tooltip: () => T(mod, "gmcm.option.enable-polyamory-support.tooltip", "Treat all romantic NPCs as valid kiss partners for this mod, including NPCs from other mods."),
+                tooltip: () => T(mod, "gmcm.option.enable-polyamory-support.tooltip", "Allow kisses when the player has more than one romantic partner. When disabled, kisses work only if the player has exactly one boyfriend/girlfriend, fiance(e), or spouse."),
                 getValue: () => mod.Config.PolyamorySupport,
                 setValue: value => mod.Config.PolyamorySupport = value
             );
