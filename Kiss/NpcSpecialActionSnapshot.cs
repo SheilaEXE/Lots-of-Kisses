@@ -109,6 +109,7 @@ namespace LotsOfKisses
             bool isWalking = npc.isMoving() ||
                 (npc.controller != null && !hasSpecialAnimation && !hasSpecialStaticFrame);
             bool isPlainIdle = !isWalking && !hasSpecialAnimation && !hasSpecialStaticFrame;
+            bool positionOwnedByOutfitReactions = IsNpcPositionOwnedByOutfitReactions(npc);
 
             // If the NPC is walking with no special animation or frame, skip capture —
             // unless it's late night (22h+) where walking means going home and we still want the kiss to work.
@@ -124,7 +125,8 @@ namespace LotsOfKisses
                 Npc = npc,
                 Location = npc.currentLocation,
                 Position = npc.Position,
-                RestorePositionWhenPlayerLeaves = isPlainIdle,
+                RestorePositionWhenPlayerLeaves = isPlainIdle && !positionOwnedByOutfitReactions,
+                PositionOwnedByOutfitReactions = positionOwnedByOutfitReactions,
                 WasMovingOrControlled = isWalking,
                 FacingDirection = originalFacing,
                 CurrentFrame = originalFrame,
@@ -142,7 +144,7 @@ namespace LotsOfKisses
                         ? "special-static-frame"
                         : "walking-late-night";
             DebugLog("SNAPSHOT", () =>
-                $"Captured snapshot #{preKissSpecialActionSnapshot.DebugId} ({classification}, restorePosition={isPlainIdle}): " +
+                $"Captured snapshot #{preKissSpecialActionSnapshot.DebugId} ({classification}, restorePosition={preKissSpecialActionSnapshot.RestorePositionWhenPlayerLeaves}, outfitApproachOwnsPosition={positionOwnedByOutfitReactions}): " +
                 $"{DescribeNpcDebugState(npc)}, savedPosition={preKissSpecialActionSnapshot.Position}, flip={preKissSpecialActionSnapshot.Flip}, addedSpeed={preKissSpecialActionSnapshot.AddedSpeed}."
             );
 

@@ -285,6 +285,7 @@ namespace LotsOfKisses
             public GameLocation Location;
             public Vector2 Position;
             public bool RestorePositionWhenPlayerLeaves;
+            public bool PositionOwnedByOutfitReactions;
             public bool WasMovingOrControlled;
             public int FacingDirection;
             public int CurrentFrame;

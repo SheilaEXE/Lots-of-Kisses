@@ -465,6 +465,13 @@ namespace LotsOfKisses
         // genuinely on screen, rather than for the whole "noticed, waiting for a click" and
         // post-dialogue linger window, which should allow kissing normally.
         private const string OutfitReactionsActiveModDataKey = "NatrollEXE.OutfitReactions/ReactionActive";
+        private const string OutfitReactionsRomanticApproachActiveModDataKey = "NatrollEXE.OutfitReactions/RomanticApproachActive";
+
+        private bool IsNpcPositionOwnedByOutfitReactions(NPC npc)
+        {
+            return npc?.modData?.ContainsKey(OutfitReactionsRomanticApproachActiveModDataKey) == true
+                && Game1.player?.modData?.ContainsKey(OutfitReactionsActiveModDataKey) == true;
+        }
 
         // Written into the Farmer's modData for the duration of a simulated checkAction click used
         // to trigger the vanilla kiss animation (see TryCheckActionForAutoKissWithoutDialogue).
