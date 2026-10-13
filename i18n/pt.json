@@ -31,6 +31,9 @@
 
   "gmcm.option.bump-kiss.name": "Beijo ao Esbarrar",
   "gmcm.option.bump-kiss.tooltip": "Vocês trocam um beijo rápido quando você corre na direção de seu parceiro.",
+
+  "gmcm.option.special-animation-kisses.name": "Permitir Beijos Durante Animações Especiais",
+  "gmcm.option.special-animation-kisses.tooltip": "Permite que os beijos interrompam temporariamente uma animação especial do NPC. Desative para esperar a animação terminar. Animações personalizadas de pesca incompatíveis e animações protegidas por seus autores nunca serão interrompidas.",
   
   "gmcm.option.blush-smoke-style.name": "Estilo da fumaça de blush",
   "gmcm.option.blush-smoke-style.tooltip": "Escolha qual animação de fumaça de blush aparece durante as sequências de beijo.",

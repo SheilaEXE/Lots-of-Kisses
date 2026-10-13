@@ -100,6 +100,14 @@ namespace LotsOfKisses
                 setValue: value => mod.Config.BumpKissEnabled = value
             );
 
+            configMenu.AddBoolOption(
+                mod: mod.ModManifest,
+                name: () => T(mod, "gmcm.option.special-animation-kisses.name", "Allow Kisses During Special Animations"),
+                tooltip: () => T(mod, "gmcm.option.special-animation-kisses.tooltip", "Allow kisses to temporarily interrupt an NPC's special animation. Disable this to wait until the animation ends. Incompatible custom fishing animations and animations protected by their author are always left uninterrupted."),
+                getValue: () => mod.Config.AllowKissesDuringSpecialAnimations,
+                setValue: value => mod.Config.AllowKissesDuringSpecialAnimations = value
+            );
+
             configMenu.AddTextOption(
                 mod: mod.ModManifest,
                 name: () => T(mod, "gmcm.option.blush-smoke-style.name", "Blush smoke style"),

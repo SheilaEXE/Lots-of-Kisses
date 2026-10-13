@@ -45,6 +45,10 @@ namespace LotsOfKisses
         // Enable or disable the bump kiss when running toward a partner.
         public bool BumpKissEnabled { get; set; } = true;
 
+        // Let kisses temporarily interrupt ordinary NPC special animations. Unsafe custom
+        // fishing layouts and author-protected animations remain blocked regardless.
+        public bool AllowKissesDuringSpecialAnimations { get; set; } = true;
+
         // Let Lots of Kisses temporarily pause an active Stardew Squad task.
         // When disabled, mod-triggered kisses wait until the recruited partner is idle/following.
         public bool AllowKissesDuringStardewSquadTasks { get; set; } = true;

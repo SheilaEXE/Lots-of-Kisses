@@ -37,6 +37,9 @@
   "gmcm.option.bump-kiss.name": "Bump Kiss",
   "gmcm.option.bump-kiss.tooltip": "You share a quick kiss when you run toward your boyfriend/girlfriend or spouse.",
 
+  "gmcm.option.special-animation-kisses.name": "Allow Kisses During Special Animations",
+  "gmcm.option.special-animation-kisses.tooltip": "Allow kisses to temporarily interrupt an NPC's special animation. Disable this to wait until the animation ends. Incompatible custom fishing animations and animations protected by their author are always left uninterrupted.",
+
   "gmcm.section.mod-compatibility": "Compatibility with Other Mods",
   "gmcm.option.stardew-squad-task-kisses.name": "Allow Kisses During Stardew Squad Tasks",
   "gmcm.option.stardew-squad-task-kisses.tooltip": "Lets a kiss temporarily pause a recruited romantic partner's current task. Disable this to prevent Bump Kisses and Multi-Kisses while the partner is working; following and idle partners can still be kissed.",

@@ -121,6 +121,8 @@ namespace LotsOfKisses
             if (!Context.IsWorldReady)
                 return;
 
+            UpdateRestoredSpecialAnimationTransition();
+
             if (Config?.ModEnabled != true)
             {
                 if (!modDisabledCleanupApplied)
@@ -296,6 +298,7 @@ namespace LotsOfKisses
                 $"bystanders={activeBystanderSnapshots.Count}, outsideBumpPause={OutsideBumpPause.IsActive}, hotkeyWait={hotkeyStoppedMultiKissAwaitingMoveAway}, " +
                 $"postMultiKissLook={postMultiKissLookActive}."
             );
+            ClearRestoredSpecialAnimationTransition();
             ResetStardewSquadSupportState();
             RestoreBystandersBeforeContextReset();
             InvalidateDelayedActions(reason);
@@ -323,10 +326,12 @@ namespace LotsOfKisses
             bystanderRestore.ForceStart = false;
 
             ClearDirectRomanticKissVisual(directAutoKissVisualNpc, holdForNextCycle: false);
-            TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
             ResetKissState();
             ResetContinuousKissState();
             ResetPostKissState();
+            // Restore after every kiss-owned visual cleanup. A warp can end the post-kiss
+            // look before its distance check, so this is the final write to the NPC pose.
+            TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
             ClearNpcPreKissSpecialAction(reason: $"context reset: {reason}");
             DebugLog("RESET", $"Transient context reset completed ({reason}).");
         }

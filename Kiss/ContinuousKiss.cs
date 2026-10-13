@@ -41,6 +41,12 @@ namespace LotsOfKisses
                 return false;
             }
 
+            // Capture clears the NPC's current animation, so check a brand-new sequence
+            // while the original pose is still visible. Restarting an existing sequence
+            // uses the pose already owned by Lots of Kisses.
+            if (isNewSequence && ShouldBlockKissForSpecialAnimation(npc))
+                return false;
+
             if (isNewSequence)
             {
                 // publicMultiKiss should be limited to once per multi-kiss chain, not once forever.

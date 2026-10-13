@@ -90,6 +90,9 @@ namespace LotsOfKisses
             if (preKissSpecialActionSnapshot != null && preKissSpecialActionSnapshot.Npc == npc)
                 return;
 
+            if (restoredSpecialAnimationNpc == npc)
+                ClearRestoredSpecialAnimationTransition();
+
             List<FarmerSprite.AnimationFrame> animation = null;
             if (npc.Sprite.CurrentAnimation != null && npc.Sprite.CurrentAnimation.Count > 0)
                 animation = new List<FarmerSprite.AnimationFrame>(npc.Sprite.CurrentAnimation);
@@ -128,6 +131,7 @@ namespace LotsOfKisses
                 RestorePositionWhenPlayerLeaves = isPlainIdle && !positionOwnedByOutfitReactions,
                 PositionOwnedByOutfitReactions = positionOwnedByOutfitReactions,
                 WasMovingOrControlled = isWalking,
+                HadSpecialAnimation = hasSpecialAnimation || hasSpecialStaticFrame,
                 FacingDirection = originalFacing,
                 CurrentFrame = originalFrame,
                 Flip = npc.flip,
@@ -211,6 +215,9 @@ namespace LotsOfKisses
                 npc.Sprite.CurrentFrame = snapshot.CurrentFrame;
                 npc.Sprite.UpdateSourceRect();
 
+                if (snapshot.CurrentAnimation != null && snapshot.CurrentAnimation.Count > 0)
+                    TrackRestoredSpecialAnimation(npc);
+
                 DebugLog("RESTORE", () => $"Snapshot #{snapshot.DebugId} restored successfully: {DescribeNpcDebugState(npc)}.");
 
                 if (clearAfterRestore)
@@ -241,7 +248,11 @@ namespace LotsOfKisses
 
             if (npc.currentLocation != Game1.player.currentLocation)
             {
-                ClearNpcPreKissSpecialAction(npc, "player and NPC are no longer in the same location");
+                // A warp can be observed by this tick before OnWarped finishes resetting the
+                // kiss context. Restore the saved pose now instead of throwing it away: once
+                // the player leaves, the usual distance-based restore will never run here.
+                DebugLog("RESTORE", () => $"Player left {npc.Name}'s location; restoring snapshot #{snapshot.DebugId} immediately.");
+                TryRestoreNpcPreKissSpecialAction(clearAfterRestore: true);
                 return;
             }
 

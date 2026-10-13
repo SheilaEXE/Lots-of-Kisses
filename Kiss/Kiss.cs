@@ -287,6 +287,7 @@ namespace LotsOfKisses
             public bool RestorePositionWhenPlayerLeaves;
             public bool PositionOwnedByOutfitReactions;
             public bool WasMovingOrControlled;
+            public bool HadSpecialAnimation;
             public int FacingDirection;
             public int CurrentFrame;
             public bool Flip;
@@ -436,6 +437,9 @@ namespace LotsOfKisses
             if (ShouldBlockKissDuringStardewSquadTask(npc))
                 return false;
 
+            if (ShouldBlockKissForSpecialAnimation(npc))
+                return false;
+
             // A queued NPC dialogue is temporarily preserved inside TryCheckActionForAutoKissWithoutDialogue.
             // Only an actually open dialogue/menu should stop the automatic kiss before that point.
             if (IsAutoKissBlockedByOpenDialogueOrMenu())
@@ -491,6 +495,9 @@ namespace LotsOfKisses
         private bool TryTriggerVanillaContinuousKiss(NPC npc)
         {
             if (npc == null || npc.currentLocation != Game1.player.currentLocation)
+                return false;
+
+            if (ShouldBlockKissForSpecialAnimation(npc))
                 return false;
 
             if (GetApproachKissBlockTimer(npc) > 0)
@@ -952,6 +959,7 @@ namespace LotsOfKisses
                 GetBumpKissCooldown(npc) <= 0 &&
                 GetApproachKissBlockTimer(npc) <= 0 &&
                 !ShouldBlockKissDuringStardewSquadTask(npc) &&
+                !ShouldBlockKissForSpecialAnimation(npc) &&
                 !kissPostSequenceActive &&
                 !kissSequenceActive &&
                 pendingKissNpc == null &&
